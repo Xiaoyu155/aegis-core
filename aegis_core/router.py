@@ -114,7 +114,7 @@ class Router:
                 self._served[node["id"]] += 1
                 return {"status": "admitted", "lease_id": lease_id, "slot_id": node["id"],
                         "tier": candidate_tier, "provider": node["provider"], "deadline": deadline,
-                        "timeout_sec": min(node["timeout_sec"], remaining - self.reserve)}
+                        "timeout_sec": math.floor(min(node["timeout_sec"], remaining - self.reserve)*1e6)/1e6}
         return self._blocked("quota_or_quarantine")
 
     def release(self, lease_id: str) -> None:
