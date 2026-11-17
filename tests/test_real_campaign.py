@@ -19,7 +19,7 @@ def project(tmp_path, monkeypatch):
         shutil.copytree(ROOT/'examples'/name,path)
         for file,(old,good,_) in FIXES.items():
             target=path/file
-            if target.exists(): target.write_text(target.read_text().replace(old,good))
+            if target.exists(): target.write_text(target.read_text(encoding='utf-8').replace(old,good))
         monkeypatch.syspath_prepend(str(path))
         for file in path.glob('*.py'):
             if file.stem in sys.modules:
@@ -107,7 +107,7 @@ def test_eight_actual_cli_orders(tmp_path):
     report=campaign(tmp_path/'campaign')
     assert report['all_passed'] and len(report['cases'])==8
     assert report['stats']['cheat_interceptions']==report['stats']['replay_interceptions']==1
-    rows=[json.loads(line) for line in (tmp_path/'campaign/campaign_traces.jsonl').read_text().splitlines()]
+    rows=[json.loads(line) for line in (tmp_path/'campaign/campaign_traces.jsonl').read_text(encoding='utf-8').splitlines()]
     attempts=[row for row in rows if row['action_a0'].get('op')=='repair_attempt']
     healing=[row for row in attempts if row['ticket_id']=='self_heal']
     assert len(healing)==2 and healing[0]['reward']<0<healing[1]['reward']
@@ -143,5 +143,5 @@ def test_distillation_provenance_idempotency(tmp_path):
     path=tmp_path/'raw.jsonl';path.write_text('\n'.join(json.dumps(r) for r in rows))
     first=distill_campaign(path,tmp_path);second=distill_campaign(path,tmp_path)
     assert first==second and first['real_contrastive_groups']==1
-    assert len((tmp_path/'sft_mediator_eval.jsonl').read_text().splitlines())==1
-    assert len((tmp_path/'grpo_causal_rollouts.jsonl').read_text().splitlines())==1
+    assert len((tmp_path/'sft_mediator_eval.jsonl').read_text(encoding='utf-8').splitlines())==1
+    assert len((tmp_path/'grpo_causal_rollouts.jsonl').read_text(encoding='utf-8').splitlines())==1

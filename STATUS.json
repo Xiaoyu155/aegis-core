@@ -1,38 +1,47 @@
 {
   "phase": 5,
   "tests": 175,
-  "previous_tests_preserved": 136,
-  "campaign_cases": 8,
-  "campaign_all_passed": true,
+  "preserved_previous_tests": 136,
+  "campaign": {
+    "cases": 8,
+    "all_passed": true,
+    "stats": {
+      "tickets": 8,
+      "statuses": {
+        "MISSING_CONSTRAINT": 1,
+        "failed": 2,
+        "succeeded": 5
+      },
+      "traces": 47,
+      "terminal_tickets": 7,
+      "success_rate": 0.7142857142857143,
+      "repair_attempts": 10,
+      "cheat_interceptions": 1,
+      "replay_interceptions": 1,
+      "mean_reward": 0.4287544915905007
+    },
+    "report": "datasets/campaign/report.json",
+    "stdout": "datasets/campaign/stdout.txt"
+  },
   "synthetic_count": 1050,
   "real_campaign_traces_count": 47,
   "real_campaign_repair_attempts": 10,
   "real_sft_samples": 5,
   "real_contrastive_groups": 1,
   "campaign_sha256": "4fd9c65c256cf671957eba157dde092f56ed96b4152ef901ca15313e2f0a5814",
-  "dataset_counts": {
-    "sft_mediator_train.jsonl": 949,
-    "sft_mediator_eval.jsonl": 106,
-    "grpo_causal_rollouts.jsonl": 526
+  "datasets": {
+    "sft_train": 949,
+    "sft_eval": 106,
+    "grpo_groups": 526
   },
-  "campaign_stats": {
-    "tickets": 8,
-    "statuses": {
-      "MISSING_CONSTRAINT": 1,
-      "failed": 2,
-      "succeeded": 5
-    },
-    "traces": 47,
-    "terminal_tickets": 7,
-    "success_rate": 0.7142857142857143,
-    "repair_attempts": 10,
-    "cheat_interceptions": 1,
-    "replay_interceptions": 1,
-    "mean_reward": 0.4287544915905007
-  },
-  "report": "datasets/campaign/report.json",
   "provenance": "authored offline projects; physically executed CLI/worktree probes; self_heal uses a diagnosis-driven deterministic mock provider, not a live LLM",
+  "limits": [
+    "Static AST/concept retrieval; unknown invariants require clarification",
+    "Offline authored projects; no exchange, Canvas/GPU or live LLM deployment verified",
+    "Reusable buffer and bounded history; no zero-allocation claim"
+  ],
   "ci": {
-    "status": "pending"
+    "state": "pending",
+    "matrix": "Linux/Windows x Python 3.11/3.12; push + pull_request"
   }
 }
