@@ -56,5 +56,10 @@
     "max": 7870
   },
   "provenance": "synthetic variants; 24 templates, not 1050 independent runs",
-  "ci": "pending"
+  "ci": {
+    "checks_passed": 8,
+    "head": "1f5a0c1e9a9b327581e8c0d4ed32becfd6302ebf",
+    "branch": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44063341408",
+    "pr": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44064014550"
+  }
 }
