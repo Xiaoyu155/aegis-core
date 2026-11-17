@@ -50,6 +50,7 @@ class Router:
             if type(nodes) is not list or not nodes:
                 raise ValueError("nonempty tier nodes required")
             for node in nodes:
+                node = dict(node)
                 if set(node) != {"id", "provider", "model", "model_env", "base_url", "base_url_env", "api_key_env", "timeout_sec", "max_concurrency", "group", "weight", "enabled"}:
                     raise ValueError("missing/unknown node fields")
                 if type(node["id"]) is not str or not node["id"] or node["id"] in self.nodes:
@@ -153,7 +154,7 @@ class Router:
                     "status": "blocked_needs_human" if next_tier == "blocked_needs_human" else ("escalate" if repeated else "continue"),
                     "next_tier": next_tier, "patch_sha256": self.patch_hash(patch)}
 
-    def call(self, tier: str, messages: list[dict], *, deadline: float, transport=None, require_json=False, max_retries=2) -> dict:
+    def call(self, tier: str, messages: list[dict], *, deadline: float, transport=None, require_json=True, max_retries=2) -> dict:
         """A transport is injected in tests; no network is used by the simulator."""
         attempted = set()
         while len(attempted) < len(self.nodes):
@@ -175,7 +176,7 @@ class Router:
                     try:
                         result = (transport or request_provider)(node, messages, timeout=min(timeout, deadline-time.monotonic()-self.reserve), deadline=deadline)
                         if require_json:
-                            result = json.dumps(repair_json(result), ensure_ascii=False)
+                            result = json.dumps(repair_json(result), ensure_ascii=False, separators=(',',':'))
                         break
                     except (OSError, ValueError, KeyError, TimeoutError, subprocess.SubprocessError) as error:
                         transient = not isinstance(error, urllib.error.HTTPError) or error.code in (408, 429, 500, 502, 503, 504)

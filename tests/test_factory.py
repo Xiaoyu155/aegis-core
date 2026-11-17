@@ -135,3 +135,30 @@ def test_parallel_wal_worktrees(tmp_path):
     assert all(code==0 for _,code in results),results
     assert Ledger(db).stats()['success_rate']==1
     assert not list((root/'.worktrees').iterdir())
+
+@pytest.mark.parametrize('failure',['timeout','429','bad_json'])
+def test_gateway_failover(failure):
+    import urllib.error
+    router=_offline_router();node=dict(router.nodes['offline']);node['id']='backup'
+    config=router.config;config['tiers']['offline'].append({k:v for k,v in node.items() if k!='tier'})
+    router=Router(config,sleep=lambda x:None,jitter=lambda:0)
+    calls=[]
+    def transport(node,messages,**kwargs):
+        calls.append(node['id'])
+        if node['id']=='backup':return '{"ok":true}'
+        if failure=='timeout':raise TimeoutError()
+        if failure=='429':raise urllib.error.HTTPError('x',429,'busy',{'Retry-After':'0'},None)
+        return '{"broken":'
+    # Fairness initially selects backup alphabetically; force the failed primary first.
+    router._served['backup']=100
+    result=router.call('offline',[],deadline=time.monotonic()+10,transport=transport)
+    assert result['slot_id']=='backup'
+    assert router.events
+
+
+def test_graph_line_and_callers(tmp_path):
+    (tmp_path/'b.py').write_text('def callee(x):\n    return x\n')
+    (tmp_path/'a.py').write_text('from b import callee\ndef caller(x):\n    return callee(x)\n')
+    graph=ImportGraph(tmp_path)
+    result=graph.slice('b.py',line=2)
+    assert any(i['relation']=='caller' for i in result['items'])

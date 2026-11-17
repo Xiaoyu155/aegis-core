@@ -1,0 +1,14 @@
+{
+  "tests": 132,
+  "dogfood": {},
+  "samples": 1050,
+  "groups": 525,
+  "zero_variance_groups": 0,
+  "negative_fraction": 0.5,
+  "length_bytes": {
+    "min": 6343,
+    "max": 7870
+  },
+  "provenance": "synthetic variants; 24 templates, not 1050 independent runs",
+  "ci": "pending"
+}
