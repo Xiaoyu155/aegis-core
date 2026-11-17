@@ -1,0 +1,6 @@
+# Reproducible artifact hashes and script bytes on every platform.
+* text=auto
+*.jsonl text eol=lf
+*.json text eol=lf
+*.py text eol=lf
+*.ps1 text eol=lf
