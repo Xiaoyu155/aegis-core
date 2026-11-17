@@ -9,6 +9,9 @@ description = "Deterministic control kernel with causal traces"
 requires-python = ">=3.11"
 dependencies = []
 
+[project.scripts]
+aegis = "aegis_core.cli:main"
+
 [project.optional-dependencies]
 test = ["pytest>=8"]
 

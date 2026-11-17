@@ -1,0 +1,31 @@
+{
+  "schema_version": "aegis.dataset.v3",
+  "seed": 0,
+  "fault_modes": [
+    "cat_anchor_contract",
+    "cat_blank",
+    "cat_camera_offset",
+    "cat_depth",
+    "cat_depth_ties",
+    "cat_visual_threshold",
+    "quant_drawdown_boundary",
+    "quant_guard",
+    "quant_guard_period",
+    "quant_notional_cap",
+    "quant_posside",
+    "quant_signal_period"
+  ],
+  "sft_total": 520,
+  "sft_train": 468,
+  "sft_eval": 52,
+  "grpo_candidates": 520,
+  "grpo_groups": 260,
+  "executed_templates": 12,
+  "physical_template_attempts": 24,
+  "provenance": "compiler_validated_synthetic_SFT_and_instruction_augmented_template_pairs",
+  "sha256": {
+    "mediator_sft_train.jsonl": "c4e8471b90c472603185884a3f5ec9109309e3413a1130dc0ffb5d2402a95bf5",
+    "mediator_sft_eval.jsonl": "4e352930e47fc9f9d22c28e29a59c7849cea7f124bfb638aec310b167ac8ba6d",
+    "grpo_repair_pairs.jsonl": "d8e695d85b01fcd9ce8dae9d6988857fa5fb720a91345e93a312276727c61de9"
+  }
+}

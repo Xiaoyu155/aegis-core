@@ -356,7 +356,7 @@ def test_codex_and_anthropic_adapters_parse_actual_protocol_shapes(monkeypatch):
     router = Router(load_models(ROOT / "config/models.yaml"))
     monkeypatch.setenv("CODEX_DIRECT_MODEL", "configured-model")
     def subprocess_run(command, **kwargs):
-        assert command == ["codex", "exec", "--json", "--model", "configured-model", "-"]
+        assert command == ["codex", "exec", "--sandbox", "read-only", "--json", "--model", "configured-model", "-"]
         assert json.loads(kwargs["input"])[0]["role"] == "user"
         return subprocess.CompletedProcess(command, 0, stdout='{"type":"thread.started"}\n{"type":"item.completed","item":{"type":"agent_message","text":"final answer"}}\n')
     monkeypatch.setattr("aegis_core.router.subprocess.run", subprocess_run)

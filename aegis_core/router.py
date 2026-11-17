@@ -202,7 +202,7 @@ def request_provider(node: dict, messages: list[dict], *, timeout: float, deadli
         raise ValueError("configure an actual upstream model ID")
     if node["provider"] == "codex_cli":
         prompt = json.dumps(messages, ensure_ascii=False, allow_nan=False)
-        output = subprocess.run(["codex", "exec", "--json", "--model", model, "-"], input=prompt,
+        output = subprocess.run(["codex", "exec", "--sandbox", "read-only", "--json", "--model", model, "-"], input=prompt,
                                 capture_output=True, text=True, timeout=timeout, check=True).stdout
         agent_messages = []
         for line in output.splitlines():

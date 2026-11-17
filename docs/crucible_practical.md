@@ -124,7 +124,7 @@ Authorization: Bearer <宿主注入>
 Claude 原生 Messages 协议使用 `ANTHROPIC_BASE_URL`（以 `/v1` 结尾）、
 `x-api-key`、`anthropic-version: 2023-06-01` 与 `/messages`；
 Gemini 槽位使用显式配置的 OpenAI-compatible 网关，不假设原生协议兼容；
-Codex 调用本机 `codex exec --json --model MODEL -`，必须已安装并完成宿主认证。
+Codex 调用本机 `codex exec --sandbox read-only --json --model MODEL -`，必须已安装并完成宿主认证。
 
 ```python
 import time

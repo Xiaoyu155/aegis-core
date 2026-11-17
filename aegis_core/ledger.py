@@ -94,6 +94,31 @@ class Ledger:
             db.execute("INSERT OR REPLACE INTO leases VALUES (?,?,?,?)", (ticket_id, owner, token, now + ttl))
             return token
 
+    def release_lease(self, ticket_id: str, lease_token: str) -> None:
+        with self._transaction() as db:
+            changed = db.execute("DELETE FROM leases WHERE ticket_id=? AND token=?", (ticket_id, lease_token)).rowcount
+            if changed != 1:
+                raise PermissionError("stale or missing lease")
+
+    def stats(self) -> dict:
+        with self._connection() as db:
+            db.execute("BEGIN")
+            statuses = {row[0]: row[1] for row in db.execute("SELECT status,count(*) FROM tickets GROUP BY status")}
+            attempts = []
+            traces = 0
+            for row in db.execute("SELECT action_a0,actual_state_s1,reward FROM causal_traces"):
+                traces += 1
+                if json.loads(row[0]).get("op") in {"repair", "repair_attempt"}:
+                    attempts.append((json.loads(row[1]), row[2]))
+            terminal = statuses.get("succeeded", 0) + statuses.get("failed", 0)
+            return {"tickets": sum(statuses.values()), "statuses": statuses, "traces": traces,
+                    "terminal_tickets": terminal,
+                    "success_rate": statuses.get("succeeded", 0) / terminal if terminal else 0.0,
+                    "repair_attempts": len(attempts),
+                    "cheat_interceptions": sum(bool(state.get("cheat_detected", False)) for state, _ in attempts),
+                    "replay_interceptions": sum(bool(state.get("repeated_patch", False)) for state, _ in attempts),
+                    "mean_reward": sum(reward for _, reward in attempts) / len(attempts) if attempts else 0.0}
+
     def get_ticket(self, ticket_id: str) -> dict:
         with self._connection() as db:
             row = db.execute("SELECT * FROM tickets WHERE ticket_id=?", (ticket_id,)).fetchone()
@@ -131,7 +156,7 @@ class Ledger:
                    compiled_intent: dict | None = None, contract_stub: str | None = None) -> int:
         edges = {"queued": {"running", "MISSING_CONSTRAINT", "COMPILED"},
                  "MISSING_CONSTRAINT": {"MISSING_CONSTRAINT", "COMPILED"},
-                 "COMPILED": {"running"}, "running": {"succeeded", "failed"}}
+                 "COMPILED": {"COMPILED", "running"}, "running": {"running", "succeeded", "failed"}}
         if new_status not in edges.get(expected_status, set()):
             raise ValueError("illegal status transition")
         with self._transaction() as db:

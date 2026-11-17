@@ -108,3 +108,13 @@ pytest -v
 `config/models.yaml` 是 JSON 语法的 YAML 1.2 子集，核心代码不依赖 PyYAML。
 默认验收与仿真不连接任何交易所或外部模型。模型槽位需配置实际端点、型号与
 宿主凭据引用后才可调用。数据集用于训练数据交换，训练框架与 GPU 调优不在本仓库执行。
+
+## 统一 CLI 与本地接管
+
+```bash
+aegis --help
+python -m aegis_core --help
+```
+
+完整流程、退出码、账本位置及数据来源见 [控制塔说明](docs/control_tower.md)；
+Windows 环境初始化与 QLoRA/GRPO 启动见 [三条接管命令](LOCAL_HANDOFF.md)。

@@ -119,16 +119,66 @@ FAULTS = {
 }
 
 
+# Additional templates for the combined stage 3/4 dataset. V2 FAULTS and its
+# 32-row export intentionally remain unchanged for backwards compatibility.
+_EXTRA_QUANT_SIZE = "\ndef within_notional(amount, cap):\n    return amount >= cap\n"
+_EXTRA_CAT_ANCHOR = "\ndef foot_depth(cat):\n    return cat.body_anchor_y\n"
+_EXTRA_CAT_PROJECT = "\ndef project_foot(x, y, camera_offset):\n    return (x - y, (x + y) / 2 - camera_offset)\n"
+ALL_FAULTS = {**FAULTS,
+    "quant_notional_cap": ("execution_router.py", "return amount >= cap", "return 0 < amount <= cap", "return amount < 0"),
+    "quant_drawdown_boundary": ("intraday_guardian.py", "drawdown > MAX_DRAWDOWN", "drawdown >= MAX_DRAWDOWN", "drawdown >= MAX_DRAWDOWN + 0.01"),
+    "quant_guard_period": ("intraday_guardian.py", "GUARD_INTERVAL_SEC = 120", "GUARD_INTERVAL_SEC = 60", "GUARD_INTERVAL_SEC = 180"),
+    "quant_signal_period": ("signal_engine.py", "EXECUTION_PERIOD_SEC = 24 * 60 * 60", "EXECUTION_PERIOD_SEC = 8 * 60 * 60", "EXECUTION_PERIOD_SEC = 12 * 60 * 60"),
+    "cat_anchor_contract": ("engine/cat_kinematics.py", "return cat.body_anchor_y", "return cat.foot_anchor_y", "return -cat.foot_anchor_y"),
+    "cat_depth_ties": ("engine/iso_renderer.py", "key=lambda cat: (cat.foot_anchor_y, cat.name)", "key=lambda cat: cat.foot_anchor_y", "key=lambda cat: cat.body_anchor_y"),
+    "cat_visual_threshold": ("engine/iso_renderer.py", ">= 1000", ">= 18.5", ">= 2000"),
+    "cat_camera_offset": ("engine/cat_kinematics.py", "/ 2 - camera_offset", "/ 2 + camera_offset", "/ 2 - camera_offset * 2"),
+}
+TESTS.update({
+    "quant_notional_cap": "from execution_router import within_notional\ndef test_cap():\n    assert within_notional(100, 100)\n    assert not within_notional(101, 100)\n    assert not within_notional(0, 100)\n",
+    "quant_drawdown_boundary": TESTS["quant_guard"],
+    "quant_guard_period": TESTS["quant_guard"],
+    "quant_signal_period": "from signal_engine import EXECUTION_PERIOD_SEC\ndef test_period():\n    assert EXECUTION_PERIOD_SEC == 28800\n",
+    "cat_anchor_contract": "from engine.cat_kinematics import Cat, foot_depth\ndef test_anchor():\n    assert foot_depth(Cat('cat', 20, 99)) == 20\n",
+    "cat_depth_ties": "from engine.cat_kinematics import Cat\nfrom engine.iso_renderer import depth_order\ndef test_ties():\n    assert depth_order([Cat('z', 20, 99), Cat('a', 20, 1)]) == ['z', 'a']\n",
+    "cat_visual_threshold": "from engine.iso_renderer import visual_gate\ndef test_threshold():\n    assert visual_gate() is True\n",
+    "cat_camera_offset": "from engine.cat_kinematics import project_foot\ndef test_camera():\n    assert project_foot(20, 10, 10) == (10, 25)\n",
+})
+
+
+def fixture_files(scenario):
+    files = dict(QUANT if scenario.startswith("quant_") else CAT)
+    if scenario == "quant_notional_cap":
+        files["execution_router.py"] += _EXTRA_QUANT_SIZE
+    elif scenario in {"quant_drawdown_boundary", "quant_guard_period"}:
+        files["intraday_guardian.py"] = files["intraday_guardian.py"].replace('"reduceOnly": False}', '"reduceOnly": True}', 1)
+        if scenario == "quant_drawdown_boundary":
+            files["intraday_guardian.py"] = files["intraday_guardian.py"].replace("drawdown >= MAX_DRAWDOWN", "drawdown > MAX_DRAWDOWN")
+        else:
+            files["intraday_guardian.py"] = files["intraday_guardian.py"].replace("GUARD_INTERVAL_SEC = 60", "GUARD_INTERVAL_SEC = 120")
+    elif scenario == "quant_signal_period":
+        files["signal_engine.py"] = files["signal_engine.py"].replace("8 * 60 * 60", "24 * 60 * 60")
+    elif scenario == "cat_anchor_contract":
+        files["engine/cat_kinematics.py"] += _EXTRA_CAT_ANCHOR
+    elif scenario == "cat_camera_offset":
+        files["engine/cat_kinematics.py"] += _EXTRA_CAT_PROJECT
+    elif scenario == "cat_depth_ties":
+        files["engine/iso_renderer.py"] = files["engine/iso_renderer.py"].replace("key=lambda cat: cat.body_anchor_y", "key=lambda cat: (cat.foot_anchor_y, cat.name)")
+    elif scenario == "cat_visual_threshold":
+        files["engine/iso_renderer.py"] = files["engine/iso_renderer.py"].replace("return [120] * 64", "return [100, 140] * 32").replace(">= 18.5", ">= 1000")
+    return files
+
+
 def _git(root, *args):
     return subprocess.run(["git", *args], cwd=root, capture_output=True, text=True, check=True).stdout.strip()
 
 
 def create_arena(root: Path, scenario: str) -> dict:
-    if scenario not in FAULTS:
+    if scenario not in ALL_FAULTS:
         raise ValueError("unknown arena scenario")
     root = Path(root)
     root.mkdir(parents=True, exist_ok=False)
-    files = QUANT if scenario.startswith("quant_") else CAT
+    files = fixture_files(scenario)
     for name, source in files.items():
         path = root / name
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -144,13 +194,13 @@ def create_arena(root: Path, scenario: str) -> dict:
     _git(root, "commit", "-m", "Freeze original offline arena contract and failing invariant")
     return {"scenario": scenario, "fixture_sha256": tree_hash(root),
             "source_dirs": (".",) if scenario.startswith("quant_") else ("engine",),
-            "target_files": [FAULTS[scenario][0]],
+            "target_files": [ALL_FAULTS[scenario][0]],
             "test_cmd": [sys.executable, "-B", "-m", "pytest", "-q", "--tb=short"]}
 
 
 def fixture_patch(scenario: str, *, positive: bool) -> str:
-    path, old, good, bad = FAULTS[scenario]
-    source = (QUANT if scenario.startswith("quant_") else CAT)[path]
+    path, old, good, bad = ALL_FAULTS[scenario]
+    source = fixture_files(scenario)[path]
     replacement = source.replace(old, good if positive else bad)
     return "".join(difflib.unified_diff(source.splitlines(keepends=True), replacement.splitlines(keepends=True),
                                        fromfile="a/" + path, tofile="b/" + path))
@@ -168,7 +218,7 @@ def run_arena(root: Path, scenario: str, ledger: Ledger) -> list[dict]:
         token = ledger.acquire_lease(ticket, "offline-simulator", ttl=300)
         path = manager.create(ticket)
         try:
-            compile_request(ticket, "修复离线仿真", list((QUANT if scenario.startswith("quant_") else CAT).keys()),
+            compile_request(ticket, "修复离线仿真", list(fixture_files(scenario)),
                             {"target_files": arena["target_files"], "contract_stub": "def repair() -> None: ..."},
                             constraints={"execution_mode": "dry_run"}, ledger=ledger, lease_token=token)
             state = ledger.get_state(ticket)

@@ -5,3 +5,5 @@ __pycache__/
 .worktrees/
 *.sqlite*
 dist/
+training/runs/
+.aegis/

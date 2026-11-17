@@ -15,5 +15,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-      - run: python -m pip install -e ".[test]"
-      - run: python -m pytest -v
+      - name: Install core and pytest
+        if: matrix.os != 'windows-latest' || matrix.python != '3.11'
+        run: python -m pip install -e ".[test]"
+      - name: Run complete suite
+        if: matrix.os != 'windows-latest' || matrix.python != '3.11'
+        run: python -m pytest -v
+      - name: Windows local handoff bootstrap (includes full pytest suite)
+        if: matrix.os == 'windows-latest' && matrix.python == '3.11'
+        shell: pwsh
+        run: '& ./scripts/bootstrap_local.ps1'
