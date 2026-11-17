@@ -35,12 +35,21 @@ class Ledger:
                     action_a0 TEXT NOT NULL, predicted_next_state TEXT,
                     actual_state_s1 TEXT NOT NULL, reward REAL NOT NULL,
                     token_cost INTEGER NOT NULL, timestamp REAL NOT NULL,
+                    predicted_reward REAL, prediction_confidence REAL,
+                    prediction_error TEXT, predicted_reward_interval TEXT,
                     UNIQUE(ticket_id, step_idx));
                 CREATE TRIGGER IF NOT EXISTS traces_no_update BEFORE UPDATE ON causal_traces
                 BEGIN SELECT RAISE(ABORT, 'traces are append-only'); END;
                 CREATE TRIGGER IF NOT EXISTS traces_no_delete BEFORE DELETE ON causal_traces
                 BEGIN SELECT RAISE(ABORT, 'traces are append-only'); END;
             ''')
+            columns = {row[1] for row in db.execute("PRAGMA table_info(causal_traces)")}
+            for name, declaration in (("predicted_reward", "REAL"),
+                                      ("prediction_confidence", "REAL"),
+                                      ("prediction_error", "TEXT"),
+                                      ("predicted_reward_interval", "TEXT")):
+                if name not in columns:
+                    db.execute(f"ALTER TABLE causal_traces ADD COLUMN {name} {declaration}")
 
     @contextmanager
     def _connection(self):
@@ -136,23 +145,50 @@ class Ledger:
             return json.loads(row[0])
 
     @staticmethod
-    def _trace(db, ticket_id, s0, action, s1, reward, prediction, cost, now):
+    def _trace(db, ticket_id, s0, action, s1, reward, prediction, cost, now,
+               predicted_reward=None, prediction_confidence=None, prediction_error=None,
+               predicted_reward_interval=None):
         if type(cost) is not int or cost < 0 or type(reward) not in (int, float) or not math.isfinite(reward):
             raise ValueError("invalid reward or token_cost")
         if not all(isinstance(x, dict) for x in (s0, action, s1)):
             raise ValueError("causal states and action must be objects")
         if prediction is not None and not isinstance(prediction, dict):
             raise ValueError("prediction must be an object or null")
+        if predicted_reward is not None and (type(predicted_reward) not in (int, float) or not math.isfinite(predicted_reward)):
+            raise ValueError("predicted_reward must be finite")
+        if prediction_confidence is not None and (type(prediction_confidence) not in (int, float)
+                                                   or not math.isfinite(prediction_confidence)
+                                                   or not 0 <= prediction_confidence <= 1):
+            raise ValueError("prediction_confidence must be in [0, 1]")
+        if prediction_error is not None and not isinstance(prediction_error, dict):
+            raise ValueError("prediction_error must be an object or null")
+        if predicted_reward_interval is not None:
+            if (not isinstance(predicted_reward_interval, (list, tuple))
+                    or len(predicted_reward_interval) != 2
+                    or any(type(value) not in (int, float) or not math.isfinite(value)
+                           for value in predicted_reward_interval)
+                    or predicted_reward_interval[0] > predicted_reward_interval[1]):
+                raise ValueError("predicted_reward_interval must be an ordered finite pair")
         step = db.execute("SELECT COALESCE(MAX(step_idx),-1)+1 FROM causal_traces WHERE ticket_id=?", (ticket_id,)).fetchone()[0]
-        db.execute("INSERT INTO causal_traces VALUES (NULL,?,?,?,?,?,?,?,?,?)",
+        db.execute("""INSERT INTO causal_traces
+            (ticket_id,step_idx,state_s0,action_a0,predicted_next_state,actual_state_s1,
+             reward,token_cost,timestamp,predicted_reward,prediction_confidence,prediction_error,
+             predicted_reward_interval)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                    (ticket_id, step, _json(s0), _json(action), _json(prediction) if prediction is not None else None,
-                    _json(s1), reward, cost, now))
+                    _json(s1), reward, cost, now, predicted_reward, prediction_confidence,
+                    _json(prediction_error) if prediction_error is not None else None,
+                    _json(list(predicted_reward_interval)) if predicted_reward_interval is not None else None))
         return step
 
     def transition(self, ticket_id: str, lease_token: str, expected_status: str,
                    new_status: str, *, state_s0: dict, action_a0: dict,
                    actual_state_s1: dict, reward: float,
                    predicted_next_state: dict | None = None, token_cost: int = 0,
+                   predicted_reward: float | None = None,
+                   prediction_confidence: float | None = None,
+                   prediction_error: dict | None = None,
+                   predicted_reward_interval: list[float] | None = None,
                    compiled_intent: dict | None = None, contract_stub: str | None = None) -> int:
         edges = {"queued": {"running", "MISSING_CONSTRAINT", "COMPILED"},
                  "MISSING_CONSTRAINT": {"MISSING_CONSTRAINT", "COMPILED"},
@@ -178,7 +214,9 @@ class Ledger:
                 db.execute("UPDATE tickets SET compiled_intent=?,contract_stub=? WHERE ticket_id=?",
                            (_json(compiled_intent), contract_stub, ticket_id))
             step = self._trace(db, ticket_id, state_s0, action_a0, actual_state_s1,
-                               reward, predicted_next_state, token_cost, now)
+                               reward, predicted_next_state, token_cost, now,
+                               predicted_reward, prediction_confidence, prediction_error,
+                               predicted_reward_interval)
             if new_status in {"succeeded", "failed", "PRECHECK_FAILED"}:
                 db.execute("DELETE FROM leases WHERE ticket_id=?", (ticket_id,))
             return step
@@ -201,7 +239,8 @@ class Ledger:
                 with temp.open("w", encoding="utf-8", newline="\n") as output:
                     for row in rows:
                         item = dict(row)
-                        for key in ("state_s0", "action_a0", "predicted_next_state", "actual_state_s1"):
+                        for key in ("state_s0", "action_a0", "predicted_next_state", "actual_state_s1",
+                                    "prediction_error", "predicted_reward_interval"):
                             item[key] = json.loads(item[key]) if item[key] is not None else None
                         item["state_s1"] = item["actual_state_s1"]
                         output.write(_json(item) + "\n")

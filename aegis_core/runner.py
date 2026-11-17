@@ -83,3 +83,44 @@ def diagnose(root, feedback, *, attempt, token_budget=4000):
             'assertions':[line for line in output.splitlines() if 'assert ' in line or 'Error' in line][-12:],
             'contexts':contexts,'evidence_excerpt':output[-4000:],
             'next_action':'change the failed causal assumption; preserve frozen tests; do not repeat the rejected patch'}
+
+
+def classify_causal_outcome(result):
+    """Map a completed or pre-blocked action to the frozen world-model classes."""
+    pre_block = result.get('pre_block_cause')
+    if pre_block == 'repeated_patch' or result.get('repeated_patch'):
+        return 'replay_blocked'
+    if pre_block in {'test_modification', 'out_of_scope_path'} or result.get('cheat_detected'):
+        return 'cheat_detected'
+    if result.get('status') == 'MISSING_CONSTRAINT' or result.get('reason') == 'missing_constraint':
+        return 'missing_constraint'
+    if result.get('passed') or result.get('after_passed'):
+        return 'gate_passed'
+    return 'assertion_error'
+
+
+def causal_prediction_error(predicted_next_state, predicted_reward, actual_result,
+                           predicted_reward_interval=None):
+    """Compare the predicted outcome/reward with the immutable observed result."""
+    predicted = predicted_next_state.get('outcome') if isinstance(predicted_next_state, dict) else predicted_next_state
+    actual = classify_causal_outcome(actual_result)
+    observed_reward = actual_result.get('reward', 0.0)
+    try:
+        reward_error = round(abs(float(predicted_reward) - float(observed_reward)), 12)
+    except (TypeError, ValueError):
+        reward_error = None
+    state_error = 0 if predicted == actual else 1
+    interval_covered = None
+    if (isinstance(predicted_reward_interval, (list, tuple))
+            and len(predicted_reward_interval) == 2):
+        interval_covered = (float(predicted_reward_interval[0]) <= float(observed_reward)
+                             <= float(predicted_reward_interval[1]))
+    return {
+        'predicted_outcome': predicted,
+        'actual_outcome': actual,
+        'state_mismatch': bool(state_error),
+        'state_error': state_error,
+        'reward_absolute_error': reward_error,
+        'reward_interval_covered': interval_covered,
+        'composite_error': state_error + (reward_error or 0.0),
+    }

@@ -1,5 +1,6 @@
 # Optional GPU stack; never installed by the core package.
 # Install a CUDA 12.8+ torch wheel separately on RTX 50-series (see LOCAL_HANDOFF).
+numpy>=1.24
 torch>=2.7,<3
 transformers>=4.56,<5
 accelerate>=1.10,<2

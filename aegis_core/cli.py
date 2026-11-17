@@ -236,7 +236,10 @@ def _execute(args):
     manager = Sandbox(root)
     manager._paths(ticket)
     router = Router(load_models(Path(document["models_path"]))) if document["allow_model"] else _offline_router()
-    if document.get('probe_patch'):
+    from .world_model import CausalWorldModel
+    world_model = CausalWorldModel.load_if_available(root / "artifacts" / "causal_world_model")
+
+    def verify_probe_baseline():
         from .sandbox import validate_probe_patch, run_exam_gate, ProbeNotFailingError
         validate_probe_patch(document['probe_patch'])
         check = 'check-' + uuid.uuid4().hex[:12]
@@ -248,6 +251,13 @@ def _execute(args):
                 raise ProbeNotFailingError(json.dumps(before))
         finally:
             manager.cleanup(check)
+
+    probe_checked = False
+    # Legacy repositories without trained weights keep the existing precheck path.
+    # With a model, each proposed action is predicted and durably recorded first.
+    if document.get('probe_patch') and world_model is None:
+        verify_probe_baseline()
+        probe_checked = True
     for candidate in document['patches']:
         if not Path(candidate).is_file():
             raise FileNotFoundError(candidate)
@@ -295,13 +305,54 @@ def _execute(args):
                     router.release(admitted["lease_id"])
             if type(patch) is not str:
                 raise ValueError("model patch must be text")
+            patch_sha256 = hashlib.sha256(patch.encode()).hexdigest()
+            target_files = document["compilation"]["target_files"]
+            attempt_action = {"op": "repair_attempt", "patch": patch, "patch_sha256": patch_sha256,
+                              "target_files": target_files, "slot_id": slot,
+                              "context": document["context"], "contract": document["compilation"],
+                              "repeated_patch": breaker["repeated_patch"]}
+            prediction = None
+            if world_model is not None:
+                prediction_state = ledger.get_state(ticket)
+                prediction = world_model.predict(prediction_state, attempt_action,
+                                                 context=document["context"], prior_attempts=results)
+                ledger.transition(ticket, token, "running", "running", state_s0=prediction_state,
+                                  action_a0={**attempt_action, "op": "world_model_prediction"},
+                                  actual_state_s1=prediction_state, reward=0,
+                                  predicted_next_state=prediction["predicted_next_state"],
+                                  predicted_reward=prediction["predicted_reward"],
+                                  prediction_confidence=prediction["prediction_confidence"],
+                                  predicted_reward_interval=prediction["predicted_reward_interval"])
             work_id = "run-" + uuid.uuid4().hex[:16]
             result = {"baseline_failed": False, "after_passed": False, "passed": False, "cheat_detected": False,
-                      "changed_files": [], "diff_lines": 0, "repeated_patch": breaker["repeated_patch"]}
+                      "changed_files": [], "diff_lines": 0, "repeated_patch": breaker["repeated_patch"],
+                      "patch_sha256": patch_sha256}
+            if prediction is not None:
+                result.update({"predicted_next_state": prediction["predicted_next_state"],
+                               "predicted_reward": prediction["predicted_reward"],
+                               "predicted_reward_interval": prediction["predicted_reward_interval"],
+                               "prediction_confidence": prediction["prediction_confidence"],
+                               "risk_probability": prediction["risk_probability"],
+                               "world_model_version": prediction["model_version"]})
             started = time.monotonic()
-            if breaker["repeated_patch"]:
+            pre_block_reason = (prediction["predicted_next_state"].get("pre_block_reason")
+                                if prediction is not None else None)
+            if pre_block_reason:
+                paths = prediction["predicted_next_state"].get("changed_paths", [])
+                result.update(pre_blocked=True, pre_block_reason="HIGH_RISK_PRE_BLOCK",
+                              pre_block_cause=pre_block_reason,
+                              cheat_detected=pre_block_reason in {"test_modification", "out_of_scope_path"},
+                              repeated_patch=pre_block_reason == "repeated_patch",
+                              changed_files=paths,
+                              diff_lines=sum(line.startswith(("+", "-")) and not line.startswith(("+++", "---"))
+                                             for line in patch.splitlines()))
+                reason = "HIGH_RISK_PRE_BLOCK"
+            elif breaker["repeated_patch"]:
                 reason = "blocked_needs_human"
             else:
+                if document.get('probe_patch') and not probe_checked:
+                    verify_probe_baseline()
+                    probe_checked = True
                 path = manager.create(work_id, base=document["base_commit"])
                 try:
                     remaining = deadline - time.monotonic()
@@ -333,19 +384,35 @@ def _execute(args):
                                          diff_lines=result["diff_lines"], elapsed_sec=elapsed, latency_budget_sec=document["timeout_sec"],
                                          cheat_detected=result["cheat_detected"], repeated_patch=result["repeated_patch"])
             if not result['passed'] and 'diagnosis' not in result:
-                from .runner import diagnose
-                result['diagnosis'] = diagnose(root, result, attempt=index+1)
+                if not result.get("pre_blocked"):
+                    from .runner import diagnose
+                    result['diagnosis'] = diagnose(root, result, attempt=index+1)
             result["reward"] = reward
+            error = None
+            if prediction is not None:
+                from .runner import classify_causal_outcome, causal_prediction_error
+                actual_outcome = classify_causal_outcome(result)
+                result["world_model_outcome"] = actual_outcome
+                error = causal_prediction_error(prediction["predicted_next_state"],
+                                                prediction["predicted_reward"], result,
+                                                prediction["predicted_reward_interval"])
+                result["causal_prediction_error"] = error
             prior = ledger.get_state(ticket)
             current = {"status": "running", "attempt": index, **result}
             ledger.transition(ticket, token, "running", "running", state_s0=prior,
-                              action_a0={"op": "repair_attempt", "patch": patch, "patch_sha256": hashlib.sha256(patch.encode()).hexdigest(), "slot_id": slot, "context": document["context"], "contract": document["compilation"]},
-                              actual_state_s1=current, reward=reward, predicted_next_state={"passed": True})
+                              action_a0=attempt_action, actual_state_s1=current, reward=reward,
+                              predicted_next_state=prediction["predicted_next_state"] if prediction else None,
+                              predicted_reward=prediction["predicted_reward"] if prediction else None,
+                              prediction_confidence=prediction["prediction_confidence"] if prediction else None,
+                              prediction_error=error,
+                              predicted_reward_interval=prediction["predicted_reward_interval"] if prediction else None)
             results.append(result)
             if result["passed"]:
                 terminal, reason = "succeeded", "gate_passed"
                 break
             router.record_rejection(slot, patch)
+            if result.get("pre_blocked"):
+                break
             if breaker["repeated_patch"]:
                 if breaker["next_tier"] == "blocked_needs_human":
                     break

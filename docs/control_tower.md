@@ -50,7 +50,8 @@ Router 共享 deadline、验收预留和配额。Codex CLI 生成补丁时为 re
 
 `stats` 的 success_rate 分母为 succeeded+failed 终态工单；mean_reward 只统计
 repair/repair_attempt 轨迹，忽略编译等零奖励管理动作；cheat_interceptions 和
-replay_interceptions 为被拦截的尝试数。导出保持 V1 state_s0/action_a0/state_s1/reward。
+replay_interceptions 为被拦截的尝试数。导出保留 V1 state_s0/action_a0/state_s1/reward，
+并可包含世界模型预测、Reward 区间、置信度和因果预测误差字段。
 
 ## 合成数据与训练边界
 
@@ -69,5 +70,12 @@ python -m training.train_grpo --validate-only
 GRPO 的520条是24次独立模板执行结果的指令扩展，不是520次独立执行或实盘记录；
 重复上下文不应被当成泛化评测。SFT 520条为合成参数和问题，不是历史用户对话。
 在线 GRPO 奖励会对新生成补丁创建全新靶场、重新执行双探针，不读取样本/模型的
-自报分数。训练依赖只在 training/requirements-train.txt；实际 GPU 训练未在云端执行。
-Windows三条启动命令及硬件边界见 [LOCAL_HANDOFF.md](../LOCAL_HANDOFF.md)。
+自报分数。GPU QLoRA/GRPO 依赖只在 training/requirements-train.txt；Windows 本地
+GPU 接管步骤见 [LOCAL_HANDOFF.md](../LOCAL_HANDOFF.md)。
+
+## CPU 因果世界模型
+
+在有 NumPy 的 Python 环境中，运行 `python scripts/train_and_eval_world_model.py`，
+可从已执行的监督样本和真实 campaign 账本训练共享隐藏层的多任务网络，输出到
+`artifacts/causal_world_model/`。训练不依赖 PyTorch；生产推理只用标准库。
+训练与组隔离评估细节、权重格式及风险样本限制见 [causal_world_model.md](causal_world_model.md)。
