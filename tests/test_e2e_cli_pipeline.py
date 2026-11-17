@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import sysconfig
 import tomllib
 
 import pytest
@@ -133,7 +134,7 @@ def test_explicit_model_route_is_injected_and_uses_same_gate(tmp_path, monkeypat
 def test_console_entrypoint_and_no_heavy_imports():
     config = tomllib.loads((ROOT / "pyproject.toml").read_text())
     assert config["project"]["scripts"]["aegis"] == "aegis_core.cli:main"
-    exe = Path(sys.executable).parent / ("aegis.exe" if os.name == "nt" else "aegis")
+    exe = Path(sysconfig.get_path("scripts")) / ("aegis.exe" if os.name == "nt" else "aegis")
     assert subprocess.run([str(exe), "--help"], capture_output=True).returncode == 0
     command = "import aegis_core.cli, training.train_sft, training.train_grpo, sys; assert not any(x in sys.modules for x in ('torch','transformers','peft','trl'))"
     assert subprocess.run([sys.executable, "-c", command], cwd=ROOT, capture_output=True).returncode == 0
