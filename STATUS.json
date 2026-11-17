@@ -1,65 +1,38 @@
 {
-  "tests": 136,
-  "dogfood": {
-    "A": true,
-    "B": true,
-    "b_evidence": {
-      "status": "succeeded",
-      "reason": "gate_passed",
-      "rewards": [
-        -0.0075022869383307555,
-        1.4924101839333284
-      ]
-    },
-    "C": true,
-    "c_evidence": {
-      "status": "failed",
-      "reason": "attempts_exhausted",
-      "rewards": [
-        -1.3190810957299983
-      ]
-    },
-    "D": true,
-    "d_evidence": {
-      "status": "failed",
-      "reason": "blocked_needs_human",
-      "rewards": [
-        -0.007619672410000935,
-        -0.007813401968336018,
-        -1.800000000801671
-      ]
-    },
-    "stats": {
-      "tickets": 5,
-      "statuses": {
-        "COMPILED": 1,
-        "MISSING_CONSTRAINT": 1,
-        "failed": 2,
-        "succeeded": 1
-      },
-      "traces": 26,
-      "terminal_tickets": 3,
-      "success_rate": 0.3333333333333333,
-      "repair_attempts": 6,
-      "cheat_interceptions": 1,
-      "replay_interceptions": 1,
-      "mean_reward": -0.2749343789858348
-    },
-    "all_passed": true
+  "phase": 5,
+  "tests": 175,
+  "previous_tests_preserved": 136,
+  "campaign_cases": 8,
+  "campaign_all_passed": true,
+  "synthetic_count": 1050,
+  "real_campaign_traces_count": 47,
+  "real_campaign_repair_attempts": 10,
+  "real_sft_samples": 5,
+  "real_contrastive_groups": 1,
+  "campaign_sha256": "4fd9c65c256cf671957eba157dde092f56ed96b4152ef901ca15313e2f0a5814",
+  "dataset_counts": {
+    "sft_mediator_train.jsonl": 949,
+    "sft_mediator_eval.jsonl": 106,
+    "grpo_causal_rollouts.jsonl": 526
   },
-  "samples": 1050,
-  "groups": 525,
-  "zero_variance_groups": 0,
-  "negative_fraction": 0.5,
-  "length_bytes": {
-    "min": 6343,
-    "max": 7870
+  "campaign_stats": {
+    "tickets": 8,
+    "statuses": {
+      "MISSING_CONSTRAINT": 1,
+      "failed": 2,
+      "succeeded": 5
+    },
+    "traces": 47,
+    "terminal_tickets": 7,
+    "success_rate": 0.7142857142857143,
+    "repair_attempts": 10,
+    "cheat_interceptions": 1,
+    "replay_interceptions": 1,
+    "mean_reward": 0.4287544915905007
   },
-  "provenance": "synthetic variants; 24 templates, not 1050 independent runs",
+  "report": "datasets/campaign/report.json",
+  "provenance": "authored offline projects; physically executed CLI/worktree probes; self_heal uses a diagnosis-driven deterministic mock provider, not a live LLM",
   "ci": {
-    "checks_passed": 8,
-    "head": "1f5a0c1e9a9b327581e8c0d4ed32becfd6302ebf",
-    "branch": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44063341408",
-    "pr": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44064014550"
+    "status": "pending"
   }
 }

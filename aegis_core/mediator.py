@@ -252,11 +252,15 @@ def compile_wish(root, wish, *, targets=None, allow_model=False, models=None):
         return (4 if path in wish else 2 if PurePosixPath(path).stem in wish else 0) + sum(
             1 for term in re.findall(r'[A-Za-z_]\w{3,}', wish) if term in text)
     ranked = sorted(source_paths, key=lambda p: (-score(p), p))
-    target = (targets or ranked)[0]
+    from .runner import retrieve
+    retrieval = retrieve(root, wish)
+    target = targets[0] if targets else (retrieval['candidates'][0]['file'] if retrieval['candidates'] else ranked[0])
     symbols = [k for k in graph.symbols if graph.symbol_modules[k] == graph.paths.get(target)]
     if not symbols:
         raise ValueError('target has no function/class interfaces')
     symbol = max(symbols, key=lambda k: (sum(word in wish for word in k.split(':')[-1].split('.')), -graph.symbols[k].lineno))
+    if not targets and retrieval['candidates']:
+        symbol = graph.paths[target] + ':' + retrieval['candidates'][0]['symbol']
     node = graph.symbols[symbol]
     constraints = {'domain': 'general', 'actions': [], 'assertions': []}
     if re.search(r'市价|market', wish, re.I):
@@ -353,5 +357,17 @@ def test_contract():
                 probe = ''.join(difflib.unified_diff([], code.splitlines(True), fromfile='/dev/null', tofile='b/tests/test_aegis_probe.py'))
     else:
         missing.append('unsupported_offline_assertion')
+        concepts = set().union(*(set(row['matched_terms']) for row in retrieval['candidates']))
+        if 'concept_depth' in concepts:
+            missing.append('render_invariant: confirm foot anchor, container priority and stable tie order')
+        if 'concept_leverage' in concepts:
+            missing.append('risk_boundary: confirm leverage cap, equity basis and funding shutdown policy')
+        if 'concept_regime' in concepts:
+            missing.append('recovery_boundary: confirm healthy tick count and relapse transition')
+        if 'concept_memory' in concepts:
+            missing.append('memory_boundary: confirm frame history retention and allocation metric')
+    if not targets and retrieval['ambiguity_margin'] < .15:
+        missing.append('ambiguous_symbol: select a cited function and expected invariant')
+    context['retrieval'] = retrieval['candidates']
     return {'target_files': [target], 'contract_stub': stub, 'constraints': constraints, 'probe_patch': probe, 'context': context, 'missing': missing}
 

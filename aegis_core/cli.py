@@ -126,6 +126,7 @@ def _wish(args):
     try:
         if enhanced and enhanced['missing']:
             result = {'kind': 'MissingConstraintQuestion', 'ticket_id': ticket, 'status': 'MISSING_CONSTRAINT',
+                      'citations': enhanced['context'].get('retrieval', []),
                       'questions': [{'code': 'D_CONSTRAINT', 'question': ', '.join(enhanced['missing']),
                                      'options': [{'id': 'provide', 'label': '补充契约', 'value': {}}, {'id': 'stop', 'label': '停止', 'value': {}}], 'recommended': 'stop'}]}
             state = ledger.get_state(ticket)
@@ -136,13 +137,16 @@ def _wish(args):
                                  candidates=candidates, ledger=ledger, lease_token=token)
     finally:
         ledger.release_lease(ticket, token)
+    if not enhanced:
+        from .runner import retrieve
+        legacy_context = retrieve(root, ' '.join(proposal['target_files']))['context']
     document = {"schema_version": "aegis.cli.v1", "ticket_id": ticket, "repo_root": str(root),
                 "base_commit": _git(root, "rev-parse", "HEAD"), "compilation": result,
                 "fail_before_cmd": _argv(args.fail_before) or (["{python}", "-B", "-m", "pytest", "-q", "tests/test_aegis_probe.py"] if enhanced else []), "pass_after_cmd": _argv(args.pass_after) or (["{python}", "-B", "-m", "pytest", "-q", "tests/test_aegis_probe.py"] if enhanced else []),
                 "source_dirs": args.source_dir or ["."],
                 "patches": [str(Path(path).resolve()) for path in args.patch or []],
                 "models_path": str(Path(args.models).resolve()) if args.models else None,
-                "probe_patch": enhanced['probe_patch'] if enhanced else "", "context": enhanced['context'] if enhanced else {},
+                "probe_patch": enhanced['probe_patch'] if enhanced else "", "context": enhanced['context'] if enhanced else legacy_context,
                 "allow_model": args.allow_model, "max_attempts": args.max_attempts,
                 "timeout_sec": args.timeout}
     document["contract_sha256"] = _digest(document)
@@ -317,17 +321,25 @@ def _execute(args):
                 except (ValueError, OSError, subprocess.SubprocessError) as error:
                     result["error"] = type(error).__name__  # no vendor credentials or command payloads
                 finally:
-                    manager.cleanup(work_id)
+                    try:
+                        if not result['passed']:
+                            from .runner import diagnose
+                            result['diagnosis'] = diagnose(path, result, attempt=index+1)
+                    finally:
+                        manager.cleanup(work_id)
             elapsed = time.monotonic() - started
             reward = compute_step_reward(baseline_failed=result["baseline_failed"], after_passed=result["after_passed"],
                                          target_files=document["compilation"]["target_files"], changed_files=result["changed_files"],
                                          diff_lines=result["diff_lines"], elapsed_sec=elapsed, latency_budget_sec=document["timeout_sec"],
                                          cheat_detected=result["cheat_detected"], repeated_patch=result["repeated_patch"])
+            if not result['passed'] and 'diagnosis' not in result:
+                from .runner import diagnose
+                result['diagnosis'] = diagnose(root, result, attempt=index+1)
             result["reward"] = reward
             prior = ledger.get_state(ticket)
             current = {"status": "running", "attempt": index, **result}
             ledger.transition(ticket, token, "running", "running", state_s0=prior,
-                              action_a0={"op": "repair_attempt", "patch": patch, "patch_sha256": hashlib.sha256(patch.encode()).hexdigest(), "slot_id": slot},
+                              action_a0={"op": "repair_attempt", "patch": patch, "patch_sha256": hashlib.sha256(patch.encode()).hexdigest(), "slot_id": slot, "context": document["context"], "contract": document["compilation"]},
                               actual_state_s1=current, reward=reward, predicted_next_state={"passed": True})
             results.append(result)
             if result["passed"]:

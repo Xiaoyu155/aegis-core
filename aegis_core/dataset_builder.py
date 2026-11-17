@@ -134,3 +134,36 @@ def build_factory(destination, count):
 
 if __name__ == "__main__":
     main()
+
+
+def distill_campaign(trace_path, destination):
+    """Append provenance-tagged real execution evidence without duplicating reruns.
+
+    SFT learns accepted repairs only. GRPO retains same-ticket contrastive outcomes;
+    variation in runtime alone does not qualify a group as contrastive.
+    """
+    import hashlib
+    destination=Path(destination)
+    destination.mkdir(parents=True, exist_ok=True)
+    rows=[json.loads(line) for line in Path(trace_path).read_text(encoding='utf-8').splitlines()]
+    digest=hashlib.sha256(Path(trace_path).read_bytes()).hexdigest()
+    attempts=[row for row in rows if row['action_a0'].get('op')=='repair_attempt']
+    by_ticket={}
+    positives=[]
+    for row in attempts:
+        by_ticket.setdefault(row['ticket_id'],[]).append(row)
+        if row['actual_state_s1'].get('passed'):
+            history=[r for r in by_ticket[row['ticket_id']][:-1]]
+            positives.append({'messages':[
+                {'role':'system','content':'Repair the frozen contract; return JSON patch only. Preserve probes.'},
+                {'role':'user','content':json.dumps({'ticket_id':row['ticket_id'],'contract':row['action_a0'].get('contract'), 'context':row['action_a0'].get('context'), 'state':row['state_s0'],'prior_attempts':history},ensure_ascii=False)},
+                {'role':'assistant','content':json.dumps({'patch':row['action_a0']['patch']})}],
+                'provenance':'real_campaign_execution','campaign_sha256':digest,'ticket_id':row['ticket_id']})
+    groups=[{'group_id':'campaign:'+ticket,'rollouts':group,'provenance':'real_campaign_execution','campaign_sha256':digest}
+            for ticket,group in by_ticket.items() if {bool(r['actual_state_s1'].get('passed')) for r in group}=={False,True}]
+    for filename,new in [('sft_mediator_train.jsonl',positives[:-1]),('sft_mediator_eval.jsonl',positives[-1:]),('grpo_causal_rollouts.jsonl',groups)]:
+        path=destination/filename
+        old=[json.loads(line) for line in path.read_text(encoding='utf-8').splitlines()] if path.exists() else []
+        _dump(path,[r for r in old if r.get('provenance')!='real_campaign_execution']+new)
+    return {'real_campaign_traces_count':len(rows),'real_campaign_repair_attempts':len(attempts),
+            'real_sft_samples':len(positives),'real_contrastive_groups':len(groups),'campaign_sha256':digest}
