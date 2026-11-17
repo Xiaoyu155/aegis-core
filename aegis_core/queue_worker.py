@@ -13,7 +13,7 @@ def run_contracts(paths, *, db, workers=4, router=None):
         try:
             return cli._run(argparse.Namespace(contract=str(path), db=str(db), router=router))
         except Exception as error:
-            return {'status': 'error', 'error_type': type(error).__name__}, 1
+            return {'status': 'error', 'error_type': type(error).__name__, 'detail': str(getattr(error,'stderr',str(error)))[:500]}, 1
     with ThreadPoolExecutor(max_workers=workers) as pool:
         return list(pool.map(execute, paths))
 

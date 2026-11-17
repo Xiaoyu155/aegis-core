@@ -1,4 +1,5 @@
 """Git isolation and acceptance gates; not an OS security sandbox."""
+import threading
 import copy
 import ast
 import hashlib
@@ -9,6 +10,7 @@ import shlex
 import subprocess
 import tempfile
 
+_GIT_LOCK = threading.RLock()
 _EXCLUDED = {".git", ".worktrees", "__pycache__", ".pytest_cache", ".venv"}
 
 
@@ -79,7 +81,8 @@ class Sandbox:
     def _git(self, *args, cwd=None, input=None):
         # Text-mode stdin rewrites LF to CRLF on Windows, corrupting patches
         # against LF fixtures. Preserve exact UTF-8 patch bytes on every OS.
-        result = subprocess.run(["git", *args], cwd=cwd or self.repo_root,
+        with _GIT_LOCK:
+            result = subprocess.run(["git", *args], cwd=cwd or self.repo_root,
                                 input=input.encode("utf-8") if input is not None else None,
                                 capture_output=True, check=True)
         return result.stdout.decode("utf-8", errors="replace")
