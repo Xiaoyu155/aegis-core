@@ -40,3 +40,10 @@ statistically independent production or held-out generalization benchmark.
 
 PR #5 is stacked on the unmerged PR #4 branch. Existing Windows bootstrap,
 training dependencies, prior datasets, and the 136-test baseline remain present.
+
+The SFT preflight accepts both legacy two-message synthetic rows and three-message
+accepted campaign rows, adding the system role in memory for legacy rows. Check
+with `python -m training.train_sft --dataset datasets/sft_mediator_train.jsonl --validate-only`.
+The grouped causal rollout file is a reference/distillation corpus. The existing
+online GRPO trainer still uses its separate executable simulator candidate-pair
+format; it does not replay campaign groups against a real model automatically.

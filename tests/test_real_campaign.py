@@ -145,3 +145,10 @@ def test_distillation_provenance_idempotency(tmp_path):
     assert first==second and first['real_contrastive_groups']==1
     assert len((tmp_path/'sft_mediator_eval.jsonl').read_text(encoding='utf-8').splitlines())==1
     assert len((tmp_path/'grpo_causal_rollouts.jsonl').read_text(encoding='utf-8').splitlines())==1
+
+
+def test_blended_sft_training_preflight(capsys):
+    from training.train_sft import main
+    path=ROOT/'datasets/sft_mediator_train.jsonl'
+    assert main(['--dataset',str(path),'--validate-only'])==0
+    assert json.loads(capsys.readouterr().out)=={'validated':949,'gpu_used':False}

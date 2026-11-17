@@ -15,6 +15,8 @@ def main(argv=None):
     args = parser.parse_args(argv)
     data = rows(args.dataset)
     for row in data:
+        if [message["role"] for message in row["messages"]] == ["user", "assistant"]:
+            row["messages"] = [{"role":"system", "content":"Return the requested structured repair contract or patch as JSON."}] + row["messages"]
         if len(row["messages"]) != 3 or row["messages"][-1]["role"] != "assistant":
             raise ValueError("invalid SFT conversation")
         json.loads(row["messages"][-1]["content"])
