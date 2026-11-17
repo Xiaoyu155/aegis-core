@@ -9,3 +9,10 @@ missing values. Budget units are conservative bytes; no tokenizer dependency.
 Graph resolution is static; reflection, monkeypatching and runtime dispatch may
 remain unresolved. Concurrency tests are bounded evidence, not a proof that no
 filesystem/database can ever lock. Dataset variants are explicitly synthetic.
+
+Acceptance is bounded, not a guarantee of universal natural-language compilation.
+The default offline mode cannot invent correct behavior for arbitrary unseen
+APIs; it returns missing constraints. Online generation needs actual provider
+configuration. Repository reflection/dynamic imports are unresolved. Dataset
+expansion is instruction reuse, not new empirical evidence. Real GPU work was
+not performed. All of these limits remain explicit in STATUS.json.
