@@ -5,7 +5,7 @@
       "actual": "succeeded",
       "hit": true,
       "rewards": [
-        1.4905077378616687
+        1.4927186705833326
       ],
       "probes": [
         {
@@ -20,7 +20,7 @@
       "actual": "succeeded",
       "hit": true,
       "rewards": [
-        1.490281905235
+        1.4903509283850025
       ],
       "probes": [
         {
@@ -35,7 +35,7 @@
       "actual": "succeeded",
       "hit": true,
       "rewards": [
-        1.4926578662133339
+        1.492878922801671
       ],
       "probes": [
         {
@@ -50,7 +50,7 @@
       "actual": "succeeded",
       "hit": true,
       "rewards": [
-        1.4927991015916693
+        1.492733384154999
       ],
       "probes": [
         {
@@ -71,8 +71,8 @@
       "actual": "succeeded",
       "hit": true,
       "rewards": [
-        -0.006945922704999252,
-        1.493144261726666
+        -0.0072543994349992666,
+        1.4926447556766653
       ],
       "probes": [
         {
@@ -92,7 +92,7 @@
       "actual": "failed",
       "hit": true,
       "rewards": [
-        -1.3509024712516657
+        -1.3512345486950046
       ],
       "probes": [
         {
@@ -107,9 +107,9 @@
       "actual": "failed",
       "hit": true,
       "rewards": [
-        -0.0069814676050009485,
-        -0.007016094059999891,
-        -1.8000000011016648
+        -0.0073090507500031335,
+        -0.0072149066983365675,
+        -1.8000000005166656
       ],
       "probes": [
         {
@@ -144,7 +144,7 @@
     "repair_attempts": 10,
     "cheat_interceptions": 1,
     "replay_interceptions": 1,
-    "mean_reward": 0.4287544915905007
+    "mean_reward": 0.42883137555066614
   },
   "real_campaign_traces_count": 47,
   "provenance": "authored offline projects; physically executed CLI/worktree probes; self_heal uses a diagnosis-driven deterministic mock provider, not a live LLM",
@@ -153,6 +153,6 @@
     "real_campaign_repair_attempts": 10,
     "real_sft_samples": 5,
     "real_contrastive_groups": 1,
-    "campaign_sha256": "4fd9c65c256cf671957eba157dde092f56ed96b4152ef901ca15313e2f0a5814"
+    "campaign_sha256": "6d31c2fce2388c3df9b949774189921b5043e9994d88c349b196e48d9ae9099a"
   }
 }

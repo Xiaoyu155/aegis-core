@@ -18,7 +18,7 @@
       "repair_attempts": 10,
       "cheat_interceptions": 1,
       "replay_interceptions": 1,
-      "mean_reward": 0.4287544915905007
+      "mean_reward": 0.42883137555066614
     },
     "report": "datasets/campaign/report.json",
     "stdout": "datasets/campaign/stdout.txt"
@@ -28,7 +28,7 @@
   "real_campaign_repair_attempts": 10,
   "real_sft_samples": 5,
   "real_contrastive_groups": 1,
-  "campaign_sha256": "4fd9c65c256cf671957eba157dde092f56ed96b4152ef901ca15313e2f0a5814",
+  "campaign_sha256": "6d31c2fce2388c3df9b949774189921b5043e9994d88c349b196e48d9ae9099a",
   "datasets": {
     "sft_train": 949,
     "sft_eval": 106,
@@ -41,7 +41,11 @@
     "Reusable buffer and bounded history; no zero-allocation claim"
   ],
   "ci": {
-    "state": "pending",
-    "matrix": "Linux/Windows x Python 3.11/3.12; push + pull_request"
+    "state": "success",
+    "checks_passed": 8,
+    "validated_code_head": "4425b47606072d919cabbdcb080101491a32b2b2",
+    "matrix": "Linux/Windows x Python 3.11/3.12; push + pull_request",
+    "push_run": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44071133635",
+    "pull_request_run": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44071142938"
   }
 }
