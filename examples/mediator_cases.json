@@ -1,0 +1,278 @@
+[
+  {
+    "provenance": "new_v2_executable_example_not_recovered_history",
+    "request": {
+      "ticket_id": "api-production",
+      "wish": "接入生产天气 API",
+      "repo_skeleton": [
+        "src/weather.py",
+        "tests/test_weather.py"
+      ],
+      "proposal": {
+        "target_files": [
+          "src/weather.py"
+        ],
+        "contract_stub": "def fetch_weather(city: str) -> dict:\n    \"\"\"Use only an available credential reference.\"\"\"\n    ..."
+      },
+      "constraints": {}
+    },
+    "medium_question": {
+      "kind": "MissingConstraintQuestion",
+      "ticket_id": "api-production",
+      "status": "MISSING_CONSTRAINT",
+      "questions": [
+        {
+          "code": "A_CREDENTIALS",
+          "question": "生产访问尚无可用凭据引用；请选择执行模式（勿发送密钥）。",
+          "options": [
+            {
+              "id": "dry_run",
+              "label": "仅离线仿真（推荐）",
+              "value": {
+                "execution_mode": "dry_run"
+              }
+            },
+            {
+              "id": "configure_reference",
+              "label": "在宿主配置凭据引用后继续",
+              "value": {
+                "execution_mode": "live",
+                "credential_available": false
+              }
+            }
+          ],
+          "recommended": "dry_run"
+        }
+      ]
+    },
+    "answered_constraints": {
+      "execution_mode": "dry_run"
+    },
+    "compiled_contract": {
+      "kind": "CompiledContract",
+      "ticket_id": "api-production",
+      "status": "COMPILED",
+      "target_files": [
+        "src/weather.py"
+      ],
+      "contract_stub": "def fetch_weather(city: str) -> dict:\n    \"\"\"Use only an available credential reference.\"\"\"\n    ...",
+      "constraints": {
+        "execution_mode": "dry_run"
+      }
+    }
+  },
+  {
+    "provenance": "new_v2_executable_example_not_recovered_history",
+    "request": {
+      "ticket_id": "risk-boundary",
+      "wish": "实盘交易增加下单逻辑",
+      "repo_skeleton": [
+        "signal_engine.py",
+        "execution_router.py"
+      ],
+      "proposal": {
+        "target_files": [
+          "execution_router.py"
+        ],
+        "contract_stub": "def submit_order(symbol: str, notional: float, *, reduce_only: bool) -> dict:\n    \"\"\"Enforce one-way mode and explicit risk limits.\"\"\"\n    ..."
+      },
+      "constraints": {
+        "execution_mode": "live",
+        "credential_ref": "env:EXCHANGE_KEY",
+        "credential_available": true
+      }
+    },
+    "medium_question": {
+      "kind": "MissingConstraintQuestion",
+      "ticket_id": "risk-boundary",
+      "status": "MISSING_CONSTRAINT",
+      "questions": [
+        {
+          "code": "B_FINANCE",
+          "question": "不可逆资金动作缺少回撤、名义金额或持仓模式边界。",
+          "options": [
+            {
+              "id": "stop",
+              "label": "暂停资金动作（推荐）",
+              "value": {
+                "execution_mode": "dry_run"
+              }
+            },
+            {
+              "id": "supply_bounds",
+              "label": "明确填写三个硬阈值后继续",
+              "value": {
+                "execution_mode": "live"
+              }
+            }
+          ],
+          "recommended": "stop"
+        }
+      ]
+    },
+    "answered_constraints": {
+      "execution_mode": "live",
+      "credential_ref": "env:EXCHANGE_KEY",
+      "credential_available": true,
+      "max_drawdown": 0.05,
+      "max_notional": 100,
+      "position_mode": "one_way"
+    },
+    "compiled_contract": {
+      "kind": "CompiledContract",
+      "ticket_id": "risk-boundary",
+      "status": "COMPILED",
+      "target_files": [
+        "execution_router.py"
+      ],
+      "contract_stub": "def submit_order(symbol: str, notional: float, *, reduce_only: bool) -> dict:\n    \"\"\"Enforce one-way mode and explicit risk limits.\"\"\"\n    ...",
+      "constraints": {
+        "execution_mode": "live",
+        "credential_ref": "env:EXCHANGE_KEY",
+        "credential_available": true,
+        "max_drawdown": 0.05,
+        "max_notional": 100,
+        "position_mode": "one_way"
+      }
+    }
+  },
+  {
+    "provenance": "new_v2_executable_example_not_recovered_history",
+    "request": {
+      "ticket_id": "migration-boundary",
+      "wish": "执行破坏性数据迁移",
+      "repo_skeleton": [
+        "migrations/001.py",
+        "app/storage.py"
+      ],
+      "proposal": {
+        "target_files": [
+          "app/storage.py"
+        ],
+        "contract_stub": "def migrate(allowed_tables: list[str], snapshot_id: str) -> dict:\n    \"\"\"Stop outside the allowlist and pre-migration snapshot boundary.\"\"\"\n    ..."
+      },
+      "constraints": {}
+    },
+    "medium_question": {
+      "kind": "MissingConstraintQuestion",
+      "ticket_id": "migration-boundary",
+      "status": "MISSING_CONSTRAINT",
+      "questions": [
+        {
+          "code": "B_MIGRATION",
+          "question": "破坏性迁移缺少显式路径白名单及回滚边界。",
+          "options": [
+            {
+              "id": "stop",
+              "label": "保持挂起（推荐）",
+              "value": {
+                "destructive_migration": true
+              }
+            },
+            {
+              "id": "supply_boundary",
+              "label": "补充白名单和回滚边界",
+              "value": {
+                "destructive_migration": true
+              }
+            }
+          ],
+          "recommended": "stop"
+        }
+      ]
+    },
+    "answered_constraints": {
+      "migration_allowlist": [
+        "migrations/001.py"
+      ],
+      "rollback_boundary": "restore pre-migration snapshot; stop before irreversible external writes"
+    },
+    "compiled_contract": {
+      "kind": "CompiledContract",
+      "ticket_id": "migration-boundary",
+      "status": "COMPILED",
+      "target_files": [
+        "app/storage.py"
+      ],
+      "contract_stub": "def migrate(allowed_tables: list[str], snapshot_id: str) -> dict:\n    \"\"\"Stop outside the allowlist and pre-migration snapshot boundary.\"\"\"\n    ...",
+      "constraints": {
+        "migration_allowlist": [
+          "migrations/001.py"
+        ],
+        "rollback_boundary": "restore pre-migration snapshot; stop before irreversible external writes"
+      }
+    }
+  },
+  {
+    "provenance": "new_v2_executable_example_not_recovered_history",
+    "request": {
+      "ticket_id": "cat-target",
+      "wish": "猫咪遮挡顺序不对，修好它",
+      "repo_skeleton": [
+        "engine/cat_kinematics.py",
+        "engine/iso_renderer.py",
+        "tests/test_depth.py"
+      ],
+      "proposal": {
+        "target_files": [
+          "engine/iso_renderer.py"
+        ],
+        "contract_stub": "def depth_order(cats: list) -> list[str]:\n    \"\"\"Sort by foot_anchor_y, preserving input order for ties.\"\"\"\n    ..."
+      },
+      "constraints": {},
+      "candidates": [
+        {
+          "path": "engine/iso_renderer.py",
+          "score": 0.82
+        },
+        {
+          "path": "engine/cat_kinematics.py",
+          "score": 0.73
+        }
+      ]
+    },
+    "medium_question": {
+      "kind": "MissingConstraintQuestion",
+      "ticket_id": "cat-target",
+      "status": "MISSING_CONSTRAINT",
+      "questions": [
+        {
+          "code": "C_AMBIGUITY",
+          "question": "候选模块分差小于 0.15，请明确目标模块。",
+          "options": [
+            {
+              "id": "module_0",
+              "label": "engine/iso_renderer.py",
+              "value": {
+                "selected_module": "engine/iso_renderer.py"
+              }
+            },
+            {
+              "id": "module_1",
+              "label": "engine/cat_kinematics.py",
+              "value": {
+                "selected_module": "engine/cat_kinematics.py"
+              }
+            }
+          ],
+          "recommended": "module_0"
+        }
+      ]
+    },
+    "answered_constraints": {
+      "selected_module": "engine/iso_renderer.py"
+    },
+    "compiled_contract": {
+      "kind": "CompiledContract",
+      "ticket_id": "cat-target",
+      "status": "COMPILED",
+      "target_files": [
+        "engine/iso_renderer.py"
+      ],
+      "contract_stub": "def depth_order(cats: list) -> list[str]:\n    \"\"\"Sort by foot_anchor_y, preserving input order for ties.\"\"\"\n    ...",
+      "constraints": {
+        "selected_module": "engine/iso_renderer.py"
+      }
+    }
+  }
+]

@@ -103,6 +103,13 @@ class Ledger:
             result["compiled_intent"] = json.loads(result["compiled_intent"])
             return result
 
+    def get_state(self, ticket_id: str) -> dict:
+        with self._connection() as db:
+            row = db.execute("SELECT actual_state_s1 FROM causal_traces WHERE ticket_id=? ORDER BY step_idx DESC LIMIT 1", (ticket_id,)).fetchone()
+            if row is None:
+                raise KeyError(ticket_id)
+            return json.loads(row[0])
+
     @staticmethod
     def _trace(db, ticket_id, s0, action, s1, reward, prediction, cost, now):
         if type(cost) is not int or cost < 0 or type(reward) not in (int, float) or not math.isfinite(reward):
@@ -120,8 +127,11 @@ class Ledger:
     def transition(self, ticket_id: str, lease_token: str, expected_status: str,
                    new_status: str, *, state_s0: dict, action_a0: dict,
                    actual_state_s1: dict, reward: float,
-                   predicted_next_state: dict | None = None, token_cost: int = 0) -> int:
-        edges = {"queued": {"running"}, "running": {"succeeded", "failed"}}
+                   predicted_next_state: dict | None = None, token_cost: int = 0,
+                   compiled_intent: dict | None = None, contract_stub: str | None = None) -> int:
+        edges = {"queued": {"running", "MISSING_CONSTRAINT", "COMPILED"},
+                 "MISSING_CONSTRAINT": {"MISSING_CONSTRAINT", "COMPILED"},
+                 "COMPILED": {"running"}, "running": {"succeeded", "failed"}}
         if new_status not in edges.get(expected_status, set()):
             raise ValueError("illegal status transition")
         with self._transaction() as db:
@@ -137,6 +147,11 @@ class Ledger:
             changed = db.execute("UPDATE tickets SET status=?,updated_at=? WHERE ticket_id=? AND status=?", (new_status, now, ticket_id, expected_status)).rowcount
             if changed != 1:
                 raise ValueError("status conflict")
+            if compiled_intent is not None or contract_stub is not None:
+                if new_status != "COMPILED" or not contract_stub or compiled_intent is None:
+                    raise ValueError("contract updates require a compiled intent and stub")
+                db.execute("UPDATE tickets SET compiled_intent=?,contract_stub=? WHERE ticket_id=?",
+                           (_json(compiled_intent), contract_stub, ticket_id))
             step = self._trace(db, ticket_id, state_s0, action_a0, actual_state_s1,
                                reward, predicted_next_state, token_cost, now)
             if new_status in {"succeeded", "failed"}:

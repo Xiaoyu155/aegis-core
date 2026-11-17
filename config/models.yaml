@@ -1,0 +1,151 @@
+{
+  "version": 1,
+  "min_verify_reserve_sec": 30,
+  "groups": {
+    "local_gpu_8gb": 1,
+    "sub2api": 3,
+    "codex": 1,
+    "claude": 1,
+    "gemini": 1
+  },
+  "tiers": {
+    "L1_LOCAL_CAUSAL": [
+      {
+        "id": "local_3b",
+        "provider": "ollama",
+        "model": "qwen2.5-coder:3b",
+        "model_env": "",
+        "base_url": "http://127.0.0.1:11434/v1",
+        "base_url_env": "",
+        "api_key_env": "",
+        "timeout_sec": 45,
+        "max_concurrency": 1,
+        "group": "local_gpu_8gb",
+        "weight": 3,
+        "enabled": true
+      },
+      {
+        "id": "local_9b",
+        "provider": "ollama",
+        "model": "",
+        "model_env": "AEGIS_LOCAL_9B_MODEL",
+        "base_url": "http://127.0.0.1:11434/v1",
+        "base_url_env": "",
+        "api_key_env": "",
+        "timeout_sec": 90,
+        "max_concurrency": 1,
+        "group": "local_gpu_8gb",
+        "weight": 1,
+        "enabled": true
+      }
+    ],
+    "L2_WORKER_POOL": [
+      {
+        "id": "qwen_28b",
+        "provider": "sub2api",
+        "model": "",
+        "model_env": "SUB2API_QWEN28B_MODEL",
+        "base_url": "",
+        "base_url_env": "SUB2API_BASE_URL",
+        "api_key_env": "SUB2API_API_KEY",
+        "timeout_sec": 120,
+        "max_concurrency": 1,
+        "group": "sub2api",
+        "weight": 3,
+        "enabled": true
+      },
+      {
+        "id": "deepseek",
+        "provider": "sub2api",
+        "model": "",
+        "model_env": "SUB2API_DEEPSEEK_MODEL",
+        "base_url": "",
+        "base_url_env": "SUB2API_BASE_URL",
+        "api_key_env": "SUB2API_API_KEY",
+        "timeout_sec": 120,
+        "max_concurrency": 1,
+        "group": "sub2api",
+        "weight": 2,
+        "enabled": true
+      },
+      {
+        "id": "glm",
+        "provider": "sub2api",
+        "model": "",
+        "model_env": "SUB2API_GLM_MODEL",
+        "base_url": "",
+        "base_url_env": "SUB2API_BASE_URL",
+        "api_key_env": "SUB2API_API_KEY",
+        "timeout_sec": 100,
+        "max_concurrency": 1,
+        "group": "sub2api",
+        "weight": 1,
+        "enabled": true
+      }
+    ],
+    "L3_ARCHITECT_AND_DIRECT": [
+      {
+        "id": "codex_architect",
+        "provider": "codex",
+        "model": "",
+        "model_env": "CODEX_ARCHITECT_MODEL",
+        "base_url": "",
+        "base_url_env": "",
+        "api_key_env": "",
+        "timeout_sec": 180,
+        "max_concurrency": 1,
+        "group": "codex",
+        "weight": 1,
+        "enabled": true
+      },
+      {
+        "id": "claude_architect",
+        "provider": "claude",
+        "model": "",
+        "model_env": "CLAUDE_MODEL",
+        "base_url": "",
+        "base_url_env": "ANTHROPIC_BASE_URL",
+        "api_key_env": "ANTHROPIC_API_KEY",
+        "timeout_sec": 180,
+        "max_concurrency": 1,
+        "group": "claude",
+        "weight": 1,
+        "enabled": true
+      },
+      {
+        "id": "gemini_4",
+        "provider": "gemini",
+        "model": "",
+        "model_env": "GEMINI_MODEL",
+        "base_url": "",
+        "base_url_env": "GEMINI_OPENAI_BASE_URL",
+        "api_key_env": "GEMINI_API_KEY",
+        "timeout_sec": 150,
+        "max_concurrency": 1,
+        "group": "gemini",
+        "weight": 1,
+        "enabled": true
+      },
+      {
+        "id": "codex_direct",
+        "provider": "codex_cli",
+        "model": "",
+        "model_env": "CODEX_DIRECT_MODEL",
+        "base_url": "",
+        "base_url_env": "",
+        "api_key_env": "",
+        "timeout_sec": 180,
+        "max_concurrency": 1,
+        "group": "codex",
+        "weight": 1,
+        "enabled": true
+      }
+    ]
+  },
+  "unattended_work_order": [
+    "L1_LOCAL_CAUSAL",
+    "L2_WORKER_POOL",
+    "L3_ARCHITECT_AND_DIRECT",
+    "blocked_needs_human"
+  ]
+}

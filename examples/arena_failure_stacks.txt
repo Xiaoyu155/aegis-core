@@ -1,0 +1,56 @@
+Provenance: actual offline fixture failures, not historical production incidents.
+
+=== cat_blank ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______________________________ test_center_roi ________________________________
+tests/test_invariant.py:5: in test_center_roi
+    assert pvariance(render_center_roi()) >= 18.5
+E   assert 0 >= 18.5
+E    +  where 0 = pvariance([120, 120, 120, 120, 120, 120, ...])
+E    +    where [120, 120, 120, 120, 120, 120, ...] = render_center_roi()
+=========================== short test summary info ============================
+FAILED tests/test_invariant.py::test_center_roi - assert 0 >= 18.5
+1 failed in 0.02s
+
+=== cat_depth ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______________________________ test_depth_anchor _______________________________
+tests/test_invariant.py:6: in test_depth_anchor
+    assert depth_order(cats) == ["back", "front"]
+E   AssertionError: assert ['front', 'back'] == ['back', 'front']
+E
+E     At index 0 diff: 'front' != 'back'
+E     Use -v to get more diff
+=========================== short test summary info ============================
+FAILED tests/test_invariant.py::test_depth_anchor - AssertionError: assert ['...
+1 failed in 0.02s
+
+=== quant_guard ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____________________________ test_guard_threshold _____________________________
+tests/test_invariant.py:5: in test_guard_threshold
+    assert guard(1000, 950, 60)["reduceOnly"] is True
+E   assert False is True
+=========================== short test summary info ============================
+FAILED tests/test_invariant.py::test_guard_threshold - assert False is True
+1 failed in 0.01s
+
+=== quant_posside ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______________________________ test_order_mode ________________________________
+tests/test_invariant.py:5: in test_order_mode
+    assert execute_signal("BTC-USDT-SWAP", "one_way")["accepted"] is True
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+signal_engine.py:8: in execute_signal
+    return submit_order(make_order(symbol, position_mode), position_mode)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+execution_router.py:6: in submit_order
+    raise ExchangeAPIError('code=51000: posSide invalid in One-Way mode')
+E   execution_router.ExchangeAPIError: code=51000: posSide invalid in One-Way mode
+=========================== short test summary info ============================
+FAILED tests/test_invariant.py::test_order_mode - execution_router.ExchangeAP...
+1 failed in 0.01s

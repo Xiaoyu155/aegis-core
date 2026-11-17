@@ -93,3 +93,18 @@ NORMAL 模式不承诺掉电时最近提交绝不丢失。零运行时第三方�
 测试覆盖多进程并发写、竞争租约与过期令牌、事务回滚、JSONL、跨文件切片、
 压缩率、遮蔽名称、补丁原子失败、正负奖励、缓存失效、基线前进及门禁合并闭环。
 CI 配置覆盖 Linux/Windows 与 Python 3.11/3.12；本地云端验证见 PR 说明。
+
+## Crucible 第二阶段
+
+第二阶段新增确定性介质编译、双探针与防作弊门禁、模型配额路由/复读熔断、
+稠密奖励以及离线业务靶场。实战 Prompt、四组完整 JSON、资料核实边界与协议参数见
+[Crucible 实战说明](docs/crucible_practical.md)。
+
+```bash
+python -m aegis_core.simulator --output datasets/causal_traces_v1.jsonl
+pytest -v
+```
+
+`config/models.yaml` 是 JSON 语法的 YAML 1.2 子集，核心代码不依赖 PyYAML。
+默认验收与仿真不连接任何交易所或外部模型。模型槽位需配置实际端点、型号与
+宿主凭据引用后才可调用。数据集用于训练数据交换，训练框架与 GPU 调优不在本仓库执行。
