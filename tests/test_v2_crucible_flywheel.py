@@ -388,3 +388,21 @@ def test_protected_python_config_and_git_exclusions_cannot_bypass_gate(tmp_path,
     (root / filename).write_text("# modified policy\n")
     result = detect_source_cheat(root, ("engine",))
     assert result["cheat_detected"] and filename in result["protected_changed"]
+
+
+def test_patch_transport_survives_windows_text_stdin_translation(tmp_path, monkeypatch):
+    root = tmp_path / "arena"
+    create_arena(root, "cat_blank")
+    manager = Sandbox(root)
+    path = manager.create("lf-fixture")
+    real_run = subprocess.run
+    def windows_text_pipe(command, **kwargs):
+        data = kwargs.get("input")
+        if kwargs.get("text") and isinstance(data, str):
+            # Model Windows TextIOWrapper stdin behavior on the Linux test host.
+            kwargs["input"] = data.replace("\n", "\r\n")
+        return real_run(command, **kwargs)
+    monkeypatch.setattr("aegis_core.sandbox.subprocess.run", windows_text_pipe)
+    manager.apply_patch("lf-fixture", fixture_patch("cat_blank", positive=True))
+    assert b'return [100, 140] * 32\n' in (path / "engine/iso_renderer.py").read_bytes()
+    manager.cleanup("lf-fixture")

@@ -76,8 +76,12 @@ class Sandbox:
         self._repair_contracts = set()
 
     def _git(self, *args, cwd=None, input=None):
-        return subprocess.run(["git", *args], cwd=cwd or self.repo_root,
-                              input=input, text=True, capture_output=True, check=True).stdout
+        # Text-mode stdin rewrites LF to CRLF on Windows, corrupting patches
+        # against LF fixtures. Preserve exact UTF-8 patch bytes on every OS.
+        result = subprocess.run(["git", *args], cwd=cwd or self.repo_root,
+                                input=input.encode("utf-8") if input is not None else None,
+                                capture_output=True, check=True)
+        return result.stdout.decode("utf-8", errors="replace")
 
     def _paths(self, ticket_id):
         if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]{0,79}", ticket_id):
