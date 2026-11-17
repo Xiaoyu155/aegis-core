@@ -1,5 +1,6 @@
 """Git isolation and acceptance gates; not an OS security sandbox."""
 import copy
+import ast
 import hashlib
 import os
 from pathlib import Path
@@ -123,7 +124,7 @@ class Sandbox:
         return result.copy()
 
     def repair(self, ticket_id: str, patch: str, *, fail_before_cmd,
-               pass_after_cmd, source_dirs: tuple[str, ...], timeout: float = 60) -> dict:
+               pass_after_cmd, source_dirs: tuple[str, ...], timeout: float = 60, probe_patch: str = "") -> dict:
         import time
         if not 0 < timeout < float("inf"):
             raise ValueError("positive finite repair timeout required")
@@ -137,6 +138,13 @@ class Sandbox:
         prior = detect_source_cheat(path, source_dirs, base=base)
         if prior["changed_files"]:
             raise ValueError("repair baseline must be clean")
+        if probe_patch:
+            validate_probe_patch(probe_patch)
+            self.apply_patch(ticket_id, probe_patch)
+            self._git("add", "--", "tests/test_aegis_probe.py", cwd=path)
+            self._git("-c", "user.name=Aegis", "-c", "user.email=aegis@localhost", "commit", "-m", "Freeze automatic probe", cwd=path)
+            base = self._git("rev-parse", "HEAD", cwd=path).strip()
+            self._bases[ticket_id] = base
         start = time.monotonic()
         before = run_exam_gate(path, fail_before_cmd, timeout=timeout)
         baseline_failed = before["exit_code"] == 1 and not before["changed"]
@@ -226,3 +234,21 @@ def detect_source_cheat(worktree_path: Path, source_dirs: tuple[str, ...], *, ba
     return {"changed_files": sorted(changes), "diff_lines": sum(changes.values()),
             "source_changed_lines": source_lines, "protected_changed": protected_files,
             "cheat_detected": source_lines == 0 or bool(protected_files)}
+
+
+class ProbeNotFailingError(ValueError):
+    pass
+
+
+def validate_probe_patch(patch):
+    if not isinstance(patch, str) or not patch.strip():
+        raise ValueError('missing probe patch')
+    headers = [line[4:] for line in patch.splitlines() if line.startswith('+++ ')]
+    old = [line[4:] for line in patch.splitlines() if line.startswith('--- ')]
+    if headers != ['b/tests/test_aegis_probe.py'] or old != ['/dev/null']:
+        raise ValueError('probe must only create tests/test_aegis_probe.py')
+    code = '\n'.join(line[1:] for line in patch.splitlines() if line.startswith('+') and not line.startswith('+++'))
+    tree = ast.parse(code)
+    assertions = [node for node in ast.walk(tree) if isinstance(node, ast.Assert)]
+    if not assertions or any(isinstance(node.test, ast.Constant) for node in assertions):
+        raise ValueError('probe needs nonconstant assertions')

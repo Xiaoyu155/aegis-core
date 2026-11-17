@@ -172,7 +172,7 @@ def test_router_transport_budget_propagation_failure_fallback_and_release():
     result = router.call("L1_LOCAL_CAUSAL", [{"role": "user", "content": "x"}], deadline=deadline, transport=transport)
     assert result["tier"] == "L2_WORKER_POOL"
     assert result["output"] == '{"ok":true}'
-    assert len(calls) == 3
+    assert len(calls) == 7
     assert all(value == 0 for value in router._used.values())
 
 

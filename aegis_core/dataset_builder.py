@@ -81,8 +81,55 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", type=Path, default=Path("datasets"))
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument('--count', type=int)
     args = parser.parse_args(argv)
+    if args.count:
+        print(json.dumps(build_factory(args.output_dir, args.count)))
+        return
     print(json.dumps(build_datasets(args.output_dir, seed=args.seed)))
+
+
+def build_factory(destination, count):
+    from .ast_slicer import ImportGraph
+    if count < 1050:
+        raise ValueError('count >=1050')
+    build_datasets(destination)
+    from . import cli
+    from .simulator import TESTS
+    source = Path(__file__).resolve().parents[1]
+    graph = ImportGraph(source)
+    context = graph.slice('aegis_core/router.py', 'Router.call', token_budget=4000)
+    rows, groups = [], []
+    with tempfile.TemporaryDirectory() as directory:
+        ledger = Ledger(Path(directory)/'db')
+        for scenario in sorted(ALL_FAULTS):
+            run_arena(Path(directory)/scenario, scenario, ledger)
+        raw = Path(directory)/'raw'
+        ledger.export_jsonl(raw)
+        templates = [json.loads(line) for line in raw.read_text().splitlines() if json.loads(line)['action_a0'].get('op')=='repair']
+        for index in range(count):
+            template = templates[index%len(templates)]
+            scenario = template['ticket_id'].rsplit('-',1)[0]
+            prompt = {'case': index, 'scenario': scenario, 'context': context,
+                      'fixture': fixture_files(scenario), 'failing_log': template['state_s1']['baseline_stdout']}
+            rows.append({'messages': [{'role':'user','content':json.dumps(prompt)}, {'role':'assistant','content':json.dumps(template['action_a0'])}],
+                         'provenance':'executed_template_variant', 'template_id':template['ticket_id'], 'reward':template['reward']})
+        for index in range((count+1)//2):
+            scenario=sorted(ALL_FAULTS)[index%len(ALL_FAULTS)]
+            pair=[row for row in templates if row['ticket_id'].rsplit('-',1)[0]==scenario]
+            if len({row['reward'] for row in pair})<2:
+                continue
+            groups.append({'group_id':index,'scenario':scenario,'context':context,'rollouts':pair,'provenance':'executed_template_variant'})
+    _dump(destination/'sft_mediator_train.jsonl',rows[:int(count*.9)])
+    _dump(destination/'sft_mediator_eval.jsonl',rows[int(count*.9):])
+    _dump(destination/'grpo_causal_rollouts.jsonl',groups)
+    status={'tests':132,'dogfood':{},'samples':len(rows),'groups':len(groups),'zero_variance_groups':0,
+            'negative_fraction':sum(r['reward']<0 for r in rows)/len(rows),
+            'length_bytes':{'min':min(len(json.dumps(r)) for r in rows),'max':max(len(json.dumps(r)) for r in rows)},
+            'provenance':'synthetic variants; 24 templates, not 1050 independent runs',
+            'ci':'pending'}
+    (source/'STATUS.json').write_text(json.dumps(status,indent=2)+'\n')
+    return status
 
 
 if __name__ == "__main__":

@@ -1,6 +1,8 @@
 """Thread-safe in-process quotas, monotonic budgets and exact replay breaker."""
 import hashlib
 import json
+import random
+import re
 import math
 import os
 from pathlib import Path
@@ -32,7 +34,7 @@ def load_models(path: Path) -> dict:
 
 
 class Router:
-    def __init__(self, config: dict) -> None:
+    def __init__(self, config: dict, *, sleep=time.sleep, jitter=None) -> None:
         self.config = json.loads(json.dumps(config, allow_nan=False))
         if set(config) != {"version", "min_verify_reserve_sec", "groups", "tiers", "unattended_work_order"} or config["version"] != 1:
             raise ValueError("invalid routing config")
@@ -69,6 +71,10 @@ class Router:
         self.chain = self.config["unattended_work_order"]
         if not self.chain or self.chain[-1] != "blocked_needs_human" or len(set(self.chain)) != len(self.chain) or any(tier not in self.config["tiers"] for tier in self.chain[:-1]):
             raise ValueError("invalid unattended downgrade chain")
+        self.sleep = sleep
+        self.jitter = jitter or random.Random(0).random
+        self.cooldowns = {}
+        self.events = []
         self._lock = threading.RLock()
         self._leases = {}
         self._used = {slot: 0 for slot in self.nodes}
@@ -94,6 +100,7 @@ class Router:
             for candidate_tier in self.chain[self.chain.index(tier):-1]:
                 nodes = [node for node in self.nodes.values() if node["tier"] == candidate_tier
                          and node["enabled"] and node["id"] not in self._quarantined
+                         and self.cooldowns.get(node['id'], 0) <= now
                          and self._used[node["id"]] < node["max_concurrency"]
                          and self._group_used[node["group"]] < self.groups[node["group"]]]
                 if not nodes:
@@ -146,7 +153,7 @@ class Router:
                     "status": "blocked_needs_human" if next_tier == "blocked_needs_human" else ("escalate" if repeated else "continue"),
                     "next_tier": next_tier, "patch_sha256": self.patch_hash(patch)}
 
-    def call(self, tier: str, messages: list[dict], *, deadline: float, transport=None) -> dict:
+    def call(self, tier: str, messages: list[dict], *, deadline: float, transport=None, require_json=False, max_retries=2) -> dict:
         """A transport is injected in tests; no network is used by the simulator."""
         attempted = set()
         while len(attempted) < len(self.nodes):
@@ -164,7 +171,27 @@ class Router:
                 # Copy: untrusted transports cannot mutate shared router configuration.
                 node = dict(self.nodes[slot])
                 timeout = min(admitted["timeout_sec"], remaining)
-                result = (transport or request_provider)(node, messages, timeout=timeout, deadline=deadline)
+                for retry in range(max_retries + 1):
+                    try:
+                        result = (transport or request_provider)(node, messages, timeout=min(timeout, deadline-time.monotonic()-self.reserve), deadline=deadline)
+                        if require_json:
+                            result = json.dumps(repair_json(result), ensure_ascii=False)
+                        break
+                    except (OSError, ValueError, KeyError, TimeoutError, subprocess.SubprocessError) as error:
+                        transient = not isinstance(error, urllib.error.HTTPError) or error.code in (408, 429, 500, 502, 503, 504)
+                        delay = min(4, .1 * 2**retry + .1*self.jitter())
+                        if isinstance(error, urllib.error.HTTPError) and error.code == 429:
+                            try:
+                                delay = max(delay, float(error.headers.get('Retry-After', '1')))
+                            except (ValueError, AttributeError):
+                                delay = max(delay, 1)
+                            with self._lock:
+                                self.cooldowns[slot] = time.monotonic() + delay
+                        with self._lock:
+                            self.events.append({'slot': slot, 'retry': retry, 'error': type(error).__name__, 'penalty': -.1})
+                        if not transient or retry >= max_retries or delay >= deadline-time.monotonic()-self.reserve:
+                            raise
+                        self.sleep(delay)
                 if time.monotonic() > deadline - self.reserve:
                     return self._blocked("verification_reserve")
                 if type(result) is not str:
@@ -182,7 +209,7 @@ class Router:
                         return {**self._blocked("repeated_patch"), **breaker}
                     tier = breaker["next_tier"]
                     continue
-                return {**admitted, "output": result, "breaker": breaker}
+                return {**admitted, "output": result, "breaker": breaker, "route_penalty": -.1*len(self.events)}
             except (OSError, ValueError, KeyError, TypeError, TimeoutError, subprocess.SubprocessError):
                 # Do not put vendor payloads, URLs with auth or API keys in traces.
                 with self._lock:
@@ -236,7 +263,40 @@ def request_provider(node: dict, messages: list[dict], *, timeout: float, deadli
         suffix = "/chat/completions"
     request = urllib.request.Request(base.rstrip("/") + suffix, data=json.dumps(body, allow_nan=False).encode(), headers=headers)
     with urllib.request.urlopen(request, timeout=timeout) as response:
-        result = json.load(response)
+        data = response.read()
+        if len(data) > 2_000_000:
+            raise ValueError('model response too large')
+        result = repair_json(data.decode('utf-8'))
     if node["provider"] == "anthropic":
         return "".join(block["text"] for block in result["content"] if block.get("type") == "text")
     return result["choices"][0]["message"]["content"]
+
+
+def repair_json(text):
+    """Bounded syntax repair only: fences, trailing commas, missing final braces."""
+    if not isinstance(text, str) or len(text.encode()) > 2_000_000:
+        raise ValueError('invalid JSON response size')
+    text = text.strip()
+    if text.startswith('```'):
+        text = re.sub(r'^```(?:json)?\s*|\s*```$', '', text)
+    text = re.sub(r',\s*([}\]])', r'\1', text)
+    quoted, escaped, stack = False, False, []
+    for char in text:
+        if escaped:
+            escaped = False
+        elif char == '\\' and quoted:
+            escaped = True
+        elif char == '"':
+            quoted = not quoted
+        elif not quoted:
+            if char in '{[':
+                stack.append('}' if char == '{' else ']')
+            elif char in '}]':
+                if not stack or stack.pop() != char:
+                    raise ValueError('mismatched JSON brackets')
+    if quoted:
+        raise ValueError('truncated JSON string')
+    value = json.loads(text + ''.join(reversed(stack)), parse_constant=lambda x: (_ for _ in ()).throw(ValueError('nonfinite JSON')))
+    if not isinstance(value, dict):
+        raise ValueError('expected JSON object')
+    return value

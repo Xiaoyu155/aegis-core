@@ -85,7 +85,7 @@ class Ledger:
             row = db.execute("SELECT status FROM tickets WHERE ticket_id=?", (ticket_id,)).fetchone()
             if row is None:
                 raise KeyError(ticket_id)
-            if row["status"] in {"succeeded", "failed"}:
+            if row["status"] in {"succeeded", "failed", "PRECHECK_FAILED"}:
                 return None
             lease = db.execute("SELECT expires_at FROM leases WHERE ticket_id=?", (ticket_id,)).fetchone()
             if lease and lease[0] > now:
@@ -156,7 +156,7 @@ class Ledger:
                    compiled_intent: dict | None = None, contract_stub: str | None = None) -> int:
         edges = {"queued": {"running", "MISSING_CONSTRAINT", "COMPILED"},
                  "MISSING_CONSTRAINT": {"MISSING_CONSTRAINT", "COMPILED"},
-                 "COMPILED": {"COMPILED", "running"}, "running": {"running", "succeeded", "failed"}}
+                 "COMPILED": {"COMPILED", "running", "PRECHECK_FAILED"}, "running": {"running", "succeeded", "failed"}}
         if new_status not in edges.get(expected_status, set()):
             raise ValueError("illegal status transition")
         with self._transaction() as db:
@@ -179,7 +179,7 @@ class Ledger:
                            (_json(compiled_intent), contract_stub, ticket_id))
             step = self._trace(db, ticket_id, state_s0, action_a0, actual_state_s1,
                                reward, predicted_next_state, token_cost, now)
-            if new_status in {"succeeded", "failed"}:
+            if new_status in {"succeeded", "failed", "PRECHECK_FAILED"}:
                 db.execute("DELETE FROM leases WHERE ticket_id=?", (ticket_id,))
             return step
 

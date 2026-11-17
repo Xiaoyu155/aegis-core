@@ -12,7 +12,7 @@ import time
 import uuid
 
 from .ledger import Ledger
-from .mediator import compile_request, is_business_source, validate_compilation
+from .mediator import compile_wish, compile_request, is_business_source, validate_compilation
 from .reward import compute_step_reward
 from .router import Router, load_models
 from .sandbox import Sandbox, tree_hash
@@ -86,8 +86,13 @@ def _wish(args):
     sources = [name for name in skeleton if is_business_source(name)]
     if not sources:
         raise ValueError("repository has no existing business source targets")
+    enhanced = None
+    if args.auto_probe:
+        enhanced = compile_wish(root, args.text, targets=args.target, allow_model=args.allow_model, models=args.models)
     candidates = None
-    if args.proposal:
+    if enhanced:
+        proposal = {key: enhanced[key] for key in ('target_files', 'contract_stub')}
+    elif args.proposal:
         proposal = _load(args.proposal)
     else:
         if args.target:
@@ -100,6 +105,8 @@ def _wish(args):
         # Generic stub is explicit when no user-approved business signature is supplied.
         proposal = {"target_files": targets, "contract_stub": "def apply_change() -> None:\n    ..."}
     constraints = _load(args.constraints) if args.constraints else {}
+    if enhanced:
+        constraints = {**enhanced['constraints'], **constraints}
     selection = args.selected_module or constraints.get("selected_module")
     if selection and candidates:
         proposal["target_files"] = [selection]
@@ -117,16 +124,25 @@ def _wish(args):
     if not token:
         raise PermissionError("ticket is leased")
     try:
-        result = compile_request(ticket, args.text, skeleton, proposal, constraints=constraints,
+        if enhanced and enhanced['missing']:
+            result = {'kind': 'MissingConstraintQuestion', 'ticket_id': ticket, 'status': 'MISSING_CONSTRAINT',
+                      'questions': [{'code': 'D_CONSTRAINT', 'question': ', '.join(enhanced['missing']),
+                                     'options': [{'id': 'provide', 'label': '补充契约', 'value': {}}, {'id': 'stop', 'label': '停止', 'value': {}}], 'recommended': 'stop'}]}
+            state = ledger.get_state(ticket)
+            ledger.transition(ticket, token, state['status'], 'MISSING_CONSTRAINT', state_s0=state,
+                              action_a0={'op': 'compile'}, actual_state_s1={'status': 'MISSING_CONSTRAINT', 'compilation': result}, reward=0)
+        else:
+            result = compile_request(ticket, args.text, skeleton, proposal, constraints=constraints,
                                  candidates=candidates, ledger=ledger, lease_token=token)
     finally:
         ledger.release_lease(ticket, token)
     document = {"schema_version": "aegis.cli.v1", "ticket_id": ticket, "repo_root": str(root),
                 "base_commit": _git(root, "rev-parse", "HEAD"), "compilation": result,
-                "fail_before_cmd": _argv(args.fail_before), "pass_after_cmd": _argv(args.pass_after),
+                "fail_before_cmd": _argv(args.fail_before) or (["{python}", "-B", "-m", "pytest", "-q", "tests/test_aegis_probe.py"] if enhanced else []), "pass_after_cmd": _argv(args.pass_after) or (["{python}", "-B", "-m", "pytest", "-q", "tests/test_aegis_probe.py"] if enhanced else []),
                 "source_dirs": args.source_dir or ["."],
                 "patches": [str(Path(path).resolve()) for path in args.patch or []],
                 "models_path": str(Path(args.models).resolve()) if args.models else None,
+                "probe_patch": enhanced['probe_patch'] if enhanced else "", "context": enhanced['context'] if enhanced else {},
                 "allow_model": args.allow_model, "max_attempts": args.max_attempts,
                 "timeout_sec": args.timeout}
     document["contract_sha256"] = _digest(document)
@@ -148,7 +164,7 @@ def _wish(args):
 
 def _validate_manifest(document, root, ledger):
     fields = {"schema_version", "ticket_id", "repo_root", "base_commit", "compilation", "fail_before_cmd", "pass_after_cmd",
-              "source_dirs", "patches", "models_path", "allow_model", "max_attempts", "timeout_sec", "contract_sha256"}
+              "source_dirs", "patches", "models_path", "allow_model", "max_attempts", "timeout_sec", "contract_sha256", "probe_patch", "context"}
     if set(document) != fields or document["schema_version"] != "aegis.cli.v1" or _digest(document) != document["contract_sha256"]:
         raise ValueError("invalid or modified frozen manifest")
     if Path(document["repo_root"]).resolve() != root or _git(root, "rev-parse", "HEAD") != document["base_commit"]:
@@ -190,6 +206,24 @@ def _offline_router():
 
 def _run(args):
     document = _load(args.contract)
+    root = _repo(document['repo_root'])
+    ledger = _ledger(root, args.db)
+    try:
+        return _execute(args)
+    except (ValueError, OSError, KeyError, subprocess.SubprocessError) as error:
+        ticket = document.get('ticket_id')
+        if ticket:
+            state = ledger.get_state(ticket)
+            if state['status'] == 'COMPILED':
+                token = ledger.acquire_lease(ticket, 'precheck')
+                if token:
+                    ledger.transition(ticket, token, 'COMPILED', 'PRECHECK_FAILED', state_s0=state,
+                                      action_a0={'op': 'precheck'}, actual_state_s1={'status': 'PRECHECK_FAILED', 'reason': str(error), 'error_type': type(error).__name__}, reward=-1)
+        raise
+
+
+def _execute(args):
+    document = _load(args.contract)
     root = _repo(document["repo_root"])
     ledger = _ledger(root, args.db)
     _validate_manifest(document, root, ledger)
@@ -198,6 +232,21 @@ def _run(args):
     manager = Sandbox(root)
     manager._paths(ticket)
     router = Router(load_models(Path(document["models_path"]))) if document["allow_model"] else _offline_router()
+    if document.get('probe_patch'):
+        from .sandbox import validate_probe_patch, run_exam_gate, ProbeNotFailingError
+        validate_probe_patch(document['probe_patch'])
+        check = 'check-' + uuid.uuid4().hex[:12]
+        path = manager.create(check, base=document['base_commit'])
+        try:
+            manager.apply_patch(check, document['probe_patch'])
+            before = run_exam_gate(path, [sys.executable if a == '{python}' else a for a in document['fail_before_cmd']], timeout=min(60, document['timeout_sec']))
+            if before['exit_code'] != 1 or before['changed']:
+                raise ProbeNotFailingError(json.dumps(before))
+        finally:
+            manager.cleanup(check)
+    for candidate in document['patches']:
+        if not Path(candidate).is_file():
+            raise FileNotFoundError(candidate)
     token = ledger.acquire_lease(ticket, "cli-runner", ttl=document["timeout_sec"] + 60)
     if not token:
         raise PermissionError("ticket is leased")
@@ -259,7 +308,7 @@ def _run(args):
                             resolve = lambda command: [sys.executable if arg == "{python}" else arg for arg in command]
                             result.update(manager.repair(work_id, patch, fail_before_cmd=resolve(document["fail_before_cmd"]),
                                                          pass_after_cmd=resolve(document["pass_after_cmd"]), source_dirs=tuple(document["source_dirs"]),
-                                                         timeout=remaining))
+                                                         timeout=remaining, probe_patch=document.get('probe_patch', '')))
                         except (ValueError, subprocess.SubprocessError) as error:
                             result["error_type"] = type(error).__name__
                         outside = set(result["changed_files"]) - set(document["compilation"]["target_files"])
@@ -324,7 +373,8 @@ def main(argv: list[str] | None = None) -> int:
     wish.add_argument("--allow-model", action="store_true")
     wish.add_argument("--max-attempts", type=int, default=3)
     wish.add_argument("--timeout", type=float, default=120)
-    wish.add_argument("--out")
+    wish.add_argument("--out", "--output")
+    wish.add_argument("--auto-probe", action=argparse.BooleanOptionalAction, default=True)
     run = commands.add_parser("run")
     run.add_argument("--contract", required=True)
     run.add_argument("--db")
@@ -333,7 +383,7 @@ def main(argv: list[str] | None = None) -> int:
         command.add_argument("--repo", default=".")
         command.add_argument("--db")
         if name == "export-traces":
-            command.add_argument("--out", default="datasets/latest_traces.jsonl")
+            command.add_argument("--out", "--output", default="datasets/latest_traces.jsonl")
             command.add_argument("--ticket-id")
     args = parser.parse_args(argv)
     for stream in (sys.stdout, sys.stderr):

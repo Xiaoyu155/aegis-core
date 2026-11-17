@@ -107,7 +107,7 @@ def validate_compilation(payload: dict, repo_skeleton: list[str]) -> dict:
         for question in payload["questions"]:
             if type(question) is not dict or set(question) != {"code", "question", "options", "recommended"}:
                 raise ValueError("invalid question shape")
-            if question["code"] not in {"A_CREDENTIALS", "B_FINANCE", "B_MIGRATION", "C_AMBIGUITY"} or question["code"] in codes:
+            if question["code"] not in {"A_CREDENTIALS", "B_FINANCE", "B_MIGRATION", "C_AMBIGUITY", "D_CONSTRAINT"} or question["code"] in codes:
                 raise ValueError("invalid or duplicate question code")
             codes.add(question["code"])
             if not isinstance(question["question"], str) or not question["question"].strip():
@@ -159,7 +159,7 @@ def compile_request(ticket_id: str, wish: str, repo_skeleton: list[str], proposa
     # A reference is acceptable; a credential value is neither requested nor recorded.
     allowed = {"execution_mode", "credential_ref", "credential_available", "max_drawdown", "max_notional",
                "position_mode", "migration_allowlist", "rollback_boundary", "selected_module",
-               "financial_effect", "destructive_migration", "production_api"}
+               "financial_effect", "destructive_migration", "production_api", "domain", "actions", "assertions", "time_window", "timeout_ms", "retry_count", "unlock_condition", "close_method"}
     if set(constraints) - allowed:
         raise ValueError("unknown constraint; never pass secret values")
     if type(wish) is not str or not wish.strip():
@@ -235,3 +235,123 @@ def compile_request(ticket_id: str, wish: str, repo_skeleton: list[str], proposa
                           reward=0, compiled_intent=result if result["status"] == "COMPILED" else None,
                           contract_stub=result.get("contract_stub"))
     return result
+
+
+def compile_wish(root, wish, *, targets=None, allow_model=False, models=None):
+    """Finite offline grammar, or schema-checked model synthesis. Never repairs code."""
+    from .ast_slicer import ImportGraph, signature
+    from .router import Router, load_models
+    import time
+    import difflib
+    graph = ImportGraph(root)
+    source_paths = [p for p in graph.paths if is_business_source(p) and '__' not in PurePosixPath(p).name]
+    if not source_paths:
+        raise ValueError('no indexed production Python source')
+    def score(path):
+        text = graph.modules[graph.paths[path]][1]
+        return (4 if path in wish else 2 if PurePosixPath(path).stem in wish else 0) + sum(
+            1 for term in re.findall(r'[A-Za-z_]\w{3,}', wish) if term in text)
+    ranked = sorted(source_paths, key=lambda p: (-score(p), p))
+    target = (targets or ranked)[0]
+    symbols = [k for k in graph.symbols if graph.symbol_modules[k] == graph.paths.get(target)]
+    if not symbols:
+        raise ValueError('target has no function/class interfaces')
+    symbol = max(symbols, key=lambda k: (sum(word in wish for word in k.split(':')[-1].split('.')), -graph.symbols[k].lineno))
+    node = graph.symbols[symbol]
+    constraints = {'domain': 'general', 'actions': [], 'assertions': []}
+    if re.search(r'市价|market', wish, re.I):
+        constraints['close_method'] = 'market'
+    if re.search(r'限价|limit order', wish, re.I):
+        constraints['close_method'] = 'limit'
+    constraints['actions'] = [word for word in ('熔断', '平仓', '回滚', '锁定', '锁死') if word in wish]
+    percent = re.search(r'(\d+(?:\.\d+)?)\s*%', wish)
+    if percent:
+        constraints['max_drawdown'] = float(percent[1]) / 100
+    for pattern, key in [(r'(\d+)\s*(?:ms|毫秒)', 'timeout_ms'), (r'(?:重试|retry)\s*(\d+)\s*次?', 'retry_count')]:
+        match = re.search(pattern, wish, re.I)
+        if match:
+            constraints[key] = int(match[1])
+    if re.search(r'UTC|日内|daily', wish, re.I):
+        constraints['time_window'] = 'UTC'
+    if re.search(r'次日|midnight|00:00', wish, re.I):
+        constraints['unlock_condition'] = 'next_utc_midnight'
+    if re.search(r'人工解锁', wish):
+        constraints['unlock_condition'] = 'human'
+    for pattern, value in [(r'熔断|circuit', 'circuit_break'), (r'平仓|close', 'close'), (r'回滚|rollback', 'rollback'), (r'锁|lock', 'lock')]:
+        if re.search(pattern, wish, re.I):
+            constraints['actions'].append(value)
+    if re.search(r'市价|market', wish, re.I):
+        constraints['close_method'] = 'market'
+    elif re.search(r'限价|limit order', wish, re.I):
+        constraints['close_method'] = 'limit'
+    finance = bool(re.search(r'回撤|亏损|平仓|资金', wish))
+    missing = []
+    if finance:
+        constraints['domain'] = 'finance'
+        missing = [key for key in ('max_drawdown', 'unlock_condition', 'close_method') if key not in constraints]
+    context = graph.slice(target, symbol.split(':', 1)[1], token_budget=8000)
+    stub = signature(node) + '\n# Assertions: ' + wish.replace('\n', ' ') + '\n'
+    probe = ''
+    if allow_model:
+        if models is None:
+            raise ValueError('models configuration required')
+        router = Router(load_models(models))
+        response = router.call(router.chain[0], [{'role': 'system', 'content':
+            'Return JSON {target_files,contract_stub,constraints,probe_patch}. Generate ONLY a new independent tests/test_aegis_probe.py with meaningful assertions proving the wish. No implementation patches. Keep target interfaces. Never use unconditional assert False.'},
+            {'role': 'user', 'content': json.dumps({'wish': wish, 'context': context, 'constraints': constraints}, ensure_ascii=False)}], deadline=time.monotonic() + 180, require_json=True)
+        if response['status'] != 'admitted':
+            raise ValueError('intent model unavailable')
+        value = json.loads(response['output'])
+        if set(value) != {'target_files', 'contract_stub', 'constraints', 'probe_patch'}:
+            raise ValueError('invalid intent model envelope')
+        validate_compilation({'kind': 'CompiledContract', 'ticket_id': 'validate', 'status': 'COMPILED',
+                             'target_files': value['target_files'], 'contract_stub': value['contract_stub'], 'constraints': value['constraints']}, list(graph.paths))
+        return {**value, 'context': context, 'missing': missing}
+    # Pure return-value contract: e.g. package.calc.add(2, 3) returns 5.
+    call = re.search(r'([A-Za-z_]\w*)\(([^\n()]*)\)\s*(?:returns?|返回|=)\s*([^\n;]+)', wish)
+    if re.search(r'回撤|亏损|平仓|drawdown', wish, re.I):
+        missing += [field for field in ('max_drawdown', 'unlock_condition', 'close_method') if field not in constraints]
+    if call:
+        function, arguments, expected = call.groups()
+        expression = ast.parse(f'{function}({arguments})', mode='eval').body
+        values = [ast.literal_eval(arg) for arg in expression.args]
+        expected = ast.literal_eval(ast.parse(expected.strip(), mode='eval').body)
+        match = next((k for k in symbols if k.endswith(':' + function)), None)
+        if match is None:
+            missing.append('target_signature')
+        else:
+            symbol, node = match, graph.symbols[match]
+            stub = signature(node) + '\n# assert ' + call.group(0) + '\n'
+            module = graph.paths[target]
+            code = f'import importlib\n\ndef test_contract():\n    module = importlib.import_module({module!r})\n    assert module.{function}(*{values!r}) == {expected!r}\n'
+            probe = ''.join(difflib.unified_diff([], code.splitlines(True), fromfile='/dev/null', tofile='b/tests/test_aegis_probe.py'))
+            constraints['assertions'] = [{'function': function, 'args': values, 'equals': expected}]
+    elif finance:
+        if not missing:
+            # A concrete declared interface for new functionality; no inferred fake signature.
+            stub = 'class CircuitBreaker:\n    def tick(self, peak: float, equity: float, timestamp: int, positions: dict[str, float]) -> list[dict]: ...'
+            module = graph.paths[target]
+            threshold = constraints['max_drawdown']
+            if constraints['close_method'] != 'market' or constraints['unlock_condition'] != 'next_utc_midnight':
+                missing.append('unsupported_offline_policy')
+            else:
+                code = f'''import importlib
+
+def test_contract():
+    module = importlib.import_module({module!r})
+    guard = module.CircuitBreaker()
+    positions = {{"BTC": 2, "ETH": -3}}
+    assert guard.tick(1000, 1000, 86398, positions) == []
+    orders = guard.tick(1000, {1000 * (1-threshold)!r}, 86399, positions)
+    assert orders == [{{"symbol": "BTC", "quantity": 2, "side": "sell", "type": "market", "reduceOnly": True}}, {{"symbol": "ETH", "quantity": 3, "side": "buy", "type": "market", "reduceOnly": True}}]
+    assert guard.can_open is False
+    assert guard.tick(1000, 1000, 86399, positions) == []
+    assert guard.can_open is False
+    assert guard.tick(1000, 1000, 86400, positions) == []
+    assert guard.can_open is True
+'''
+                probe = ''.join(difflib.unified_diff([], code.splitlines(True), fromfile='/dev/null', tofile='b/tests/test_aegis_probe.py'))
+    else:
+        missing.append('unsupported_offline_assertion')
+    return {'target_files': [target], 'contract_stub': stub, 'constraints': constraints, 'probe_patch': probe, 'context': context, 'missing': missing}
+

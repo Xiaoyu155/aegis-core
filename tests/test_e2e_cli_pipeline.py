@@ -31,7 +31,7 @@ def call(*args):
 def wish(root, tmp_path, patches, *, ticket="task", text="修复", target=None, extra=()):
     manifest = tmp_path / (ticket + ".json")
     db = tmp_path / "ledger.sqlite"
-    args = ["wish", text, "--repo", root, "--db", db, "--ticket-id", ticket, "--out", manifest,
+    args = ["wish", "--no-auto-probe", text, "--repo", root, "--db", db, "--ticket-id", ticket, "--out", manifest,
             "--fail-before", PROBE, "--pass-after", PROBE, "--timeout", "120", "--max-attempts", "5"]
     if target:
         args += ["--target", target]
@@ -100,7 +100,7 @@ def test_tampered_or_stale_manifest_does_not_start_ticket(tmp_path):
     manifest.write_text(json.dumps(modified), encoding="utf-8")
     assert call("run", "--contract", manifest, "--db", db)[0] == 1
     stats = call("stats", "--repo", root, "--db", db)[1]
-    assert stats["statuses"] == {"COMPILED": 1}
+    assert stats["statuses"] == {"PRECHECK_FAILED": 1}
 
 
 def test_malformed_patch_is_a_negative_attempt_then_good_patch_can_pass(tmp_path):
