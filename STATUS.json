@@ -1,6 +1,52 @@
 {
-  "tests": 132,
-  "dogfood": {},
+  "tests": 136,
+  "dogfood": {
+    "A": true,
+    "B": true,
+    "b_evidence": {
+      "status": "succeeded",
+      "reason": "gate_passed",
+      "rewards": [
+        -0.0075022869383307555,
+        1.4924101839333284
+      ]
+    },
+    "C": true,
+    "c_evidence": {
+      "status": "failed",
+      "reason": "attempts_exhausted",
+      "rewards": [
+        -1.3190810957299983
+      ]
+    },
+    "D": true,
+    "d_evidence": {
+      "status": "failed",
+      "reason": "blocked_needs_human",
+      "rewards": [
+        -0.007619672410000935,
+        -0.007813401968336018,
+        -1.800000000801671
+      ]
+    },
+    "stats": {
+      "tickets": 5,
+      "statuses": {
+        "COMPILED": 1,
+        "MISSING_CONSTRAINT": 1,
+        "failed": 2,
+        "succeeded": 1
+      },
+      "traces": 26,
+      "terminal_tickets": 3,
+      "success_rate": 0.3333333333333333,
+      "repair_attempts": 6,
+      "cheat_interceptions": 1,
+      "replay_interceptions": 1,
+      "mean_reward": -0.2749343789858348
+    },
+    "all_passed": true
+  },
   "samples": 1050,
   "groups": 525,
   "zero_variance_groups": 0,
