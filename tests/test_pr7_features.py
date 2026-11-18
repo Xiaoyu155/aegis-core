@@ -336,11 +336,13 @@ def test_learn_updates_weights_and_writes_versioned_online_calibration_report(tm
     old_version = CausalWorldModel.load(artifacts).model_version
     result = learn_from_ledger(repo=ROOT, db=ledger.path, artifact_dir=artifacts, epochs=1)
     assert result["status"] == "updated"
+    assert result["updated"] is True
     assert result["world_model_version"] != old_version
     assert result["selected_traces"] == 1
     assert result["anchor_examples"] > 0
     assert (artifacts / "versions" / f"{result['world_model_version']}.json").is_file()
     report = json.loads((artifacts / "online_replay_report.json").read_text())
+    assert report["updated"] is True
     assert report["trace_ids"] and report["regularization"]["kind"] == "proximal_to_previous_weights"
     assert CausalWorldModel.load(artifacts).model_version == result["world_model_version"]
 

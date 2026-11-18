@@ -206,6 +206,7 @@ def learn_from_ledger(*, repo: str | Path, db: str | Path, min_surprise: float =
         **summary,
         "schema_version": "aegis.online_replay_report.v1",
         "status": "updated",
+        "updated": True,
         "threshold": float(min_surprise),
         "selected_traces": len(traces),
         "replay_examples": len(replay),
