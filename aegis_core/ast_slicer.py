@@ -4,6 +4,7 @@ import copy
 import json
 import os
 from pathlib import Path
+import posixpath
 import re
 
 
@@ -82,7 +83,7 @@ def _js_symbols(source: str):
             name = match.group(1)
             opening = masked.find('{', match.start(), match.end())
             end = _brace_end(masked, opening)
-            found.setdefault(name, (match.start(), end))
+            found.setdefault(name, (match.start(), opening, end))
     for class_match in re.finditer(r'\bclass\s+([A-Za-z_$][\w$]*)[^{}]*\{', masked):
         class_name = class_match.group(1)
         opening = masked.find('{', class_match.start(), class_match.end())
@@ -92,14 +93,18 @@ def _js_symbols(source: str):
         for method in re.finditer(r'(?m)(?:^|[;{}\n])\s*(?:static\s+|async\s+|get\s+|set\s+)*([A-Za-z_$][\w$]*)(?:<[^>{}]+>)?\s*\([^;{}]*\)\s*(?::\s*[^;{}]+)?\{', body):
             method_name = method.group(1)
             method_open = offset + body.find('{', method.start(), method.end())
-            found.setdefault(class_name + '.' + method_name, (method_open, _brace_end(masked, method_open)))
+            leading = body[method.start():method.start(1)]
+            modifiers_start = offset + method.start() + len(leading) - len(leading.lstrip(';{} \t\n'))
+            found.setdefault(class_name + '.' + method_name,
+                             (modifiers_start, method_open, _brace_end(masked, method_open)))
     lines = source.splitlines()
     result = {}
-    for name, (start, end) in sorted(found.items(), key=lambda item: item[1][0]):
+    for name, (start, opening, end) in sorted(found.items(), key=lambda item: item[1][0]):
         start_line = source.count('\n', 0, start) + 1
         end_line = source.count('\n', 0, end) + 1
         result[name] = {'name': name, 'start_line': start_line, 'end_line': end_line,
-                        'source': '\n'.join(lines[start_line - 1:end_line])}
+                        'source': '\n'.join(lines[start_line - 1:end_line]),
+                        'signature': source[start:opening].strip()}
     return result
 
 SKIP = {'.git', '.venv', '.worktrees', '__pycache__', 'node_modules', 'dist', 'build', 'vendor',
@@ -194,31 +199,23 @@ class ImportGraph:
                     self.js_modules[relative] = (text, symbols)
                     self.js_symbols.update({relative + ':' + key: {"file": relative, **value}
                                             for key, value in symbols.items()})
-                    dependencies = set()
-                    for specifier in re.findall(r'(?:from\s*|import\s*\(|require\s*\()\s*[\'\"]([^\'\"]+)', text):
-                        if not specifier.startswith('.'):
-                            continue
-                        base = (Path(relative).parent / specifier).as_posix()
-                        candidates = [base + suffix for suffix in JS_SUFFIXES]
-                        candidates += [base + '/index' + suffix for suffix in JS_SUFFIXES]
-                        dependencies.update(candidate for candidate in candidates if candidate in self.js_modules)
-                    self.file_dependencies[relative] = sorted(dependencies)
-        # Resolve JS imports after every file is indexed (walk order is not a dependency order).
+        # Resolve relative module specifiers after every JS file is indexed.
         js_paths = set(self.js_modules)
-        for relative, (text, _) in self.js_modules.items():
+        for relative, (source, _) in self.js_modules.items():
             dependencies = set()
-            for specifier in re.findall(r'(?:from\s*|import\s*\(|require\s*\()\s*[\'\"]([^\'\"]+)', text):
-                if specifier.startswith('.'):
-                    base = (Path(relative).parent / specifier).as_posix()
-                    dependencies.update(candidate for candidate in
-                                        [base + suffix for suffix in JS_SUFFIXES] +
-                                        [base + '/index' + suffix for suffix in JS_SUFFIXES]
-                                        if candidate in js_paths)
+            masked = _mask_js_comments_and_strings(source)
+            for match in re.finditer(r'\b(?:from\s*|import\s*\(?\s*|require\s*\()\s*[\'\"]([^\'\"]+)', source):
+                specifier = match[1]
+                if masked[match.start()].strip() and specifier.startswith('.'):
+                    base = posixpath.normpath(posixpath.join(posixpath.dirname(relative), specifier))
+                    candidates = [base, *(base + suffix for suffix in JS_SUFFIXES),
+                                  *(base + '/index' + suffix for suffix in JS_SUFFIXES)]
+                    dependencies.update(path for path in candidates if path in js_paths and path != relative)
             self.file_dependencies[relative] = sorted(dependencies)
         for module, (relative, _, _) in self.modules.items():
             dependencies = set()
             for bound in self.bindings.get(module, {}).values():
-                requested_module = bound.rsplit('.', 1)[0] if '.' in bound else bound
+                requested_module = bound if bound in self.modules else bound.rsplit('.', 1)[0] if '.' in bound else bound
                 matches = []
                 for candidate in self.modules:
                     if (requested_module == candidate or requested_module.startswith(candidate + '.')
@@ -228,6 +225,8 @@ class ImportGraph:
                 if matches:
                     origin = Path(relative).parent
                     candidate = min(matches, key=lambda name: (
+                        not (requested_module == name or requested_module.startswith(name + '.')),
+                        -len(name) if requested_module.startswith(name + '.') else 0,
                         len(set((self.modules[name][0].split('/')[:-1])) ^ set(origin.parts)),
                         len(self.modules[name][0]), name))
                     if candidate != module:

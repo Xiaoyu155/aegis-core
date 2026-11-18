@@ -76,6 +76,11 @@ def retrieve(root, wish, *, token_budget=4000, graph=None):
 
 
 def diagnose(root, feedback, *, attempt, token_budget=4000):
+    if feedback.get("gate_failure"):
+        category = feedback["gate_failure"]
+        evidence = feedback.get("interface_contract_differences") or feedback["review"]["findings"]
+        return {"kind": "FailureDiagnosis", "attempt": attempt, "category": category,
+                "evidence": evidence, "next_action": "Address the reported violations in the candidate source."}
     graph = ImportGraph(root)
     final = feedback.get('final') or feedback.get('baseline') or {}
     output = final.get('stdout','') + '\n' + final.get('stderr','')
@@ -107,6 +112,8 @@ def classify_causal_outcome(result):
         return 'cheat_detected'
     if result.get('status') == 'MISSING_CONSTRAINT' or result.get('reason') == 'missing_constraint':
         return 'missing_constraint'
+    if result.get('gate_failure'):
+        return 'assertion_error'
     if result.get('passed') or result.get('after_passed'):
         return 'gate_passed'
     return 'assertion_error'

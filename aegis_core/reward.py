@@ -6,8 +6,9 @@ def compute_step_reward(*, baseline_failed: bool, after_passed: bool,
                         target_files: list[str], changed_files: list[str], diff_lines: int,
                         elapsed_sec: float, latency_budget_sec: float,
                         concise_budget_lines: int = 80, cheat_detected: bool = False,
-                        repeated_patch: bool = False, timeout_killed: bool = False) -> float:
-    for flag in (baseline_failed, after_passed, cheat_detected, repeated_patch, timeout_killed):
+                        repeated_patch: bool = False, timeout_killed: bool = False,
+                        semantic_gate_rejected: bool = False) -> float:
+    for flag in (baseline_failed, after_passed, cheat_detected, repeated_patch, timeout_killed, semantic_gate_rejected):
         if type(flag) is not bool:
             raise ValueError("gate flags must be bool")
     for number in (elapsed_sec, latency_budget_sec):
@@ -25,6 +26,8 @@ def compute_step_reward(*, baseline_failed: bool, after_passed: bool,
     latency = min(1.0, elapsed_sec / latency_budget_sec)
     penalty = (1.0 if cheat_detected or repeated_patch else 0.0) + (1.25 if timeout_killed else 0.0)
     score = gate + 0.3 * scope + 0.2 * concise - 0.2 * latency - penalty
+    if semantic_gate_rejected:
+        score = min(score - 1.0, -0.5)
     if timeout_killed:
         score = min(score, -0.25)
     return max(-2.0, min(1.5, score))

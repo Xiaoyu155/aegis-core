@@ -1,7 +1,7 @@
 {
-  "phase": 9,
-  "tests": 294,
-  "preserved_previous_tests": 275,
+  "phase": 10,
+  "tests": 385,
+  "preserved_previous_tests": 294,
   "campaign": {
     "cases": 8,
     "all_passed": true,
@@ -21,7 +21,8 @@
       "mean_reward": 0.42883137555066614
     },
     "report": "datasets/campaign/report.json",
-    "stdout": "datasets/campaign/stdout.txt"
+    "stdout": "datasets/campaign/stdout.txt",
+    "provenance": "authored offline projects; physically executed CLI/worktree probes; self_heal uses a diagnosis-driven deterministic mock provider, not a live LLM"
   },
   "synthetic_count": 1050,
   "real_campaign_traces_count": 47,
@@ -34,19 +35,20 @@
     "sft_eval": 106,
     "grpo_groups": 526
   },
-  "provenance": "authored offline projects; physically executed CLI/worktree probes; self_heal uses a diagnosis-driven deterministic mock provider, not a live LLM",
+  "provenance": "Codex-authored patches based on real AST slices, verified with physical Git worktrees and frozen probes for PR #10",
   "limits": [
     "Static AST/concept retrieval; unknown invariants require clarification",
     "Offline authored projects; no exchange, Canvas/GPU or live LLM deployment verified",
-    "Reusable buffer and bounded history; no zero-allocation claim"
+    "Reusable buffer and bounded history; no zero-allocation claim",
+    "The prior private cat-cafe trace exports and WAL ledger were unavailable. New training samples come from measured public-example replays.",
+    "Training validation used the official Qwen tokenizer on CPU. CUDA execution and RTX 5060 memory use remain unmeasured.",
+    "Interface capture and independent review cover statically visible source patterns."
   ],
   "ci": {
-    "state": "success",
-    "checks_passed": 8,
-    "validated_code_head": "4425b47606072d919cabbdcb080101491a32b2b2",
-    "matrix": "Linux/Windows x Python 3.11/3.12; push + pull_request",
-    "push_run": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44071133635",
-    "pull_request_run": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44071142938"
+    "state": "pending",
+    "checks_passed": 0,
+    "checks_expected": 8,
+    "matrix": "Linux/Windows x Python 3.11/3.12; push + pull_request"
   },
   "pr7": {
     "branch": "feat/world-model-v8",
@@ -485,6 +487,71 @@
           "windows-latest / 3.12": "success"
         }
       }
+    }
+  },
+  "prior_ci": {
+    "state": "success",
+    "checks_passed": 8,
+    "validated_code_head": "4425b47606072d919cabbdcb080101491a32b2b2",
+    "matrix": "Linux/Windows x Python 3.11/3.12; push + pull_request",
+    "push_run": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44071133635",
+    "pull_request_run": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44071142938"
+  },
+  "pr10": {
+    "branch": "feat/autonomous-contractor-v10",
+    "base_branch": "feat/world-model-v10",
+    "base_commit": "c03e76d9489c6f5ee8f48aca71598c928aba3131",
+    "features": [
+      "Immutable per-layer interface contracts with exact differences, negative rewards, and overlap detection.",
+      "L1/L2/L3 routing with caller radius, coupling and causal risk. L3 requires independent static and semantic audit after both probes.",
+      "ExpandedSpec with AST and ExperienceBank evidence, three acceptance criteria, and business parameter clarification.",
+      "Checksummed v3 supplemental training data and verified CPU QLoRA SFT/GRPO preflight checkpoints."
+    ],
+    "drill": {
+      "script": "scripts/run_whitepaper_v10_drill.py",
+      "status": "passed",
+      "sections_passed": 4,
+      "contract_gate": "INTERFACE_CONTRACT_VIOLATION",
+      "review_gate": "ADVERSARIAL_AUDIT_REJECTED",
+      "review_red_green_exit": [
+        1,
+        0
+      ],
+      "valid_l3_candidate_passed_review": true,
+      "drill_experience_bank_version": 3,
+      "drill_experience_bank_records": 4,
+      "experience_matches": 2,
+      "resolved_max_drawdown": 0.08
+    },
+    "dataset_v3": {
+      "manifest": "datasets/manifest_v3.json",
+      "sft_train": 472,
+      "sft_eval": 52,
+      "grpo_candidates": 528,
+      "grpo_groups": 264,
+      "cat_cafe_public_worktree_attempts": 8,
+      "private_external_trace_exports_available": false
+    },
+    "training_preflight": {
+      "tokenizer": "Qwen/Qwen2.5-Coder-3B-Instruct",
+      "gpu_used": false,
+      "checkpoints_verified": 4,
+      "sft_default_max_tokens": 784,
+      "grpo_default_max_prompt_tokens": 665,
+      "grpo_default_max_completion_tokens": 167,
+      "sft_stress_prompt_and_completion_truncations": [
+        472,
+        240
+      ],
+      "grpo_stress_prompt_and_completion_truncations": [
+        132,
+        218
+      ]
+    },
+    "tests": {
+      "total": 385,
+      "pr10_new_cases": 91,
+      "previous_cases_preserved": 294
     }
   }
 }

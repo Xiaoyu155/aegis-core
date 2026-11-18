@@ -180,6 +180,19 @@ class Ledger:
                 raise KeyError(ticket_id)
             return json.loads(row[0])
 
+    def approved_patch(self, ticket_id: str, digest: str) -> str | None:
+        """Read a passing candidate from the immutable attempt trace."""
+        with self._connection() as db:
+            rows = db.execute(
+                "SELECT action_a0,actual_state_s1 FROM causal_traces WHERE ticket_id=? ORDER BY step_idx DESC",
+                (ticket_id,)).fetchall()
+        for action_json, state_json in rows:
+            action = json.loads(action_json)
+            if (action.get("op") == "repair_attempt" and action.get("patch_sha256") == digest
+                    and json.loads(state_json).get("passed")):
+                return action.get("patch")
+        return None
+
     @staticmethod
     def _trace(db, ticket_id, s0, action, s1, reward, prediction, cost, now,
                predicted_reward=None, prediction_confidence=None, prediction_error=None,

@@ -1,10 +1,7 @@
 """Unified stdlib control tower. Commands print one JSON result to stdout."""
 import argparse
-import ast
 import hashlib
-import math
 import json
-import os
 from pathlib import Path
 import shlex
 import subprocess
@@ -15,8 +12,8 @@ import uuid
 from .ledger import Ledger
 from .mediator import compile_wish, compile_request, is_business_source, validate_compilation
 from .reward import compute_step_reward
-from .router import Router, load_models
-from .sandbox import Sandbox, tree_hash
+from .router import Router, load_models, route_complexity
+from .sandbox import Sandbox
 
 
 def _git(root, *args):
@@ -58,8 +55,12 @@ def _repo(path):
     return root
 
 
+def _ledger_path(root, db):
+    return Path(db).resolve() if db else Path(_git(root, "rev-parse", "--path-format=absolute", "--git-common-dir")) / "aegis/ledger.sqlite"
+
+
 def _ledger(root, db):
-    path = Path(db).resolve() if db else Path(_git(root, "rev-parse", "--path-format=absolute", "--git-common-dir")) / "aegis/ledger.sqlite"
+    path = _ledger_path(root, db)
     path.parent.mkdir(parents=True, exist_ok=True)
     return Ledger(path)
 
@@ -106,6 +107,10 @@ def _wish(args):
         # Generic stub is explicit when no user-approved business signature is supplied.
         proposal = {"target_files": targets, "contract_stub": "def apply_change() -> None:\n    ..."}
     constraints = _load(args.constraints) if args.constraints else {}
+    planned_spec = getattr(args, "planned_spec", None)
+    if planned_spec is not None:
+        constraints.update({key: value for key, value in planned_spec["business_parameters"].items()
+                            if key in {"max_drawdown", "close_method", "unlock_condition"}})
     if enhanced:
         constraints = {**enhanced['constraints'], **constraints}
     selection = args.selected_module or constraints.get("selected_module")
@@ -150,6 +155,11 @@ def _wish(args):
                 "probe_patch": enhanced['probe_patch'] if enhanced else "", "context": enhanced['context'] if enhanced else legacy_context,
                 "allow_model": args.allow_model, "max_attempts": args.max_attempts,
                 "timeout_sec": args.timeout}
+    interface_lock = getattr(args, "interface_lock", None)
+    if interface_lock is not None:
+        document["interface_lock"] = interface_lock.to_dict()
+    if planned_spec is not None:
+        document["expanded_spec"] = planned_spec
     document["contract_sha256"] = _digest(document)
     if result["status"] == "COMPILED":
         token = ledger.acquire_lease(ticket, "cli-freeze")
@@ -170,7 +180,8 @@ def _wish(args):
 def _validate_manifest(document, root, ledger):
     fields = {"schema_version", "ticket_id", "repo_root", "base_commit", "compilation", "fail_before_cmd", "pass_after_cmd",
               "source_dirs", "patches", "models_path", "allow_model", "max_attempts", "timeout_sec", "contract_sha256", "probe_patch", "context"}
-    if set(document) != fields or document["schema_version"] != "aegis.cli.v1" or _digest(document) != document["contract_sha256"]:
+    if (set(document) - {"interface_lock", "expanded_spec"} != fields or document["schema_version"] != "aegis.cli.v1"
+            or _digest(document) != document["contract_sha256"]):
         raise ValueError("invalid or modified frozen manifest")
     if Path(document["repo_root"]).resolve() != root or _git(root, "rev-parse", "HEAD") != document["base_commit"]:
         raise ValueError("repository baseline changed; compile a new contract")
@@ -236,10 +247,14 @@ def _execute(args):
     # Validate lifecycle ID before taking a lease/changing state.
     manager = Sandbox(root)
     manager._paths(ticket)
-    router = Router(load_models(Path(document["models_path"]))) if document["allow_model"] else _offline_router()
-    from .world_model import CausalWorldModel
-    model_path = Path(os.environ.get("AEGIS_WORLD_MODEL_DIR", root / "artifacts" / "causal_world_model")).resolve()
-    world_model = CausalWorldModel.load_if_available(model_path)
+    router = (getattr(args, "router", None) or Router(load_models(Path(document["models_path"])))) if document["allow_model"] else _offline_router()
+    from .ast_slicer import ImportGraph
+    from .contract_lock import InterfaceContractLock
+    interface_lock = InterfaceContractLock.from_dict(document["interface_lock"]) if "interface_lock" in document else None
+    graph = ImportGraph(root)
+    target_files = document["compilation"]["target_files"]
+    from .world_model import load_repository_model
+    world_model = load_repository_model(root)
 
     def verify_probe_baseline():
         from .sandbox import validate_probe_patch, run_exam_gate, ProbeNotFailingError
@@ -263,10 +278,14 @@ def _execute(args):
     for candidate in document['patches']:
         if not Path(candidate).is_file():
             raise FileNotFoundError(candidate)
+    proposed = {"op": "repair_attempt", "target_files": target_files, "contract": document["compilation"]}
+    planned_risk = (world_model.predict(ledger.get_state(ticket), proposed, context=document["context"])["risk_probability"]
+                    if world_model is not None else None)
+    planned_route = route_complexity(graph, target_files, risk_probability=planned_risk)
+    tier = planned_route["tier"] if planned_route["tier"] in router.chain else router.chain[0]
     token = ledger.acquire_lease(ticket, "cli-runner", ttl=document["timeout_sec"] + 60)
     if not token:
         raise PermissionError("ticket is leased")
-    tier = router.chain[0]
     deadline = time.monotonic() + document["timeout_sec"]
     results = []
     terminal, reason = "failed", "attempts_exhausted"
@@ -280,7 +299,11 @@ def _execute(args):
             breaker = {"repeated_patch": False}
             if document["allow_model"]:
                 context = {"contract": document["compilation"], "prior_attempts": results,
-                           "source": {name: (root / name).read_text(encoding="utf-8") for name in document["compilation"]["target_files"]},
+                           "source": {name: (root / name).read_text(encoding="utf-8") if (root / name).is_file() else None
+                                      for name in target_files},
+                           "complexity": planned_route,
+                           "acceptance_spec": document.get("expanded_spec"),
+                           "interface_lock": document.get("interface_lock"),
                            "frozen_probes": {key: document[key] for key in ("fail_before_cmd", "pass_after_cmd")},
                            "frozen_tests": {name: (root / name).read_text(encoding="utf-8") for name in _skeleton(root)
                                             if name.startswith("tests/") and name.endswith(".py") and (root / name).stat().st_size < 32768}}
@@ -308,16 +331,20 @@ def _execute(args):
             if type(patch) is not str:
                 raise ValueError("model patch must be text")
             patch_sha256 = hashlib.sha256(patch.encode()).hexdigest()
-            target_files = document["compilation"]["target_files"]
             attempt_action = {"op": "repair_attempt", "patch": patch, "patch_sha256": patch_sha256,
                               "target_files": target_files, "slot_id": slot,
+                              "model_tier": admitted.get("tier", tier) if document["allow_model"] else None,
                               "context": document["context"], "contract": document["compilation"],
                               "repeated_patch": breaker["repeated_patch"]}
             prediction = None
+            complexity = planned_route
             if world_model is not None:
                 prediction_state = ledger.get_state(ticket)
                 prediction = world_model.predict(prediction_state, attempt_action,
                                                  context=document["context"], prior_attempts=results)
+                actual_route = route_complexity(graph, target_files, risk_probability=prediction["risk_probability"])
+                if actual_route["level"] >= planned_route["level"]:
+                    complexity = actual_route
                 ledger.transition(ticket, token, "running", "running", state_s0=prediction_state,
                                   action_a0={**attempt_action, "op": "world_model_prediction"},
                                   actual_state_s1=prediction_state, reward=0,
@@ -328,7 +355,8 @@ def _execute(args):
             work_id = "run-" + uuid.uuid4().hex[:16]
             result = {"baseline_failed": False, "after_passed": False, "passed": False, "cheat_detected": False,
                       "changed_files": [], "diff_lines": 0, "repeated_patch": breaker["repeated_patch"],
-                      "patch_sha256": patch_sha256}
+                      "patch_sha256": patch_sha256, "complexity": complexity,
+                      "model_tier": attempt_action["model_tier"]}
             if prediction is not None:
                 result.update({"predicted_next_state": prediction["predicted_next_state"],
                                "predicted_reward": prediction["predicted_reward"],
@@ -365,7 +393,9 @@ def _execute(args):
                             resolve = lambda command: [sys.executable if arg == "{python}" else arg for arg in command]
                             result.update(manager.repair(work_id, patch, fail_before_cmd=resolve(document["fail_before_cmd"]),
                                                          pass_after_cmd=resolve(document["pass_after_cmd"]), source_dirs=tuple(document["source_dirs"]),
-                                                         timeout=remaining, probe_patch=document.get('probe_patch', '')))
+                                                         timeout=remaining, probe_patch=document.get('probe_patch', ''),
+                                                         interface_lock=interface_lock,
+                                                         require_review=complexity["level"] == "L3"))
                         except (ValueError, subprocess.SubprocessError) as error:
                             result["error_type"] = type(error).__name__
                         outside = set(result["changed_files"]) - set(document["compilation"]["target_files"])
@@ -385,7 +415,10 @@ def _execute(args):
                                          target_files=document["compilation"]["target_files"], changed_files=result["changed_files"],
                                          diff_lines=result["diff_lines"], elapsed_sec=elapsed, latency_budget_sec=document["timeout_sec"],
                                          cheat_detected=result["cheat_detected"], repeated_patch=result["repeated_patch"],
-                                         timeout_killed=result.get("timeout_killed", False))
+                                         timeout_killed=result.get("timeout_killed", False),
+                                         semantic_gate_rejected=bool(result.get("gate_failure")))
+            if result.get("gate_failure"):
+                reason = result["gate_failure"]
             if not result['passed'] and 'diagnosis' not in result:
                 if not result.get("pre_blocked"):
                     from .runner import diagnose
@@ -420,6 +453,8 @@ def _execute(args):
                 if breaker["next_tier"] == "blocked_needs_human":
                     break
                 tier = breaker["next_tier"]
+            elif complexity["tier"] in router.chain and router.chain.index(complexity["tier"]) > router.chain.index(tier):
+                tier = complexity["tier"]
         previous = ledger.get_state(ticket)
         ledger.transition(ticket, token, "running", terminal, state_s0=previous, action_a0={"op": "finish_run"},
                           actual_state_s1={"status": terminal, "reason": reason, "attempts": len(results)}, reward=0)
@@ -464,11 +499,19 @@ def main(argv: list[str] | None = None) -> int:
     run.add_argument("--db")
     run.add_argument("--repo")
     run.add_argument("--workers", type=int, default=4)
+    run.add_argument("--models", help="Enable configured providers for DAG repairs without authored patches")
     plan = commands.add_parser("plan")
     plan.add_argument("text")
     plan.add_argument("--repo", default=".")
     plan.add_argument("--out", "--output", required=True)
     plan.add_argument("--max-tasks", type=int, default=8)
+    spec = commands.add_parser("spec")
+    for command in (plan, spec):
+        command.add_argument("--db")
+        command.add_argument("--answers", help="JSON file containing business parameter answers")
+    spec.add_argument("text")
+    spec.add_argument("--repo", default=".")
+    spec.add_argument("--out", "--output")
     learn = commands.add_parser("learn")
     learn.add_argument("--repo", default=".")
     learn.add_argument("--db")
@@ -496,19 +539,34 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "run":
             if args.dag:
                 from .planner import execute_task_dag
-                result, code = execute_task_dag(args.dag, db=args.db, workers=args.workers, repo=args.repo)
+                result, code = execute_task_dag(args.dag, db=args.db, workers=args.workers, repo=args.repo, models=args.models)
             else:
+                if args.models:
+                    raise ValueError("provide --models when freezing the contract with aegis wish")
                 result, code = _run(args)
         elif args.command == "plan":
             from .planner import build_task_dag
-            result = build_task_dag(args.text, args.repo, max_tasks=args.max_tasks)
+            root = _repo(args.repo)
+            result = build_task_dag(args.text, root, max_tasks=args.max_tasks,
+                                    answers=_load(args.answers) if args.answers else None,
+                                    experience_db=_ledger_path(root, args.db))
             destination = Path(args.out).resolve()
             destination.parent.mkdir(parents=True, exist_ok=True)
             _save(destination, result)
             result = {"status": "planned", "dag_id": result["dag_id"],
                       "tasks": len(result["tasks"]), "layers": result["topological_layers"],
-                      "output": str(destination)}
-            code = 0
+                      "spec": result["spec"], "output": str(destination)}
+            if result["spec"]["questions"]:
+                result["status"] = "MISSING_CONSTRAINT"
+            code = 2 if result["spec"]["questions"] else 0
+        elif args.command == "spec":
+            from .pm_expander import expand_requirement
+            root = _repo(args.repo)
+            result = expand_requirement(args.text, root, answers=_load(args.answers) if args.answers else None,
+                                        experience_db=_ledger_path(root, args.db)).to_dict()
+            if args.out:
+                _save(args.out, result)
+            code = 2 if result["questions"] else 0
         elif args.command == "learn":
             root = _repo(args.repo)
             ledger = _ledger(root, args.db)

@@ -209,7 +209,8 @@ class Sandbox:
         return result.copy()
 
     def repair(self, ticket_id: str, patch: str, *, fail_before_cmd,
-               pass_after_cmd, source_dirs: tuple[str, ...], timeout: float = 60, probe_patch: str = "") -> dict:
+               pass_after_cmd, source_dirs: tuple[str, ...], timeout: float = 60, probe_patch: str = "",
+               interface_lock=None, require_review: bool = False) -> dict:
         import time
         if not 0 < timeout < float("inf"):
             raise ValueError("positive finite repair timeout required")
@@ -223,6 +224,8 @@ class Sandbox:
         prior = detect_source_cheat(path, source_dirs, base=base)
         if prior["changed_files"]:
             raise ValueError("repair baseline must be clean")
+        if interface_lock is not None and interface_lock.baseline != base:
+            raise ValueError("interface lock baseline disagrees with the worktree")
         if probe_patch:
             validate_probe_patch(probe_patch)
             self.apply_patch(ticket_id, probe_patch)
@@ -243,7 +246,12 @@ class Sandbox:
             self.apply_patch(ticket_id, patch)
             scope = detect_source_cheat(path, source_dirs, base=base)
             result.update(scope)
-            if not scope["cheat_detected"]:
+            if not scope["cheat_detected"] and interface_lock is not None:
+                differences = interface_lock.violations(path, scope["changed_files"])
+                if differences:
+                    result.update(gate_failure="INTERFACE_CONTRACT_VIOLATION",
+                                  interface_contract_differences=differences)
+            if not scope["cheat_detected"] and "gate_failure" not in result:
                 remaining = timeout - (time.monotonic() - start)
                 if remaining > 0:
                     after = run_exam_gate(path, pass_after_cmd, timeout=remaining)
@@ -253,6 +261,12 @@ class Sandbox:
                     result["timeout_killed"] = bool(after.get("timeout_killed"))
                     result["termination_reason"] = after.get("termination_reason")
                     result["reward"] = 1.0 if after["passed"] else (-1.0 if after.get("timeout_killed") else -0.5)
+                    if after["passed"] and require_review:
+                        from .reviewer import audit_candidate
+                        review = audit_candidate(path, base, scope["changed_files"])
+                        result["review"] = review
+                        if not review["passed"]:
+                            result.update(passed=False, gate_failure="ADVERSARIAL_AUDIT_REJECTED", reward=-1.0)
             result["after_hash"] = tree_hash(path)
         result["elapsed_sec"] = time.monotonic() - start
         self._gates[ticket_id] = result

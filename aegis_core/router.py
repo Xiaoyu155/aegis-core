@@ -301,3 +301,38 @@ def repair_json(text):
     if not isinstance(value, dict):
         raise ValueError('expected JSON object')
     return value
+
+
+def route_complexity(graph, targets, *, risk_probability=None):
+    """Measure production import/call impact and select an existing model tier."""
+    from .ast_slicer import is_protected_test_path
+
+    if risk_probability is not None and (type(risk_probability) not in (int, float)
+                                         or not 0 <= risk_probability <= 1):
+        raise ValueError("risk probability must be in [0,1]")
+    targets = set(targets)
+    outgoing = {path: set(dependencies) for path, dependencies in graph.file_dependencies.items()}
+    for caller, callees in graph.calls.items():
+        path = graph.modules[graph.symbol_modules[caller]][0]
+        outgoing.setdefault(path, set()).update(graph.modules[graph.symbol_modules[name]][0] for name in callees)
+    edges = {(path, dependency) for path, dependencies in outgoing.items() for dependency in dependencies
+             if dependency != path and not is_protected_test_path(path)
+             and not is_protected_test_path(dependency)}
+    impacted, frontier, radius = set(targets), set(targets), 0
+    while frontier:
+        callers = {caller for caller, dependency in edges if dependency in frontier} - impacted
+        if not callers:
+            break
+        impacted.update(callers)
+        frontier = callers
+        radius += 1
+    coupling = sum(bool(targets.intersection(edge)) for edge in edges)
+    risk = risk_probability if risk_probability is not None else 0.0
+    if risk >= .70 or radius >= 3 or coupling >= 5 or len(targets) >= 4:
+        level, tier = "L3", "L3_ARCHITECT_AND_DIRECT"
+    elif risk >= .35 or radius >= 1 or coupling >= 2 or len(targets) >= 2:
+        level, tier = "L2", "L2_WORKER_POOL"
+    else:
+        level, tier = "L1", "L1_LOCAL_CAUSAL"
+    return {"level": level, "tier": tier, "impact_radius": radius, "coupling": coupling,
+            "impacted_files": sorted(impacted), "risk_probability": risk_probability}

@@ -433,3 +433,11 @@ class CausalWorldModel:
             "risk_probability": risk_probability,
             "model_version": self.model_version,
         }
+
+
+def load_repository_model(root):
+    """Load the repository model, honoring the attached-repository override."""
+    import os
+
+    path = Path(os.environ.get("AEGIS_WORLD_MODEL_DIR", Path(root) / "artifacts" / "causal_world_model"))
+    return CausalWorldModel.load_if_available(path.resolve())

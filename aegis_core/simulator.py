@@ -176,15 +176,20 @@ def _git(root, *args):
 def create_arena(root: Path, scenario: str) -> dict:
     if scenario not in ALL_FAULTS:
         raise ValueError("unknown arena scenario")
+    return freeze_arena(root, scenario, fixture_files(scenario), TESTS[scenario],
+                        target=ALL_FAULTS[scenario][0],
+                        source_dirs=(".",) if scenario.startswith("quant_") else ("engine",))
+
+
+def freeze_arena(root: Path, scenario, sources, probe, *, target, source_dirs):
     root = Path(root)
     root.mkdir(parents=True, exist_ok=False)
-    files = fixture_files(scenario)
-    for name, source in files.items():
+    for name, source in sources.items():
         path = root / name
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(source, encoding="utf-8", newline="\n")
     (root / "tests").mkdir()
-    (root / "tests/test_invariant.py").write_text(TESTS[scenario], encoding="utf-8", newline="\n")
+    (root / "tests/test_invariant.py").write_text(probe, encoding="utf-8", newline="\n")
     (root / ".gitignore").write_text(".worktrees/\n__pycache__/\n.pytest_cache/\n", encoding="utf-8")
     _git(root, "init", "-b", "main")
     _git(root, "config", "user.name", "Aegis Offline Simulator")
@@ -192,10 +197,8 @@ def create_arena(root: Path, scenario: str) -> dict:
     _git(root, "config", "core.autocrlf", "false")
     _git(root, "add", ".")
     _git(root, "commit", "-m", "Freeze original offline arena contract and failing invariant")
-    return {"scenario": scenario, "fixture_sha256": tree_hash(root),
-            "source_dirs": (".",) if scenario.startswith("quant_") else ("engine",),
-            "target_files": [ALL_FAULTS[scenario][0]],
-            "test_cmd": [sys.executable, "-B", "-m", "pytest", "-q", "--tb=short"]}
+    return {"scenario": scenario, "fixture_sha256": tree_hash(root), "source_dirs": source_dirs,
+            "target_files": [target], "test_cmd": [sys.executable, "-B", "-m", "pytest", "-q", "--tb=short"]}
 
 
 def fixture_patch(scenario: str, *, positive: bool) -> str:

@@ -26,6 +26,31 @@
   "sha256": {
     "mediator_sft_train.jsonl": "c4e8471b90c472603185884a3f5ec9109309e3413a1130dc0ffb5d2402a95bf5",
     "mediator_sft_eval.jsonl": "4e352930e47fc9f9d22c28e29a59c7849cea7f124bfb638aec310b167ac8ba6d",
-    "grpo_repair_pairs.jsonl": "d8e695d85b01fcd9ce8dae9d6988857fa5fb720a91345e93a312276727c61de9"
+    "grpo_repair_pairs.jsonl": "d8e695d85b01fcd9ce8dae9d6988857fa5fb720a91345e93a312276727c61de9",
+    "cat_cafe_replay_sft.jsonl": "10e0c473297beb6a8f5bc2259e1b8259c6e6cb14fe476611d2b0cb84718179d1",
+    "cat_cafe_replay_grpo.jsonl": "d29ce511a126a7645ba06a0e81d087e8e50c28b6d2c6e3cab117141058d4fe34"
+  },
+  "cat_cafe_replay": {
+    "source": "examples/cat_cafe_25d",
+    "scenarios": [
+      "cat_replay_depth",
+      "cat_replay_history",
+      "cat_replay_interaction",
+      "cat_replay_projection"
+    ],
+    "physical_attempts": 8,
+    "sft_rows": 4,
+    "grpo_rows": 8,
+    "supplements": {
+      "mediator_sft_train.jsonl": "cat_cafe_replay_sft.jsonl",
+      "grpo_repair_pairs.jsonl": "cat_cafe_replay_grpo.jsonl"
+    },
+    "reward_policy": "deterministic_zero_latency_dual_probe_reward"
+  },
+  "training_totals": {
+    "sft_train": 472,
+    "sft_eval": 52,
+    "grpo_candidates": 528,
+    "grpo_groups": 264
   }
 }

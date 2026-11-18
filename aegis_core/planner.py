@@ -2,19 +2,22 @@
 from __future__ import annotations
 
 import argparse
+from collections import Counter
 import hashlib
 import json
 import os
 from pathlib import Path
 import re
-import shutil
 import subprocess
 import sys
-import tempfile
 import uuid
 
 from .ast_slicer import ImportGraph, is_protected_test_path
+from .contract_lock import InterfaceContractLock
+from .pm_expander import expand_requirement
+from .router import Router, load_models, route_complexity
 from .runner import retrieve, terms
+from .world_model import load_repository_model
 
 
 def _git(root: Path, *args: str) -> str:
@@ -54,7 +57,8 @@ def _topological_layers(tasks: list[dict]) -> list[list[str]]:
     return layers
 
 
-def build_task_dag(requirement: str, repo: str | Path, *, max_tasks: int = 8) -> dict:
+def build_task_dag(requirement: str, repo: str | Path, *, max_tasks: int = 8,
+                   answers=None, experience_db=None) -> dict:
     """Plan a requirement from repository symbols, imports and matching tests."""
     root = Path(repo).resolve(strict=True)
     if not (root / ".git").exists() and not (root / ".git").is_file():
@@ -65,6 +69,9 @@ def build_task_dag(requirement: str, repo: str | Path, *, max_tasks: int = 8) ->
         raise ValueError("max_tasks must be 1..32")
     graph = ImportGraph(root)
     retrieval = retrieve(root, requirement, token_budget=6000, graph=graph)
+    spec = expand_requirement(requirement, root, answers=answers, experience_db=experience_db,
+                              graph=graph, retrieval=retrieval).to_dict()
+    model = load_repository_model(root)
     query = terms(requirement)
     candidates = {}
     for row in retrieval["candidates"]:
@@ -148,7 +155,7 @@ def build_task_dag(requirement: str, repo: str | Path, *, max_tasks: int = 8) ->
             "patches": [],
             "fail_before_cmd": [],
             "pass_after_cmd": [],
-            "source_dirs": [str(Path(relative).parent).replace(".", "", 1) or "."],
+            "source_dirs": [Path(relative).parent.as_posix()],
         })
         task_by_file[relative] = task_id
     for index, relative in enumerate(planned_new_paths):
@@ -169,7 +176,7 @@ def build_task_dag(requirement: str, repo: str | Path, *, max_tasks: int = 8) ->
             "patches": [],
             "fail_before_cmd": [],
             "pass_after_cmd": [],
-            "source_dirs": [str(Path(relative).parent)],
+            "source_dirs": [Path(relative).parent.as_posix()],
         })
         task_by_file[relative] = task_id
     selected = set(ranked)
@@ -182,7 +189,6 @@ def build_task_dag(requirement: str, repo: str | Path, *, max_tasks: int = 8) ->
         if relative in ranked and Path(relative).stem in mentioned_stems:
             imports.update(new_path for new_path in planned_new_paths
                            if new_path != relative and Path(new_path).parent == Path(relative).parent)
-        task_by_file[relative]
         repair = next(task for task in repair_tasks if task["task_id"] == task_id)
         repair["depends_on"] = sorted(task_by_file[dependency] for dependency in imports
                                       if dependency in selected and task_by_file[dependency] != task_id)
@@ -211,14 +217,33 @@ def build_task_dag(requirement: str, repo: str | Path, *, max_tasks: int = 8) ->
         "command": validation_cmd,
         "timeout_sec": 180,
     }
+    for task in repair_tasks:
+        contract = task["contract"]
+        targets = contract["target_files"]
+        contract["acceptance_criteria"] = spec["acceptance_criteria"]
+        contract["business_parameters"] = spec["business_parameters"]
+        prediction = model.predict({"status": "COMPILED"}, {"op": "repair_attempt", "target_files": targets,
+                                   "contract": contract}, context=contract["ast_context"]) if model else None
+        task["complexity"] = route_complexity(graph, targets,
+                                              risk_probability=prediction["risk_probability"] if prediction else None)
     tasks = repair_tasks + [validation]
     layers = _topological_layers(tasks)
+    by_id = {task["task_id"]: task for task in repair_tasks}
+    baseline = _git(root, "rev-parse", "HEAD")
+    interface_locks = {}
+    for index, layer in enumerate(layers):
+        target_groups = [by_id[task_id]["contract"]["target_files"] for task_id in layer if task_id in by_id]
+        if len(target_groups) > 1:
+            targets = [target for group in target_groups for target in group]
+            interface_locks[str(index)] = InterfaceContractLock.capture(graph, baseline, targets).to_dict()
     return {
         "schema_version": "aegis.task_dag.v1",
         "dag_id": "dag-" + hashlib.sha256((requirement + str(root)).encode()).hexdigest()[:12],
         "repo_root": str(root),
-        "base_commit": _git(root, "rev-parse", "HEAD"),
+        "base_commit": baseline,
         "requirement": requirement,
+        "spec": spec,
+        "interface_locks": interface_locks,
         "tasks": tasks,
         "topological_layers": layers,
         "dependency_edges": [{"from": parent, "to": task["task_id"]}
@@ -228,12 +253,14 @@ def build_task_dag(requirement: str, repo: str | Path, *, max_tasks: int = 8) ->
 
 
 def execute_task_dag(plan_path: str | Path, *, db: str | Path | None = None,
-                     workers: int = 4, repo: str | Path | None = None) -> tuple[dict, int]:
+                     workers: int = 4, repo: str | Path | None = None, models: str | Path | None = None) -> tuple[dict, int]:
     """Run each DAG layer through ordinary Aegis contracts and a staged worktree."""
     plan_path = Path(plan_path).resolve(strict=True)
     plan = json.loads(plan_path.read_text(encoding="utf-8"))
     if plan.get("schema_version") != "aegis.task_dag.v1":
         raise ValueError("unsupported TaskDAG schema")
+    if plan.get("spec", {}).get("questions"):
+        raise ValueError("resolve the outstanding business parameters with aegis plan --answers")
     root = Path(repo or plan.get("repo_root", "")).resolve(strict=True)
     if Path(plan["repo_root"]).resolve() != root:
         raise ValueError("TaskDAG repository does not match --repo")
@@ -243,15 +270,24 @@ def execute_task_dag(plan_path: str | Path, *, db: str | Path | None = None,
         raise ValueError("DAG execution requires a clean repository")
     layers = _topological_layers(plan["tasks"])
     task_map = {task["task_id"]: task for task in plan["tasks"]}
+    from .mediator import canonical_path
+    for layer in layers:
+        targets = Counter(os.path.normcase(canonical_path(target))
+                          for task_id in layer if task_map[task_id]["kind"] == "repair"
+                          for target in set(task_map[task_id]["contract"]["target_files"]))
+        if any(count > 1 for count in targets.values()):
+            raise ValueError("parallel repair targets overlap; add a dependency before execution")
     ledger_path = Path(db).resolve() if db else Path(_git(root, "rev-parse", "--path-format=absolute", "--git-common-dir")) / "aegis/ledger.sqlite"
     ledger_path.parent.mkdir(parents=True, exist_ok=True)
+    models = Path(models).resolve(strict=True) if models else None
+    router = Router(load_models(models)) if models else None
     stage_id = "aegis/dag-" + uuid.uuid4().hex[:10]
     stage_dir = root / ".worktrees" / ("dag-" + uuid.uuid4().hex[:10])
     if stage_dir.parent.is_symlink():
         raise ValueError("DAG worktree parent must not be a symlink")
     stage_dir.parent.mkdir(parents=True, exist_ok=True)
     _git(root, "worktree", "add", "-b", stage_id, str(stage_dir), plan["base_commit"])
-    statuses, results = {}, []
+    statuses, results, executed_locks, temporary_manifests = {}, [], {}, set()
     try:
         for layer_index, layer in enumerate(layers):
             ready = [task_id for task_id in layer
@@ -264,11 +300,19 @@ def execute_task_dag(plan_path: str | Path, *, db: str | Path | None = None,
                                 "failed_dependencies": [parent for parent in task_map[task_id]["depends_on"]
                                                         if statuses.get(parent) != "passed"]})
             repair_tasks = [task_map[task_id] for task_id in ready if task_map[task_id]["kind"] == "repair"]
+            interface_lock = None
+            if len(repair_tasks) > 1:
+                # Rebuild from the staged Git baseline so edited plans and earlier layers cannot stale the lock.
+                stage_head = _git(stage_dir, "rev-parse", "HEAD")
+                targets = [target for task in repair_tasks for target in task["contract"]["target_files"]]
+                interface_lock = InterfaceContractLock.capture(ImportGraph(stage_dir), stage_head, targets)
+                executed_locks[str(layer_index)] = interface_lock.to_dict()
             manifests = []
             manifest_tasks = {}
             for task in repair_tasks:
                 patches = task.get("patches", [])
-                if not patches:
+                use_model = not patches and router is not None
+                if not patches and not use_model:
                     statuses[task["task_id"]] = "failed"
                     results.append({"task_id": task["task_id"], "status": "failed",
                                     "reason": "no_patch_artifact"})
@@ -281,17 +325,18 @@ def execute_task_dag(plan_path: str | Path, *, db: str | Path | None = None,
                                     "reason": "frozen_probe_required"})
                     continue
                 from .cli import _wish
-                from .mediator import is_business_source
                 ticket_id = "dag-" + _slug(task["task_id"]) + "-" + uuid.uuid4().hex[:8]
                 manifest = plan_path.parent / (ticket_id + ".contract.json")
+                temporary_manifests.add(manifest)
                 args = argparse.Namespace(
                     repo=str(stage_dir), text=task["contract"]["intent"], auto_probe=False,
-                    allow_model=False, models=None, target=targets, proposal=None, constraints=None,
+                    allow_model=use_model, models=models if use_model else None, target=targets,
+                    proposal=None, constraints=None, planned_spec=plan.get("spec"),
                     selected_module=None, db=str(ledger_path), ticket_id=ticket_id,
                     fail_before=json.dumps(probe), pass_after=json.dumps(task.get("pass_after_cmd") or probe),
                     source_dir=task.get("source_dirs") or ["."], patch=patches,
-                    max_attempts=task.get("max_attempts", len(patches)),
-                    timeout=float(task.get("timeout_sec", 180)), out=str(manifest))
+                    max_attempts=task.get("max_attempts", 3 if use_model else len(patches)),
+                    timeout=float(task.get("timeout_sec", 180)), out=str(manifest), interface_lock=interface_lock)
                 document, code = _wish(args)
                 if code or document["compilation"]["status"] != "COMPILED":
                     statuses[task["task_id"]] = "failed"
@@ -302,7 +347,7 @@ def execute_task_dag(plan_path: str | Path, *, db: str | Path | None = None,
                 manifest_tasks[str(manifest)] = task
             if manifests:
                 from .queue_worker import run_contracts
-                executions = run_contracts(manifests, db=ledger_path, workers=min(workers, max(1, len(manifests))))
+                executions = run_contracts(manifests, db=ledger_path, workers=min(workers, len(manifests)), router=router)
                 for manifest, (result, code) in zip(manifests, executions):
                     task = manifest_tasks[str(manifest)]
                     task_id = task["task_id"]
@@ -311,10 +356,19 @@ def execute_task_dag(plan_path: str | Path, *, db: str | Path | None = None,
                                            if attempt.get("passed") and attempt.get("patch_sha256")]
                         winning_hash = passed_attempts[-1]["patch_sha256"] if passed_attempts else None
                         matching = []
-                        for patch_path in task["patches"]:
+                        patch_artifacts = task.get("patches", [])
+                        for patch_path in patch_artifacts:
                             patch_text = Path(patch_path).read_text(encoding="utf-8")
-                            if hashlib.sha256(patch_text.encode("utf-8")).hexdigest() == winning_hash:
-                                matching.append(Path(patch_path).read_bytes())
+                            patch_bytes = patch_text.encode("utf-8")
+                            if hashlib.sha256(patch_bytes).hexdigest() == winning_hash:
+                                matching.append(patch_bytes)
+                        if not patch_artifacts and winning_hash:
+                            from .ledger import Ledger
+                            candidate = Ledger(ledger_path).approved_patch(result["ticket_id"], winning_hash)
+                            if isinstance(candidate, str):
+                                patch_bytes = candidate.encode("utf-8")
+                                if hashlib.sha256(patch_bytes).hexdigest() == winning_hash:
+                                    matching.append(patch_bytes)
                         if len(matching) != 1:
                             statuses[task_id] = "failed"
                             results.append({"task_id": task_id, "status": "failed",
@@ -359,11 +413,17 @@ def execute_task_dag(plan_path: str | Path, *, db: str | Path | None = None,
                     results.append({"task_id": task_id, "status": "failed", "reason": "unsupported_task_kind"})
         passed = all(statuses.get(task["task_id"]) == "passed" for task in plan["tasks"])
         return {"dag_id": plan["dag_id"], "status": "succeeded" if passed else "failed",
-                "tasks": results, "task_statuses": statuses,
+                "tasks": results, "task_statuses": statuses, "interface_locks": executed_locks,
                 "staged_commit": _git(stage_dir, "rev-parse", "HEAD")}, 0 if passed else 1
     finally:
         try:
-            _git(root, "worktree", "remove", "--force", str(stage_dir))
+            for manifest in temporary_manifests:
+                manifest.unlink(missing_ok=True)
         finally:
-            try: _git(root, "branch", "-D", stage_id)
-            except subprocess.CalledProcessError: pass
+            try:
+                _git(root, "worktree", "remove", "--force", str(stage_dir))
+            finally:
+                try:
+                    _git(root, "branch", "-D", stage_id)
+                except subprocess.CalledProcessError:
+                    pass
