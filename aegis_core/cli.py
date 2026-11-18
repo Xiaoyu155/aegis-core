@@ -387,7 +387,7 @@ def _execute(args):
                            "frozen_probes": {key: document[key] for key in ("fail_before_cmd", "pass_after_cmd")},
                            "frozen_tests": {name: (root / name).read_text(encoding="utf-8") for name in _skeleton(root)
                                             if name.startswith("tests/") and name.endswith(".py") and (root / name).stat().st_size < 32768}}
-                route_options = {"budget": budget} if budgeted or isinstance(router, Router) else {}
+                route_options = {"budget": budget} if budgeted else {}
                 admitted = router.call(tier, [{"role": "system", "content": 'Return only JSON {"patch":"unified diff"}. Never edit tests or configuration.'},
                                              {"role": "user", "content": json.dumps(context, ensure_ascii=False)}], deadline=deadline, **route_options)
                 if admitted["status"] != "admitted":
