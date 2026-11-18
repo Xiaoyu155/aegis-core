@@ -1,4 +1,4 @@
-# Aegis Core Architecture Report — PR #8
+# Aegis Core Architecture Report — PR #9
 
 Updated 2026-11-18. This report summarizes implemented gates and measured runs; it does not claim production deployment or unrestricted model autonomy.
 
@@ -11,6 +11,7 @@ Updated 2026-11-18. This report summarizes implemented gates and measured runs; 
 | PR #6 | CPU-trained causal state, reward, and risk heads; predictions and observed outcomes are recorded in the ledger. |
 | PR #7 | Reward calibration, ticket/template-group stratified splits, `plan`/`run --dag`, `learn`, mixed-language attach profiles, and JavaScript/TypeScript symbol extraction. |
 | PR #8 | Explicit new-source DAG planning, process-group timeout kill and reaping, cascade skip codes, append-only versioned `ExperienceBank`, and validated private-repository worktree runs. |
+| PR #9 | Repeated external cat-cafe work orders, bounded projection reuse, save integrity recovery, v3 experience replay, and mediator retrieval from fresh traces. |
 
 ## Runtime path
 
@@ -29,6 +30,16 @@ Timeouts now start a new process group/session. A timeout kills the full group, 
 | Online replay | 12 high-surprise traces; replay loss 2.053460 → 2.041790. Anchor validation loss 0.610334 → 0.613454, within the 0.02 guard. Model version `bde814c83bd926cf67540dcf64774da0f24bed5a15f15abff52f440c47114692`; experience bank version 2 contains 12 distilled records. |
 | PR #8 tests and CI | 275 local tests passed (234 existing plus 41 PR #8 cases). See `STATUS.json` for the final eight Linux/Windows × Python 3.11/3.12 Actions checks. |
 
+## PR #9 — external cat-cafe iteration and ExperienceBank v3
+
+The external `main` ref remained at `22000d36ade5ee0166c96237834fd61179180568` with a clean original worktree. The gated outputs were preserved on the local branch `feat/pr9-catcafe-pr9` (`f52e469013bd710cd7041046a2d8a2a138a9f767`) in a separate clean worktree. Work order A passed 3/3 DAG tasks; work order B passed 4/4, including both headless probes and the repository's `npm test`. The final branch contains both tickets in order.
+
+A adds a transaction-style interaction state module for feed, pet, and play. It clamps affection and needs, applies independent cooldowns, and wires those events into the existing game loop and web bundle. B adds a bounded TTL/LRU cache for recurring 2.5D projection pairs and a versioned save envelope with structural/range validation, checksum checks, legacy migration, and safe default recovery. The checksum detects accidental or casual edits; it is not cryptographic authentication against a client that can recompute it. The first B attempt exposed an off-by-one assumption in the authored TTL probe; the diagnosis showed the cache behavior was correct, and the probe was corrected to advance the required third frame before rerunning the full DAG.
+
+Both external DAGs ran with the shipped causal model loaded via `AEGIS_WORLD_MODEL_DIR`. Across five new repair traces, the model produced composite errors from 1.3750 to 3.8549; the actual code gates passed, so these are recorded calibration surprises rather than model successes. `learn --min-surprise 0.25` selected 17 traces, including five new external traces. Replay loss moved 2.711768 → 2.697695; anchor validation loss moved 0.608742 → 0.611992 (increase 0.003251 against a 0.02 tolerance). The model version advanced from `541eb833…` to `5c64ee29…`. ExperienceBank now has 17 deduplicated records at version 3, hash `4c2491992e1e70b4e7356ffdb56d0b19bf1fb28b0b8e15a980b774762d3da383`. Mediator retrieval returned five matching v3 records (similarity 0.333–0.429) and did not fill safety constraints automatically.
+
+The full Python suite passed 294/294. Nineteen PR #9 cases cover versioned memory search, mediator hits, report/anchor synchronization, invalid DAG shapes, and two sequential real worktree-gated work orders. The external repository's original `main` worktree remains clean. Eight GitHub Actions checks are pending for the PR branch at report time; `STATUS.json` is updated with the final run links after they finish.
+
 ## Model and data boundaries
 
 The portable inference path uses the shipped NumPy-trained dense network and standard-library forward pass. Online learning requires NumPy. The local container did not train or validate on a GPU. The model can be explicitly selected for an attached repository with `AEGIS_WORLD_MODEL_DIR`; otherwise Aegis loads weights from that repository's own `artifacts/causal_world_model` directory. Deterministic policy gates remain authoritative over learned risk estimates.
@@ -37,7 +48,7 @@ The cross-repository and chaos runs use real Git repositories, real patches, and
 
 ## Windows 11 + RTX 5060 handoff
 
-The existing `training/` tree and `scripts/bootstrap_local.ps1` are preserved. On the Windows host, fetch/checkout the merged PR #8 branch, then run PowerShell from the repository root:
+The existing `training/` tree and `scripts/bootstrap_local.ps1` are preserved. On the Windows host, fetch/checkout the merged PR #9 branch, then run PowerShell from the repository root:
 
 ```powershell
 & .\scripts\bootstrap_local.ps1

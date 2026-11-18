@@ -1,9 +1,9 @@
 {
   "schema_version": "aegis.online_replay_report.v1",
   "status": "updated",
-  "threshold": 0.3,
-  "selected_traces": 12,
-  "replay_examples": 12,
+  "threshold": 0.25,
+  "selected_traces": 17,
+  "replay_examples": 17,
   "anchor_examples": 51,
   "anchor_policy": "up to 24 ticket/template-disjoint training anchors per state; two replay copies per surprise",
   "regularization": {
@@ -13,6 +13,11 @@
     "selected_epoch": 1
   },
   "trace_ids": [
+    188,
+    181,
+    179,
+    167,
+    160,
     87,
     85,
     83,
@@ -27,43 +32,66 @@
     6
   ],
   "ticket_ids": [
+    "dag-create-cat-interaction-state-1-79337438",
     "dag-create-interaction-1-32aadc9c",
     "dag-create-interaction-1-5518089b",
+    "dag-create-render-cache-1-9f10b83e",
+    "dag-create-save-state-2-2900bc60",
     "dag-node1-self-heal-62cc8302",
     "dag-node1-self-heal-879fb8bc",
     "dag-node4-timeout-4966b369",
     "dag-node4-timeout-7967c457",
+    "dag-repair-core-1-15742004",
     "dag-repair-core-1-594f19a8",
+    "dag-repair-core-1-5d4dec1d",
     "dag-repair-core-1-7fcc58ad",
     "wish-4e076219448b",
     "wish-8e93af24d6b0"
   ],
   "surprise_by_outcome": {
-    "gate_passed": 6,
+    "gate_passed": 11,
     "assertion_error": 6,
     "cheat_detected": 0,
     "replay_blocked": 0,
     "missing_constraint": 0
   },
-  "replay_loss_before": 2.0534598553644865,
-  "replay_loss_after": 2.0417900684809496,
-  "anchor_validation_loss_before": 0.6103337491508805,
-  "anchor_validation_loss_after": 0.6134535734472578,
+  "replay_loss_before": 2.711767990253364,
+  "replay_loss_after": 2.697694747009605,
+  "anchor_validation_loss_before": 0.6087415779678702,
+  "anchor_validation_loss_after": 0.6119917955530612,
   "history": [
     {
       "epoch": 1,
-      "replay_loss": 2.0417900684809496,
-      "anchor_validation_loss": 0.6134535734472578,
+      "replay_loss": 2.697694747009605,
+      "anchor_validation_loss": 0.6119917955530612,
       "accepted": true
+    },
+    {
+      "epoch": 2,
+      "replay_loss": 2.69868357602798,
+      "anchor_validation_loss": 0.6115383313843078,
+      "accepted": false
+    },
+    {
+      "epoch": 3,
+      "replay_loss": 2.6980107401625375,
+      "anchor_validation_loss": 0.6107881696144366,
+      "accepted": false
+    },
+    {
+      "epoch": 4,
+      "replay_loss": 2.6982168462506264,
+      "anchor_validation_loss": 0.611113773735585,
+      "accepted": false
     }
   ],
-  "previous_world_model_version": "970d13792bca474bd92633bfb6e8334b37d3105627769bf8cb8947b872eeaf0a",
-  "world_model_version": "bde814c83bd926cf67540dcf64774da0f24bed5a15f15abff52f440c47114692",
-  "weights_sha256": "0a8069a7fcb9e1f95a34d1e858ac0ba31e30d742d3935f945425cdea02a0f778",
+  "previous_world_model_version": "541eb8334456594c0307cb71e33cd2a62c63d225e6e60f8573fbfee7550b442f",
+  "world_model_version": "5c64ee2972cf103513d5a29ba6bb0bf61f0a6c621451618c292eb91f158ac8aa",
+  "weights_sha256": "fb34a3212bde3f193598a7db876302dadf82cac4ec1b25fcedb6cbfa2a52e88c",
   "experience_bank": {
-    "added": 6,
-    "experience_count": 12,
-    "version": 2,
-    "version_sha256": "d6d12cabeffba3e17ea2ae5efafd3cf28ec0cf2ae8b50fd351dd047684effdc3"
+    "added": 5,
+    "experience_count": 17,
+    "version": 3,
+    "version_sha256": "4c2491992e1e70b4e7356ffdb56d0b19bf1fb28b0b8e15a980b774762d3da383"
   }
 }

@@ -1,7 +1,7 @@
 {
-  "phase": 8,
-  "tests": 275,
-  "preserved_previous_tests": 234,
+  "phase": 9,
+  "tests": 294,
+  "preserved_previous_tests": 275,
   "campaign": {
     "cases": 8,
     "all_passed": true,
@@ -310,6 +310,163 @@
           "windows-latest / 3.12": "success"
         }
       }
+    }
+  },
+  "pr9": {
+    "branch": "feat/world-model-v10",
+    "base_branch": "feat/world-model-v9",
+    "base_commit": "55bc6fb1d3c7f6e4e02dd8aa06e8a4a62386c216",
+    "features": [
+      "Cat-cafe feed, pet, and play state transitions now apply bounded affection/need effects with per-cat action cooldowns.",
+      "Frame projection points are reused through a bounded TTL/LRU cache; versioned save envelopes validate shape/ranges/checksum and recover damaged storage.",
+      "External multi-ticket results are recorded in the shared WAL ledger; the main branch remains untouched."
+    ],
+    "external_repository": {
+      "profile_path": ".aegis/repo_profile.json",
+      "initial_main_head": "22000d36ade5ee0166c96237834fd61179180568",
+      "main_worktree_clean": true,
+      "main_ref_unchanged": true,
+      "final_feature_branch": "feat/pr9-catcafe-pr9",
+      "final_feature_head": "f52e469013bd710cd7041046a2d8a2a138a9f767",
+      "final_feature_worktree": "/workspace/external_target_repo_pr9_model",
+      "final_feature_worktree_clean": true,
+      "final_file_count": 1330,
+      "business_tickets": [
+        {
+          "name": "A: cat interaction state loop",
+          "dag_id": "pr9-ticket-a-cat-interaction",
+          "status": "succeeded",
+          "tasks_passed": 3,
+          "tasks_total": 3,
+          "raw_output": "/tmp/pr9_ticket_a_model_run_raw.json",
+          "red_probe_exit": 1,
+          "all_after_probes_exit": 0,
+          "rewards": [
+            1.2178847383400007,
+            1.3098503723388886
+          ],
+          "surprise_trace_ids": [
+            160,
+            167
+          ]
+        },
+        {
+          "name": "B: render cache and save integrity",
+          "dag_id": "pr9-ticket-b-model-backed",
+          "status": "succeeded",
+          "tasks_passed": 4,
+          "tasks_total": 4,
+          "raw_output": "/tmp/pr9_ticket_b_model_run_raw.json",
+          "red_probe_exit": 1,
+          "all_after_probes_exit": 0,
+          "rewards": [
+            1.2619765633211095,
+            1.1852366608744442,
+            1.2558343177422222
+          ],
+          "surprise_trace_ids": [
+            179,
+            181,
+            188
+          ]
+        }
+      ],
+      "npm_test": "passed",
+      "headless_node_probes": "passed",
+      "final_profile": {
+        "file_count": 1330,
+        "languages": {
+          "python": 283,
+          "javascript": 241,
+          "typescript": 0
+        },
+        "test_frameworks": [
+          "node --test",
+          "npm test",
+          "pytest"
+        ],
+        "path": "/workspace/external_target_repo_pr9_model/.aegis/repo_profile.json"
+      },
+      "ledger_stats": {
+        "tickets": 28,
+        "statuses": {
+          "failed": 7,
+          "succeeded": 21
+        },
+        "traces": 189,
+        "terminal_tickets": 28,
+        "success_rate": 0.75,
+        "repair_attempts": 30,
+        "cheat_interceptions": 2,
+        "replay_interceptions": 0,
+        "mean_reward": 0.6706957231865575
+      },
+      "stats_output": "/tmp/pr9_external_stats_final.json"
+    },
+    "online_learning": {
+      "status": "updated",
+      "command": "python -m aegis_core learn --min-surprise 0.25 --db <external shared WAL ledger>",
+      "min_surprise": 0.25,
+      "selected_traces": 17,
+      "new_external_high_surprise_records": 5,
+      "experience_bank": {
+        "version": 3,
+        "experience_count": 17,
+        "added": 5,
+        "version_sha256": "4c2491992e1e70b4e7356ffdb56d0b19bf1fb28b0b8e15a980b774762d3da383"
+      },
+      "trace_ids_added": [
+        160,
+        167,
+        179,
+        181,
+        188
+      ],
+      "replay_loss_before": 2.711767990253364,
+      "replay_loss_after": 2.697694747009605,
+      "anchor_validation_loss_before": 0.6087415779678702,
+      "anchor_validation_loss_after": 0.6119917955530612,
+      "anchor_validation_loss_delta": 0.00325021758519099,
+      "anchor_validation_tolerance": 0.02,
+      "previous_world_model_version": "541eb8334456594c0307cb71e33cd2a62c63d225e6e60f8573fbfee7550b442f",
+      "world_model_version": "5c64ee2972cf103513d5a29ba6bb0bf61f0a6c621451618c292eb91f158ac8aa",
+      "weights_sha256": "fb34a3212bde3f193598a7db876302dadf82cac4ec1b25fcedb6cbfa2a52e88c",
+      "raw_output": "/tmp/pr9_learn_final_raw.json"
+    },
+    "mediator_retrieval": {
+      "status": "hit",
+      "v3_matches": 5,
+      "experience_ids": [
+        31,
+        35,
+        33,
+        32,
+        34
+      ],
+      "similarity_scores": [
+        0.428571,
+        0.391304,
+        0.347826,
+        0.347826,
+        0.333333
+      ],
+      "safety_constraints_auto_filled": false
+    },
+    "traces": {
+      "exported": 189,
+      "path": "/tmp/pr9_external_traces.jsonl"
+    },
+    "tests": {
+      "total": 294,
+      "passed": 294,
+      "pr9_new_cases": 19,
+      "previous_cases_preserved": 275,
+      "full_suite_command": "pytest -q"
+    },
+    "ci": {
+      "state": "pending",
+      "checks_expected": 8,
+      "matrix": "Linux/Windows x Python 3.11/3.12; push + pull_request"
     }
   }
 }
