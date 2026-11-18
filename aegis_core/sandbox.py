@@ -238,7 +238,8 @@ class Sandbox:
     def repair(self, ticket_id: str, patch: str, *, fail_before_cmd,
                pass_after_cmd, source_dirs: tuple[str, ...], timeout: float = 60, probe_patch: str = "",
                interface_lock=None, require_review: bool = False, tool_source_globs=None,
-               probe_kind="unit", probe_script_sha256=None) -> dict:
+               probe_kind="unit", probe_script_sha256=None, mutation_rule=None,
+               require_assertion_red=False, budget=None) -> dict:
         import time
         if not 0 < timeout < float("inf"):
             raise ValueError("positive finite repair timeout required")
@@ -256,17 +257,25 @@ class Sandbox:
         if interface_lock is not None and interface_lock.baseline != base:
             raise ValueError("interface lock baseline disagrees with the worktree")
         if probe_patch:
-            validate_probe_patch(probe_patch)
+            probe_file = validate_probe_patch(probe_patch)
             self.apply_patch(ticket_id, probe_patch)
-            self._git("add", "--", "tests/test_aegis_probe.py", cwd=path)
+            self._git("add", "--", probe_file, cwd=path)
             self._git("-c", "user.name=Aegis", "-c", "user.email=aegis@localhost", "commit", "-m", "Freeze automatic probe", cwd=path)
             base = self._git("rev-parse", "HEAD", cwd=path).strip()
             self._bases[ticket_id] = base
+        if mutation_rule:
+            from .probe_mutator import validate_target
+            validate_target(path / mutation_rule["path"], mutation_rule)
         start = time.monotonic()
         probe = {"probe_kind": probe_kind, "probe_script_sha256": probe_script_sha256}
-        before = run_exam_gate(path, fail_before_cmd, timeout=timeout, **probe)
+        from functools import partial
+        exam = run_exam_gate if budget is None else partial(budget.run_gate, run_exam_gate)
+        before = exam(path, fail_before_cmd, timeout=timeout, **probe)
         baseline_failed = (before["exit_code"] == 1 and not before["changed"]
                            and before["failure_code"] not in {"ENVIRONMENT_UNAVAILABLE", PROBE_INTEGRITY_VIOLATION})
+        if require_assertion_red:
+            from .probe_synth import is_true_red
+            baseline_failed = is_true_red(before)
         result = {"baseline": before, "baseline_failed": baseline_failed,
                   "final": None, "after_passed": False, "passed": False,
                   "cheat_detected": False, "changed_files": [], "diff_lines": 0,
@@ -274,6 +283,8 @@ class Sandbox:
                   "before_hash": before["before_hash"], "after_hash": before["after_hash"],
                   "reward": -1.0}
         if baseline_failed:
+            if budget is not None:
+                budget.check()
             self.apply_patch(ticket_id, patch)
             scope = detect_source_cheat(path, source_dirs, base=base, tool_source_globs=globs)
             result.update(scope)
@@ -285,7 +296,7 @@ class Sandbox:
             if not scope["cheat_detected"] and "gate_failure" not in result:
                 remaining = timeout - (time.monotonic() - start)
                 if remaining > 0:
-                    after = run_exam_gate(path, pass_after_cmd, timeout=remaining, **probe,
+                    after = exam(path, pass_after_cmd, timeout=remaining, **probe,
                                           probe_runtime_sha256=before["probe_runtime_sha256"])
                     result["final"] = after
                     result["after_passed"] = after["passed"]
@@ -293,7 +304,15 @@ class Sandbox:
                     result["timeout_killed"] = bool(after.get("timeout_killed"))
                     result["termination_reason"] = after.get("termination_reason")
                     result["reward"] = 1.0 if after["passed"] else (-1.0 if after.get("timeout_killed") else -0.5)
-                    if after["passed"] and require_review:
+                    if after["passed"] and mutation_rule:
+                        from .probe_mutator import MUTATION_PROBE_FAILED, run_mutations
+                        remaining = timeout - (time.monotonic() - start)
+                        mutation = run_mutations(path, mutation_rule, timeout=remaining, exam=exam) if remaining > 0 else None
+                        result["mutation"] = mutation
+                        if mutation is None or not mutation["passed"]:
+                            result.update(passed=False, gate_failure=MUTATION_PROBE_FAILED, reward=-1.0,
+                                          timeout_killed=mutation is None or mutation["timeout_killed"])
+                    if result["passed"] and require_review:
                         from .reviewer import audit_candidate
                         review = audit_candidate(path, base, scope["changed_files"])
                         result["review"] = review
@@ -383,10 +402,15 @@ def validate_probe_patch(patch):
         raise ValueError('missing probe patch')
     headers = [line[4:] for line in patch.splitlines() if line.startswith('+++ ')]
     old = [line[4:] for line in patch.splitlines() if line.startswith('--- ')]
-    if headers != ['b/tests/test_aegis_probe.py'] or old != ['/dev/null']:
+    if headers not in (['b/tests/test_aegis_probe.py'], ['b/tests/test_aegis_probe.mjs']) or old != ['/dev/null']:
         raise ValueError('probe must only create tests/test_aegis_probe.py')
     code = '\n'.join(line[1:] for line in patch.splitlines() if line.startswith('+') and not line.startswith('+++'))
+    if headers[0].endswith(".mjs"):
+        if "assert.strictEqual(" not in code:
+            raise ValueError("node probe needs a strict equality assertion")
+        return headers[0][2:]
     tree = ast.parse(code)
     assertions = [node for node in ast.walk(tree) if isinstance(node, ast.Assert)]
     if not assertions or any(isinstance(node.test, ast.Constant) for node in assertions):
         raise ValueError('probe needs nonconstant assertions')
+    return headers[0][2:]

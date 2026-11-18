@@ -154,10 +154,12 @@ class Router:
                     "status": "blocked_needs_human" if next_tier == "blocked_needs_human" else ("escalate" if repeated else "continue"),
                     "next_tier": next_tier, "patch_sha256": self.patch_hash(patch)}
 
-    def call(self, tier: str, messages: list[dict], *, deadline: float, transport=None, require_json=True, max_retries=2) -> dict:
+    def call(self, tier: str, messages: list[dict], *, deadline: float, transport=None, require_json=True, max_retries=2, budget=None) -> dict:
         """A transport is injected in tests; no network is used by the simulator."""
         attempted = set()
         while len(attempted) < len(self.nodes):
+            if budget is not None:
+                budget.check()
             admitted = self.acquire(tier, deadline=deadline)
             if admitted["status"] != "admitted":
                 return admitted
@@ -174,7 +176,12 @@ class Router:
                 timeout = min(admitted["timeout_sec"], remaining)
                 for retry in range(max_retries + 1):
                     try:
-                        result = (transport or request_provider)(node, messages, timeout=min(timeout, deadline-time.monotonic()-self.reserve), deadline=deadline)
+                        request = transport or request_provider
+                        remaining = min(timeout, deadline - time.monotonic() - self.reserve)
+                        if budget is None:
+                            result = request(node, messages, timeout=remaining, deadline=deadline)
+                        else:
+                            result = budget.model_request(request, node, messages, timeout=remaining, deadline=deadline)
                         if require_json:
                             result = json.dumps(repair_json(result), ensure_ascii=False, separators=(',',':'))
                         break
@@ -192,6 +199,9 @@ class Router:
                             self.events.append({'slot': slot, 'retry': retry, 'error': type(error).__name__, 'penalty': -.1})
                         if not transient or retry >= max_retries or delay >= deadline-time.monotonic()-self.reserve:
                             raise
+                        if budget is not None:
+                            budget.record("provider_retry")
+                            budget.check()
                         self.sleep(delay)
                 if time.monotonic() > deadline - self.reserve:
                     return self._blocked("verification_reserve")
@@ -261,6 +271,8 @@ def request_provider(node: dict, messages: list[dict], *, timeout: float, deadli
         if key:
             headers["Authorization"] = "Bearer " + key
         body = {"model": model, "messages": messages, "temperature": 0, "stream": False}
+        if node.get("budgeted"):
+            body["max_tokens"] = 2048
         suffix = "/chat/completions"
     request = urllib.request.Request(base.rstrip("/") + suffix, data=json.dumps(body, allow_nan=False).encode(), headers=headers)
     with urllib.request.urlopen(request, timeout=timeout) as response:
@@ -268,6 +280,13 @@ def request_provider(node: dict, messages: list[dict], *, timeout: float, deadli
         if len(data) > 2_000_000:
             raise ValueError('model response too large')
         result = repair_json(data.decode('utf-8'))
+    if node.get("_budget_collect_usage"):
+        usage = result.get("usage")
+        if isinstance(usage, dict):
+            fields = (("input_tokens", "output_tokens") if node["provider"] == "anthropic"
+                      else ("prompt_tokens", "completion_tokens"))
+            if all(type(usage.get(field)) is int and usage[field] >= 0 for field in fields):
+                node["_budget_token_usage"] = sum(usage[field] for field in fields)
     if node["provider"] == "anthropic":
         return "".join(block["text"] for block in result["content"] if block.get("type") == "text")
     return result["choices"][0]["message"]["content"]

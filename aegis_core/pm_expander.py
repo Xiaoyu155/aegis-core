@@ -112,6 +112,10 @@ def expand_requirement(intent, repo, *, answers=None, experience_db=None, graph=
     retrieval = retrieve(repo, intent, graph=graph) if retrieval is None else retrieval
     candidates = retrieval["candidates"]
     context = dict(retrieval["context"])
+    from .probe_synth import acceptance_rule
+    rule = acceptance_rule(intent)
+    if rule is not None:
+        context["acceptance_rule"] = rule
     if (any(question["parameter"] == "max_drawdown" for question in questions)
             and re.search(r"\b(?:existing|current|unchanged|preserve)\b|沿用|现有|保持", intent, re.I)):
         existing = _existing_drawdown(graph, candidates)
@@ -160,6 +164,14 @@ def expand_requirement(intent, repo, *, answers=None, experience_db=None, graph=
             case = f"Check recurrence of the observed failure mode {cause} (experience {record['experience_id']})."
             if case not in cases:
                 cases.append(case)
+    if rule is not None and rule["kind"] == "distinct_events":
+        normal = f"{rule['path']}::{rule['symbol']} counts distinct string events."
+        boundary = "An empty event list returns zero. Replaying an event does not increment the count."
+        fallback = f"Non-list inputs and lists containing any non-string event return {rule['fallback']!r}."
+    elif rule is not None:
+        normal = f"{rule['path']}::{rule['symbol']} returns integers inside the interval unchanged."
+        boundary = f"Inputs outside [{rule['low']}, {rule['high']}] return the closest endpoint."
+        fallback = f"Non-integer inputs return {rule['fallback']!r}."
     return ExpandedSpec(intent, (AcceptanceCriterion("normal", normal), AcceptanceCriterion("boundary", boundary),
                                  AcceptanceCriterion("fallback", fallback)), tuple(cases),
                         tuple(invariants), context, experience, parameters, questions)

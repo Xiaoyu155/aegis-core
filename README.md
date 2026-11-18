@@ -25,6 +25,18 @@ pytest -v
 - 浏览器修复工单在 DAG 中声明 "probe_kind": "browser_visual"，也可用 aegis wish --no-auto-probe --probe-kind browser_visual 冻结契约。至少要锁定一个探针脚本。直接传入的脚本参数会自动锁定；间接入口或额外夹具可用 probe_scripts（CLI 为重复 --probe-script）显式指定。probe_script_sha256 对仓内文本脚本统一使用 LF，其余路径按原始字节计算。门禁在每次执行前后核验，红绿两次探针在同一个 worktree 内还须具有相同的 probe_runtime_sha256 原始字节摘要。验证节点也支持相同声明。
 - 浏览器探针自行运行项目的浏览器脚本，断言布局、像素或帧时；Aegis 记录退出和证据。FailureDiagnosis.failure_code 区分断言失败、模块未实现、浏览器等待超时和环境不可用。HTML 内联 JS 与 CSS 引用可由 L3 原生审查，静态规则只覆盖可识别的源码模式。
 
+## 第十二阶段工厂
+
+`aegis wish` 可以从带有可执行规则的单句验收需求生成并冻结 pytest 或 Node.js 22+ 探针。例如 `src/limits.py::clamp clamps integers to [0, 10] and returns null for invalid inputs.`。事件集合规则可用 `src/events.py::count counts distinct string events and returns -1 for non-string events.`。规格通过 `ExpandedSpec` 记录正常、边界和回退行为。生成的探针必须在独立基线上出现真实断言失败。在候选补丁通过静态探针后，门禁按固定种子生成不同输入，失败记为 `MUTATION_PROBE_FAILED`。自定义验收语义可继续使用显式冻结探针。
+
+`aegis wish` 和 `aegis plan` 接受 `--max-token-budget`、`--max-cost-usd` 与 `--max-wall-clock-sec`。DAG 可在各节点声明同名下划线字段。父预算汇总子工单开销，子预算可单独熔断。账本记录模型请求及重试、探针进程与结果奖励。API 开销按固定混合费率估算，优先使用供应商返回的 token 数。没有返回用量时按 UTF-8 字节保守估计。离线补丁的 API token 和费用为零，仍消耗时钟预算。
+
+`aegis batch --config factory.json --out report.json` 读取 `aegis.factory.v1` 配置。每个 `jobs` 条目需要 `id`、整数 `priority`、`aegis attach` 生成的 `profile` 路径，以及一个 `contract` 或 `dag` 路径。相对路径从配置文件目录解析。大优先级先执行，同优先级按配置顺序。单条失败后继续执行后续工作，最终退出码与汇总报告反映所有工作结果。
+
+```bash
+python scripts/run_factory_v12_drill.py
+```
+
 ## 四个原语
 
 - `ledger.Ledger`：SQLite WAL、NORMAL 同步、15 秒锁等待；每个操作独立连接。

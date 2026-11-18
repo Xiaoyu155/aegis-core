@@ -9,6 +9,7 @@ import sys
 import time
 import uuid
 
+from .budget_guard import BUDGET_EXCEEDED_HALT, LIMIT_KEYS, BudgetExceeded, BudgetGuard, budget_limits
 from .ledger import Ledger
 from .mediator import compile_wish, compile_request, is_business_source, validate_compilation
 from .probes import PROBE_KINDS, freeze_probes, verify_probe_files
@@ -17,6 +18,15 @@ from .reward import compute_step_reward
 from .router import Router, load_models, route_complexity
 from .sandbox import Sandbox, run_git
 from .world_model import load_repository_model, prediction_telemetry
+
+
+def _budget_args(command):
+    for key in LIMIT_KEYS:
+        command.add_argument("--" + key.replace("_", "-"), type=int if key == "max_token_budget" else float)
+
+
+def _selected_budget(args):
+    return budget_limits({key: getattr(args, key) for key in LIMIT_KEYS if getattr(args, key, None) is not None})
 
 
 def _git(root, *args):
@@ -93,13 +103,25 @@ def _wish(args):
     sources = [name for name in skeleton if is_business_source(name, tool_source_globs=globs)]
     if not sources:
         raise ValueError("repository has no existing business source targets")
+    from .probe_synth import acceptance_rule, compile_probe
+    synthesized = None
+    rule = acceptance_rule(args.text)
+    if rule and rule["path"] not in sources:
+        raise ValueError("acceptance target is not a tracked business source")
+    if rule and args.auto_probe and not args.fail_before and not args.pass_after:
+        from .pm_expander import expand_requirement
+        spec = expand_requirement(args.text, root)
+        synthesized = compile_probe(spec, root, _git(root, "rev-parse", "HEAD"), timeout=args.timeout,
+                                    budget=getattr(args, "parent_budget", None))
     enhanced = None
-    if args.auto_probe:
+    if args.auto_probe and not synthesized:
         enhanced = compile_wish(root, args.text, targets=args.target, allow_model=args.allow_model,
                                 models=args.models, tool_source_globs=globs)
     candidates = None
     if enhanced:
         proposal = {key: enhanced[key] for key in ('target_files', 'contract_stub')}
+    elif rule:
+        proposal = {"target_files": [rule["path"]], "contract_stub": "def apply_change() -> None:\n    ..."}
     elif args.proposal:
         proposal = _load(args.proposal)
     else:
@@ -129,6 +151,9 @@ def _wish(args):
     (fail_before, pass_after), probe_hashes = freeze_probes(
         root, (_argv(args.fail_before) or default_command, _argv(args.pass_after) or default_command),
         kind=probe_kind, scripts=getattr(args, "probe_scripts", ()) or ())
+    if synthesized:
+        fail_before = pass_after = synthesized["command"]
+        probe_hashes.update(synthesized["hashes"])
     expected_hashes = getattr(args, "probe_script_sha256", None)
     if expected_hashes is not None and probe_hashes != expected_hashes:
         raise ValueError("PROBE_INTEGRITY_VIOLATION: DAG probe script hashes differ from the plan")
@@ -170,11 +195,19 @@ def _wish(args):
                 "probe_patch": enhanced['probe_patch'] if enhanced else "", "context": enhanced['context'] if enhanced else legacy_context,
                 "allow_model": args.allow_model, "max_attempts": args.max_attempts,
                 "timeout_sec": args.timeout}
+    if rule:
+        document["mutation_rule"] = rule
+    if synthesized:
+        document.update(probe_patch=synthesized["patch"], expanded_spec=spec.to_dict(),
+                        synthesized_probe=True)
     interface_lock = getattr(args, "interface_lock", None)
     if interface_lock is not None:
         document["interface_lock"] = interface_lock.to_dict()
-    if planned_spec is not None:
+    if planned_spec is not None and not synthesized:
         document["expanded_spec"] = planned_spec
+    limits = _selected_budget(args)
+    if limits:
+        document["budget_limits"] = limits
     document["contract_sha256"] = _digest(document)
     if result["status"] == "COMPILED":
         token = ledger.acquire_lease(ticket, "cli-freeze")
@@ -195,7 +228,8 @@ def _wish(args):
 def _validate_manifest(document, root, ledger):
     fields = {"schema_version", "ticket_id", "repo_root", "base_commit", "compilation", "fail_before_cmd", "pass_after_cmd",
               "source_dirs", "patches", "models_path", "allow_model", "max_attempts", "timeout_sec", "contract_sha256", "probe_patch", "context"}
-    optional = {"interface_lock", "expanded_spec", "tool_source_globs", "probe_kind", "probe_script_sha256"}
+    optional = {"interface_lock", "expanded_spec", "tool_source_globs", "probe_kind", "probe_script_sha256",
+                "mutation_rule", "synthesized_probe", "budget_limits"}
     if (set(document) - optional != fields or document["schema_version"] != "aegis.cli.v1"
             or _digest(document) != document["contract_sha256"]):
         raise ValueError("invalid or modified frozen manifest")
@@ -220,7 +254,12 @@ def _validate_manifest(document, root, ledger):
     probe_hashes = document.get("probe_script_sha256", {})
     if probe_kind not in PROBE_KINDS or (probe_kind == "browser_visual" and not probe_hashes):
         raise ValueError("invalid or unfrozen probe_kind")
-    verify_probe_files(root, probe_hashes)
+    if document.get("synthesized_probe"):
+        from .probe_synth import PROBE_NAMES
+        generated = PROBE_NAMES[Path(document["mutation_rule"]["path"]).suffix]
+        verify_probe_files(root, {name: digest for name, digest in probe_hashes.items() if name != generated})
+    else:
+        verify_probe_files(root, probe_hashes)
     if not document["source_dirs"] or any(type(p) is not str for p in document["source_dirs"]):
         raise ValueError("source directories required")
     if type(document["max_attempts"]) is not int or not 1 <= document["max_attempts"] <= 20:
@@ -267,6 +306,10 @@ def _execute(args):
     ledger = _ledger(root, args.db)
     _validate_manifest(document, root, ledger)
     ticket = document["ticket_id"]
+    parent_budget = getattr(args, "parent_budget", None)
+    limits = budget_limits(document.get("budget_limits", {}))
+    budget = BudgetGuard(ledger, ticket, limits, parent=parent_budget)
+    budgeted = bool(limits) or parent_budget is not None
     # Validate lifecycle ID before taking a lease/changing state.
     manager = Sandbox(root)
     manager._paths(ticket)
@@ -289,8 +332,11 @@ def _execute(args):
         path = manager.create(check, base=document['base_commit'])
         try:
             manager.apply_patch(check, document['probe_patch'])
-            before = run_exam_gate(path, [sys.executable if a == '{python}' else a for a in document['fail_before_cmd']],
+            before = budget.run_gate(run_exam_gate, path, [sys.executable if a == '{python}' else a for a in document['fail_before_cmd']],
                                    timeout=min(60, document['timeout_sec']), **probe)
+            from .probe_synth import is_true_red
+            if document.get("synthesized_probe") and not is_true_red(before):
+                raise ProbeNotFailingError(json.dumps(before))
             if before['exit_code'] != 1 or before['changed'] or before['failure_code'] in {
                     'ENVIRONMENT_UNAVAILABLE', 'PROBE_INTEGRITY_VIOLATION'}:
                 raise ProbeNotFailingError(json.dumps(before))
@@ -300,7 +346,7 @@ def _execute(args):
     probe_checked = False
     # Legacy repositories without trained weights keep the existing precheck path.
     # With a model, each proposed action is predicted and durably recorded first.
-    if document.get('probe_patch') and not active_model:
+    if document.get("probe_patch") and not active_model and not budgeted:
         verify_probe_baseline()
         probe_checked = True
     for candidate in document['patches']:
@@ -314,14 +360,20 @@ def _execute(args):
     token = ledger.acquire_lease(ticket, "cli-runner", ttl=document["timeout_sec"] + 60)
     if not token:
         raise PermissionError("ticket is leased")
-    deadline = time.monotonic() + document["timeout_sec"]
+    deadline = min(time.monotonic() + document["timeout_sec"], budget.deadline)
     results = []
     terminal, reason = "failed", "attempts_exhausted"
     try:
         state = ledger.get_state(ticket)
         running = {"status": "running", "contract_sha256": document["contract_sha256"]}
         ledger.transition(ticket, token, "COMPILED", "running", state_s0=state, action_a0={"op": "start_run"}, actual_state_s1=running, reward=0)
+        budget.check()
+        if document.get("probe_patch") and not active_model and not probe_checked:
+            verify_probe_baseline()
+            probe_checked = True
         for index in range(document["max_attempts"]):
+            budget.check()
+            budget.record("attempt" if index == 0 else "retry")
             patch = None
             admitted = None
             breaker = {"repeated_patch": False}
@@ -335,9 +387,12 @@ def _execute(args):
                            "frozen_probes": {key: document[key] for key in ("fail_before_cmd", "pass_after_cmd")},
                            "frozen_tests": {name: (root / name).read_text(encoding="utf-8") for name in _skeleton(root)
                                             if name.startswith("tests/") and name.endswith(".py") and (root / name).stat().st_size < 32768}}
+                route_options = {"budget": budget} if budgeted or isinstance(router, Router) else {}
                 admitted = router.call(tier, [{"role": "system", "content": 'Return only JSON {"patch":"unified diff"}. Never edit tests or configuration.'},
-                                             {"role": "user", "content": json.dumps(context, ensure_ascii=False)}], deadline=deadline)
+                                             {"role": "user", "content": json.dumps(context, ensure_ascii=False)}], deadline=deadline, **route_options)
                 if admitted["status"] != "admitted":
+                    if budget.deadline == deadline and admitted.get("reason") == "verification_reserve":
+                        budget.halt_wall()
                     reason = admitted.get("reason", "blocked_needs_human")
                     break
                 patch = json.loads(admitted["output"])["patch"]
@@ -347,7 +402,10 @@ def _execute(args):
                 if index >= len(document["patches"]):
                     break
                 admitted = router.acquire(tier, deadline=deadline)
+                budget.record("offline_route")
                 if admitted["status"] != "admitted":
+                    if budget.deadline == deadline and admitted["reason"] == "verification_reserve":
+                        budget.halt_wall()
                     reason = admitted["reason"]
                     break
                 slot = admitted["slot_id"]
@@ -419,6 +477,8 @@ def _execute(args):
                 try:
                     remaining = deadline - time.monotonic()
                     if remaining <= router.reserve:
+                        if budget.deadline == deadline:
+                            budget.halt_wall()
                         reason = "verification_reserve"
                     else:
                         try:
@@ -428,7 +488,10 @@ def _execute(args):
                                                          timeout=remaining, probe_patch=document.get('probe_patch', ''),
                                                          interface_lock=interface_lock,
                                                          require_review=complexity["level"] == "L3",
-                                                         tool_source_globs=document.get("tool_source_globs"), **probe))
+                                                         tool_source_globs=document.get("tool_source_globs"),
+                                                         mutation_rule=document.get("mutation_rule"),
+                                                         require_assertion_red=document.get("synthesized_probe", False),
+                                                         budget=budget, **probe))
                         except (ValueError, subprocess.SubprocessError) as error:
                             result["error_type"] = type(error).__name__
                         outside = set(result["changed_files"]) - set(document["compilation"]["target_files"])
@@ -476,6 +539,8 @@ def _execute(args):
                               prediction_error=error,
                               predicted_reward_interval=prediction["predicted_reward_interval"] if prediction else None)
             results.append(result)
+            budget.record("result", reward=reward)
+            budget.check()
             if result["passed"]:
                 terminal, reason = "succeeded", "gate_passed"
                 break
@@ -491,6 +556,13 @@ def _execute(args):
         previous = ledger.get_state(ticket)
         ledger.transition(ticket, token, "running", terminal, state_s0=previous, action_a0={"op": "finish_run"},
                           actual_state_s1={"status": terminal, "reason": reason, "attempts": len(results)}, reward=0)
+    except BudgetExceeded as error:
+        terminal, reason = "failed", BUDGET_EXCEEDED_HALT
+        previous = ledger.get_state(ticket)
+        ledger.transition(ticket, token, "running", terminal, state_s0=previous,
+                          action_a0={"op": "budget_halt", "limit": error.limit},
+                          actual_state_s1={"status": terminal, "reason": reason, "limit": error.limit,
+                                           "attempts": len(results)}, reward=0)
     except Exception:
         previous = ledger.get_state(ticket)
         if previous["status"] == "running":
@@ -501,7 +573,7 @@ def _execute(args):
         if ledger.get_ticket(ticket)["status"] not in {"succeeded", "failed"}:
             ledger.release_lease(ticket, token)
     return {"ticket_id": ticket, "status": terminal, "reason": reason, "attempts": len(results),
-            "results": results, "telemetry": args.telemetry}, 0 if terminal == "succeeded" else 1
+            "results": results, "telemetry": args.telemetry, "budget": budget.report()}, 0 if terminal == "succeeded" else 1
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -529,6 +601,7 @@ def main(argv: list[str] | None = None) -> int:
     wish.add_argument("--timeout", type=float, default=120)
     wish.add_argument("--out", "--output")
     wish.add_argument("--auto-probe", action=argparse.BooleanOptionalAction, default=True)
+    _budget_args(wish)
     run = commands.add_parser("run")
     run_target = run.add_mutually_exclusive_group(required=True)
     run_target.add_argument("--contract")
@@ -537,11 +610,16 @@ def main(argv: list[str] | None = None) -> int:
     run.add_argument("--repo")
     run.add_argument("--workers", type=int, default=4)
     run.add_argument("--models", help="Enable configured providers for DAG repairs without authored patches")
+    batch = commands.add_parser("batch")
+    batch.add_argument("--config", required=True)
+    batch.add_argument("--workers", type=int, default=4)
+    batch.add_argument("--out", "--output")
     plan = commands.add_parser("plan")
     plan.add_argument("text")
     plan.add_argument("--repo", default=".")
     plan.add_argument("--out", "--output", required=True)
     plan.add_argument("--max-tasks", type=int, default=8)
+    _budget_args(plan)
     spec = commands.add_parser("spec")
     for command in (plan, spec):
         command.add_argument("--db")
@@ -585,12 +663,18 @@ def main(argv: list[str] | None = None) -> int:
                 if args.models:
                     raise ValueError("provide --models when freezing the contract with aegis wish")
                 result, code = _run(args)
+        elif args.command == "batch":
+            from .factory_queue import run_factory_queue
+            result, code = run_factory_queue(args.config, workers=args.workers)
+            if args.out:
+                _save(args.out, result)
         elif args.command == "plan":
             from .planner import build_task_dag
             root = _repo(args.repo)
             result = build_task_dag(args.text, root, max_tasks=args.max_tasks,
                                     answers=_load(args.answers) if args.answers else None,
                                     experience_db=_ledger_path(root, args.db))
+            result.update(_selected_budget(args))
             destination = Path(args.out).resolve()
             destination.parent.mkdir(parents=True, exist_ok=True)
             _save(destination, result)

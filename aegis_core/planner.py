@@ -313,6 +313,10 @@ def execute_task_dag(plan_path: str | Path, *, db: str | Path | None = None,
             raise ValueError("parallel repair targets overlap; add a dependency before execution")
     ledger_path = Path(db).resolve() if db else Path(_git(root, "rev-parse", "--path-format=absolute", "--git-common-dir")) / "aegis/ledger.sqlite"
     ledger_path.parent.mkdir(parents=True, exist_ok=True)
+    from .budget_guard import BUDGET_EXCEEDED_HALT, LIMIT_KEYS, BudgetExceeded, BudgetGuard
+    from .ledger import Ledger
+    limits = {key: plan[key] for key in LIMIT_KEYS if key in plan}
+    budget = BudgetGuard(Ledger(ledger_path), plan["dag_id"], limits)
     models = Path(models).resolve(strict=True) if models else None
     router = Router(load_models(models)) if models else None
     world_model = load_repository_model(root)
@@ -328,6 +332,7 @@ def execute_task_dag(plan_path: str | Path, *, db: str | Path | None = None,
     statuses, results, executed_locks, temporary_manifests = {}, [], {}, set()
     try:
         for layer_index, layer in enumerate(layers):
+            budget.check()
             ready = [task_id for task_id in layer
                      if all(statuses.get(parent) == "passed" for parent in task_map[task_id]["depends_on"])]
             blocked = [task_id for task_id in layer if task_id not in ready]
@@ -348,6 +353,7 @@ def execute_task_dag(plan_path: str | Path, *, db: str | Path | None = None,
             manifests = []
             manifest_tasks = {}
             for task in repair_tasks:
+                budget.check()
                 patches = task.get("patches", [])
                 use_model = not patches and router is not None
                 if not patches and not use_model:
@@ -357,7 +363,10 @@ def execute_task_dag(plan_path: str | Path, *, db: str | Path | None = None,
                     continue
                 targets = task["contract"]["target_files"]
                 probe = task.get("fail_before_cmd") or task.get("pass_after_cmd")
-                if not probe:
+                from .probe_synth import acceptance_rule
+                rule = acceptance_rule(task["contract"]["intent"])
+                synthesize = not probe and rule is not None and targets == [rule["path"]]
+                if not probe and not synthesize:
                     statuses[task["task_id"]] = "failed"
                     results.append({"task_id": task["task_id"], "status": "failed",
                                     "reason": "frozen_probe_required"})
@@ -367,16 +376,21 @@ def execute_task_dag(plan_path: str | Path, *, db: str | Path | None = None,
                 manifest = plan_path.parent / (ticket_id + ".contract.json")
                 temporary_manifests.add(manifest)
                 args = argparse.Namespace(
-                    repo=str(stage_dir), text=task["contract"]["intent"], auto_probe=False,
+                    repo=str(stage_dir), text=task["contract"]["intent"], auto_probe=synthesize,
                     allow_model=use_model, models=models if use_model else None, target=targets,
                     proposal=None, constraints=None, planned_spec=plan.get("spec"),
                     selected_module=None, db=str(ledger_path), ticket_id=ticket_id,
-                    fail_before=json.dumps(probe), pass_after=json.dumps(task.get("pass_after_cmd") or probe),
+                    fail_before=json.dumps(probe) if probe else None,
+                    pass_after=json.dumps(task.get("pass_after_cmd") or probe) if probe else None,
                     source_dir=task.get("source_dirs") or ["."], patch=patches,
                     max_attempts=task.get("max_attempts", 3 if use_model else len(patches)),
                     timeout=float(task.get("timeout_sec", 180)), out=str(manifest), interface_lock=interface_lock,
                     tool_source_globs=globs, probe_kind=task.get("probe_kind", "unit"),
+                    parent_budget=budget,
                     probe_scripts=task.get("probe_scripts"), probe_script_sha256=task.get("probe_script_sha256"))
+                for key in LIMIT_KEYS:
+                    if key in task:
+                        setattr(args, key, task[key])
                 document, code = _wish(args)
                 if code or document["compilation"]["status"] != "COMPILED":
                     statuses[task["task_id"]] = "failed"
@@ -388,13 +402,13 @@ def execute_task_dag(plan_path: str | Path, *, db: str | Path | None = None,
             if manifests:
                 from .queue_worker import run_contracts
                 executions = run_contracts(manifests, db=ledger_path, workers=min(workers, len(manifests)),
-                                            router=router, world_model=world_model)
+                                            router=router, world_model=world_model, parent_budget=budget)
                 for manifest, (result, code) in zip(manifests, executions):
                     for key in ("predictions_made", "no_prediction_count"):
                         telemetry[key] += result.get("telemetry", {}).get(key, 0)
                     task = manifest_tasks[str(manifest)]
                     task_id = task["task_id"]
-                    if code == 0 and result.get("status") == "succeeded":
+                    if not budget.halted_by and code == 0 and result.get("status") == "succeeded":
                         passed_attempts = [attempt for attempt in result.get("results", [])
                                            if attempt.get("passed") and attempt.get("patch_sha256")]
                         winning_hash = passed_attempts[-1]["patch_sha256"] if passed_attempts else None
@@ -433,6 +447,7 @@ def execute_task_dag(plan_path: str | Path, *, db: str | Path | None = None,
                                     "aegis_result": result, "exit_code": code})
                     manifest.unlink(missing_ok=True)
             for task_id in ready:
+                budget.check()
                 task = task_map[task_id]
                 if task["kind"] not in {"validation", "command"} or statuses.get(task_id):
                     continue
@@ -444,8 +459,18 @@ def execute_task_dag(plan_path: str | Path, *, db: str | Path | None = None,
                 from .sandbox import run_exam_gate
                 probe_kind = task.get("probe_kind", "unit")
                 command = [sys.executable if arg == "{python}" else arg for arg in command]
-                gate = run_exam_gate(stage_dir, command, timeout=float(task.get("timeout_sec", 180)),
-                                     probe_kind=probe_kind, probe_script_sha256=task.get("probe_script_sha256"))
+                task_budget = BudgetGuard(budget.ledger, task_id, {key: task[key] for key in LIMIT_KEYS if key in task},
+                                          parent=budget)
+                try:
+                    gate = task_budget.run_gate(run_exam_gate, stage_dir, command,
+                                                timeout=float(task.get("timeout_sec", 180)), probe_kind=probe_kind,
+                                                probe_script_sha256=task.get("probe_script_sha256"))
+                except BudgetExceeded:
+                    statuses[task_id] = "failed"
+                    results.append({"task_id": task_id, "status": "failed", "reason": BUDGET_EXCEEDED_HALT,
+                                    "budget": task_budget.report()})
+                    budget.check()
+                    continue
                 statuses[task_id] = "passed" if gate["passed"] else "failed"
                 results.append({"task_id": task_id, "status": statuses[task_id], "gate": gate})
             # A task that was selected but did not yield an explicit result is
@@ -454,10 +479,20 @@ def execute_task_dag(plan_path: str | Path, *, db: str | Path | None = None,
                 if task_id not in statuses:
                     statuses[task_id] = "failed"
                     results.append({"task_id": task_id, "status": "failed", "reason": "unsupported_task_kind"})
+        budget.check()
         passed = all(statuses.get(task["task_id"]) == "passed" for task in plan["tasks"])
         return {"dag_id": plan["dag_id"], "status": "succeeded" if passed else "failed",
                 "tasks": results, "task_statuses": statuses, "interface_locks": executed_locks,
+                "budget": budget.report(),
                 "telemetry": telemetry, "staged_commit": _git(stage_dir, "rev-parse", "HEAD")}, 0 if passed else 1
+    except BudgetExceeded:
+        for task_id in (item for item in task_map if item not in statuses):
+            statuses[task_id] = "blocked"
+            results.append({"task_id": task_id, "status": "blocked", "reason": BUDGET_EXCEEDED_HALT})
+        return {"dag_id": plan["dag_id"], "status": "failed", "reason": BUDGET_EXCEEDED_HALT,
+                "tasks": results, "task_statuses": statuses, "budget": budget.report(),
+                "interface_locks": executed_locks, "telemetry": telemetry,
+                "staged_commit": _git(stage_dir, "rev-parse", "HEAD")}, 1
     finally:
         try:
             for manifest in temporary_manifests:

@@ -55,6 +55,11 @@ class Ledger:
         with self._connection() as db:
             db.execute("PRAGMA journal_mode=WAL")
             db.executescript('''
+                CREATE TABLE IF NOT EXISTS budget_events (
+                    event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    scope TEXT NOT NULL, operation TEXT NOT NULL, tokens INTEGER NOT NULL,
+                    elapsed_sec REAL NOT NULL, reward REAL NOT NULL, limit_name TEXT, timestamp REAL NOT NULL);
+                CREATE INDEX IF NOT EXISTS budget_scope ON budget_events(scope, event_id);
                 CREATE TABLE IF NOT EXISTS tickets (
                     ticket_id TEXT PRIMARY KEY, wish_raw TEXT NOT NULL,
                     compiled_intent TEXT NOT NULL, contract_stub TEXT NOT NULL,
@@ -108,6 +113,20 @@ class Ledger:
             except BaseException:
                 db.rollback()
                 raise
+
+    def record_budget_event(self, scopes, operation, tokens, elapsed_sec, reward, *, limit=None):
+        with self._transaction() as db:
+            db.executemany(
+                "INSERT INTO budget_events(scope, operation, tokens, elapsed_sec, reward, limit_name, timestamp) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                [(scope, operation, tokens, elapsed_sec, reward, limit, time.time()) for scope in scopes],
+            )
+
+    def budget_events(self, scope):
+        with self._connection() as db:
+            return [dict(row) for row in db.execute(
+                "SELECT * FROM budget_events WHERE scope = ? ORDER BY event_id", (scope,)
+            )]
 
     def create_ticket(self, ticket_id: str, wish_raw: str, compiled_intent: dict,
                       contract_stub: str, assigned_tier: str = "local") -> None:
