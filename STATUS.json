@@ -45,10 +45,27 @@
     "Interface capture and independent review cover statically visible source patterns."
   ],
   "ci": {
-    "state": "pending",
-    "checks_passed": 0,
+    "state": "success",
+    "checks_passed": 8,
     "checks_expected": 8,
-    "matrix": "Linux/Windows x Python 3.11/3.12; push + pull_request"
+    "matrix": "Linux/Windows x Python 3.11/3.12; push + pull_request",
+    "validated_code_head": "bd600be763d6c5803d3fd639c62c0cc8b221a878",
+    "push_run": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44245613434",
+    "pull_request_run": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44245655121",
+    "results": {
+      "push": {
+        "ubuntu-latest / 3.11": "success",
+        "ubuntu-latest / 3.12": "success",
+        "windows-latest / 3.11": "success",
+        "windows-latest / 3.12": "success"
+      },
+      "pull_request": {
+        "ubuntu-latest / 3.11": "success",
+        "ubuntu-latest / 3.12": "success",
+        "windows-latest / 3.11": "success",
+        "windows-latest / 3.12": "success"
+      }
+    }
   },
   "pr7": {
     "branch": "feat/world-model-v8",
@@ -521,7 +538,8 @@
       "drill_experience_bank_version": 3,
       "drill_experience_bank_records": 4,
       "experience_matches": 2,
-      "resolved_max_drawdown": 0.08
+      "resolved_max_drawdown": 0.08,
+      "stdout_sha256": "198ef194b9097e527753a9397af3557dec9998dc0e64e0b5d49a0e67f2732e87"
     },
     "dataset_v3": {
       "manifest": "datasets/manifest_v3.json",
@@ -551,7 +569,13 @@
     "tests": {
       "total": 385,
       "pr10_new_cases": 91,
-      "previous_cases_preserved": 294
+      "previous_cases_preserved": 294,
+      "passed": 385,
+      "full_suite_command": "python -m pytest -q",
+      "implementation_source_probe_exit_codes": [
+        1,
+        0
+      ]
     }
   }
 }

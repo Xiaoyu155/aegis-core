@@ -91,3 +91,7 @@ python scripts/run_whitepaper_v10_drill.py --tokenizer-dir /path/to/qwen-tokeniz
 ```
 
 The script runs the production CLI against temporary Git repositories and a shared WAL ledger. It verifies the contract rejection and downstream skip, two L3 outcomes after green probes, ExperienceBank retrieval and business clarification, the v3 dataset, and four CPU checkpoint exports. It checks that both original Git worktrees stay clean. See `STATUS.json` for the recorded test count and Actions matrix.
+
+### Verification
+
+The complete suite passed 385/385 tests, including the 294 existing cases. The implementation diff also passed an independent Fail-Before/Pass-After probe in a disposable worktree. The full matrix passed all eight push and pull_request jobs for code commit `bd600be763d6c5803d3fd639c62c0cc8b221a878`. [Push](https://github.com/Xiaoyu155/aegis-core/actions/runs/44245613434) · [Pull request](https://github.com/Xiaoyu155/aegis-core/actions/runs/44245655121)
