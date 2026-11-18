@@ -2,69 +2,68 @@
   "schema_version": "aegis.online_replay_report.v1",
   "status": "updated",
   "threshold": 0.3,
-  "selected_traces": 6,
-  "replay_examples": 6,
+  "selected_traces": 12,
+  "replay_examples": 12,
   "anchor_examples": 51,
   "anchor_policy": "up to 24 ticket/template-disjoint training anchors per state; two replay copies per surprise",
   "regularization": {
     "kind": "proximal_to_previous_weights",
     "displacement_retained_per_epoch": 0.05,
     "anchor_validation_tolerance": 0.02,
-    "selected_epoch": 4
+    "selected_epoch": 1
   },
   "trace_ids": [
-    140,
-    126,
-    112,
-    96,
     87,
-    85
+    85,
+    83,
+    64,
+    57,
+    50,
+    43,
+    41,
+    39,
+    20,
+    13,
+    6
   ],
   "ticket_ids": [
-    "dag-repair-risk-guard-1-e028c01f",
-    "dag-repair-risk-guard-1-f730eb28",
-    "dag-repair-risk-guard-1-fa0b43ae",
-    "pr7v3-replay-regime",
-    "pr7v3-replay-risk-guard"
+    "dag-create-interaction-1-32aadc9c",
+    "dag-create-interaction-1-5518089b",
+    "dag-node1-self-heal-62cc8302",
+    "dag-node1-self-heal-879fb8bc",
+    "dag-node4-timeout-4966b369",
+    "dag-node4-timeout-7967c457",
+    "dag-repair-core-1-594f19a8",
+    "dag-repair-core-1-7fcc58ad",
+    "wish-4e076219448b",
+    "wish-8e93af24d6b0"
   ],
   "surprise_by_outcome": {
-    "gate_passed": 3,
-    "assertion_error": 3,
+    "gate_passed": 6,
+    "assertion_error": 6,
     "cheat_detected": 0,
     "replay_blocked": 0,
     "missing_constraint": 0
   },
-  "replay_loss_before": 0.3940543162495503,
-  "replay_loss_after": 0.39179364951076134,
-  "anchor_validation_loss_before": 0.6068057788879644,
-  "anchor_validation_loss_after": 0.6101966902513176,
+  "replay_loss_before": 2.0534598553644865,
+  "replay_loss_after": 2.0417900684809496,
+  "anchor_validation_loss_before": 0.6103337491508805,
+  "anchor_validation_loss_after": 0.6134535734472578,
   "history": [
     {
       "epoch": 1,
-      "replay_loss": 0.3925010072410463,
-      "anchor_validation_loss": 0.6072874536422136,
-      "accepted": true
-    },
-    {
-      "epoch": 2,
-      "replay_loss": 0.3918160753195107,
-      "anchor_validation_loss": 0.6101583508845488,
-      "accepted": true
-    },
-    {
-      "epoch": 3,
-      "replay_loss": 0.3917958150334695,
-      "anchor_validation_loss": 0.6102007758030029,
-      "accepted": true
-    },
-    {
-      "epoch": 4,
-      "replay_loss": 0.39179364951076134,
-      "anchor_validation_loss": 0.6101966902513176,
+      "replay_loss": 2.0417900684809496,
+      "anchor_validation_loss": 0.6134535734472578,
       "accepted": true
     }
   ],
-  "previous_world_model_version": "b631f40e8f56502735f06b5d77630475607740a193f6ca66a87bade8228cabe1",
-  "world_model_version": "0ab485ac93e08d95a3934a016a27c6d78174fc8e5b8d012527cd6798384c16e0",
-  "weights_sha256": "8f73acd94b1600b99e129eb085d36f5834a7fa61c2aa85e20169e1e467f8e516"
+  "previous_world_model_version": "970d13792bca474bd92633bfb6e8334b37d3105627769bf8cb8947b872eeaf0a",
+  "world_model_version": "bde814c83bd926cf67540dcf64774da0f24bed5a15f15abff52f440c47114692",
+  "weights_sha256": "0a8069a7fcb9e1f95a34d1e858ac0ba31e30d742d3935f945425cdea02a0f778",
+  "experience_bank": {
+    "added": 6,
+    "experience_count": 12,
+    "version": 2,
+    "version_sha256": "d6d12cabeffba3e17ea2ae5efafd3cf28ec0cf2ae8b50fd351dd047684effdc3"
+  }
 }

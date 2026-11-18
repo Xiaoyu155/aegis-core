@@ -102,7 +102,9 @@ def _js_symbols(source: str):
                         'source': '\n'.join(lines[start_line - 1:end_line])}
     return result
 
-SKIP = {'.git', '.venv', '.worktrees', '__pycache__', 'node_modules', 'dist', 'build', 'vendor'}
+SKIP = {'.git', '.venv', '.worktrees', '__pycache__', 'node_modules', 'dist', 'build', 'vendor',
+        '.next', 'coverage', 'out', 'target'}
+MAX_INDEX_BYTES = 512 * 1024
 
 
 def decode(path: Path) -> tuple[str, str]:
@@ -140,6 +142,9 @@ class ImportGraph:
                 if path.suffix != '.py' or path.is_symlink():
                     continue
                 relative = path.relative_to(self.root).as_posix()
+                if path.stat().st_size > MAX_INDEX_BYTES:
+                    self.diagnostics.append({'file': relative, 'error': 'SourceTooLarge'})
+                    continue
                 module = relative[:-3].replace('/', '.')
                 if module.endswith('.__init__'):
                     module = module[:-9]
@@ -177,6 +182,9 @@ class ImportGraph:
                     continue
                 relative = path.relative_to(self.root).as_posix()
                 if path.suffix.lower() in JS_SUFFIXES:
+                    if path.stat().st_size > MAX_INDEX_BYTES:
+                        self.diagnostics.append({'file': relative, 'error': 'SourceTooLarge'})
+                        continue
                     try:
                         text, _ = decode(path)
                     except (ValueError, OSError) as error:

@@ -2,16 +2,66 @@
 import threading
 import copy
 import ast
+import ctypes
 import hashlib
 import os
 from pathlib import Path
 import re
+import signal
 import shlex
 import subprocess
 import tempfile
+import time
 
 _GIT_LOCK = threading.RLock()
 _EXCLUDED = {".git", ".worktrees", "__pycache__", ".pytest_cache", ".venv"}
+
+
+def _reap_process_group(process_group: int) -> None:
+    """Reap killed grandchildren on Linux after adopting them as a subreaper."""
+    if not sys_platform_linux():
+        return
+    deadline = time.monotonic() + 1.0
+    while time.monotonic() < deadline:
+        try:
+            pid, _ = os.waitpid(-process_group, os.WNOHANG)
+        except ChildProcessError:
+            return
+        if pid == 0:
+            time.sleep(0.01)
+
+
+def sys_platform_linux() -> bool:
+    # Kept local to avoid changing process semantics on Windows and macOS.
+    import sys
+    return sys.platform.startswith("linux")
+
+
+def _adopt_orphaned_children() -> int | None:
+    if not sys_platform_linux():
+        return None
+    # PR_SET_CHILD_SUBREAPER is process-wide. Save and restore its previous value
+    # so ordinary subprocesses later in a long-running test/worker process do not
+    # accumulate unrelated orphaned helpers here.
+    try:
+        libc = ctypes.CDLL(None, use_errno=True)
+        previous = ctypes.c_int()
+        if libc.prctl(37, ctypes.byref(previous), 0, 0, 0) != 0:
+            return None
+        if not previous.value and libc.prctl(36, 1, 0, 0, 0) != 0:
+            return None
+        return int(previous.value)
+    except (AttributeError, OSError):
+        return None
+
+
+def _restore_child_subreaper(previous: int | None) -> None:
+    if previous is None or not sys_platform_linux():
+        return
+    try:
+        ctypes.CDLL(None, use_errno=True).prctl(36, previous, 0, 0, 0)
+    except (AttributeError, OSError):
+        pass
 
 
 def tree_hash(root: Path) -> str:
@@ -43,28 +93,60 @@ def run_exam_gate(worktree_path: Path, test_cmd: str | list[str] = "pytest", *, 
     if not command:
         raise ValueError("empty exam command")
     before = tree_hash(path)
+    timed_out = False
+    killed_process_group = False
     try:
         # A fresh cache prevents same-size/same-second edits from reusing stale pyc.
         with tempfile.TemporaryDirectory(prefix="aegis-pycache-") as cache:
             environment = dict(os.environ, PYTHONPYCACHEPREFIX=cache,
                                PYTHONDONTWRITEBYTECODE="1")
-            result = subprocess.run(command, cwd=path, capture_output=True, text=True,
-                                    encoding="utf-8", errors="replace", timeout=timeout,
-                                    env=environment)
-        code, stdout, stderr = result.returncode, result.stdout, result.stderr
-    except subprocess.TimeoutExpired as error:
-        code = 124
-        stdout = error.stdout or b""
-        stderr = error.stderr or b""
-        stdout = stdout.decode(errors="replace") if isinstance(stdout, bytes) else stdout
-        stderr = (stderr.decode(errors="replace") if isinstance(stderr, bytes) else stderr) + "\nExam timed out"
+            options = {}
+            if os.name == "nt":
+                options["creationflags"] = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
+            else:
+                options["start_new_session"] = True
+            process = subprocess.Popen(command, cwd=path, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                       text=True, encoding="utf-8", errors="replace", env=environment,
+                                       **options)
+            try:
+                stdout, stderr = process.communicate(timeout=timeout)
+                code = process.returncode
+            except subprocess.TimeoutExpired:
+                timed_out = True
+                killed_process_group = True
+                subreaper_state = None
+                if os.name == "nt":
+                    # taskkill /T includes descendants that inherited this process group.
+                    subprocess.run(["taskkill", "/PID", str(process.pid), "/T", "/F"],
+                                   capture_output=True, timeout=5, check=False)
+                    if process.poll() is None:
+                        process.kill()
+                else:
+                    subreaper_state = _adopt_orphaned_children()
+                    try:
+                        os.killpg(process.pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+                    if process.poll() is None:
+                        process.kill()
+                stdout, stderr = process.communicate()
+                try:
+                    if os.name != "nt":
+                        _reap_process_group(process.pid)
+                finally:
+                    _restore_child_subreaper(subreaper_state)
+                code = 124
+                stderr = (stderr or "") + "\nExam timed out; process group killed (TIMEOUT_KILLED)"
     except OSError as error:
         code, stdout, stderr = 127, "", str(error)
     after = tree_hash(path)
     return {"command": command, "exit_code": code, "stdout": stdout, "stderr": stderr,
             "before_hash": before, "after_hash": after, "changed": before != after,
             "reward": 1.0 if code == 0 and before == after else -1.0,
-            "passed": code == 0 and before == after}
+            "passed": code == 0 and before == after,
+            "timed_out": timed_out, "timeout_killed": timed_out,
+            "termination_reason": "TIMEOUT_KILLED" if timed_out else None,
+            "killed_process_group": killed_process_group}
 
 
 class Sandbox:
@@ -154,6 +236,7 @@ class Sandbox:
         result = {"baseline": before, "baseline_failed": baseline_failed,
                   "final": None, "after_passed": False, "passed": False,
                   "cheat_detected": False, "changed_files": [], "diff_lines": 0,
+                  "timeout_killed": bool(before.get("timeout_killed")),
                   "before_hash": before["before_hash"], "after_hash": before["after_hash"],
                   "reward": -1.0}
         if baseline_failed:
@@ -167,7 +250,9 @@ class Sandbox:
                     result["final"] = after
                     result["after_passed"] = after["passed"]
                     result["passed"] = after["passed"]
-                    result["reward"] = 1.0 if after["passed"] else -0.5
+                    result["timeout_killed"] = bool(after.get("timeout_killed"))
+                    result["termination_reason"] = after.get("termination_reason")
+                    result["reward"] = 1.0 if after["passed"] else (-1.0 if after.get("timeout_killed") else -0.5)
             result["after_hash"] = tree_hash(path)
         result["elapsed_sec"] = time.monotonic() - start
         self._gates[ticket_id] = result

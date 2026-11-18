@@ -11,6 +11,7 @@ import random
 import tempfile
 
 from .ledger import Ledger
+from .experience_bank import ExperienceBank
 from .runner import classify_causal_outcome
 from .world_model import CausalWorldModel, STATE_LABELS
 
@@ -51,6 +52,8 @@ def learn_from_ledger(*, repo: str | Path, db: str | Path, min_surprise: float =
     root = Path(repo).resolve(strict=True)
     artifacts = Path(artifact_dir or root / "artifacts" / "causal_world_model").resolve()
     traces = Ledger(db).high_surprise_traces(min_surprise, limit=limit)
+    experience_bank = ExperienceBank(db)
+    experience_report = experience_bank.ingest_traces(traces)
     if not traces:
         weight_path = artifacts / "model_weights.json"
         current = json.loads(weight_path.read_text(encoding="utf-8")) if weight_path.is_file() else None
@@ -103,7 +106,7 @@ def learn_from_ledger(*, repo: str | Path, db: str | Path, min_surprise: float =
     if not replay:
         return {"status": "no_usable_surprises", "threshold": min_surprise,
                 "selected_traces": len(traces), "updated": False,
-                "world_model_version": model.model_version}
+                "world_model_version": model.model_version, "experience_bank": experience_report}
 
     rows = anchors + replay * 2
     feature_matrix = np.asarray([
@@ -173,6 +176,7 @@ def learn_from_ledger(*, repo: str | Path, db: str | Path, min_surprise: float =
                   "previous_world_model_version": model.model_version,
                   "world_model_version": model.model_version,
                   "replay_loss_before": before_loss, "anchor_validation_loss_before": validation_before,
+                  "experience_bank": experience_report,
                   "anchor_tolerance": anchor_tolerance, "history": history, "updated": False}
         _atomic_bytes(artifacts / "online_replay_report.json",
                       (json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False) + "\n").encode())
@@ -210,6 +214,7 @@ def learn_from_ledger(*, repo: str | Path, db: str | Path, min_surprise: float =
         "previous_world_model_version": model.model_version,
         "world_model_version": version,
         "weights_sha256": weight_sha,
+        "experience_bank": experience_report,
     }
     version_path = artifacts / "versions" / f"{version}.json"
     _atomic_bytes(version_path, weight_bytes)

@@ -19,6 +19,7 @@ PROTECTED_TEST_PATTERNS = [
     "**/*.test.mjs", "**/*.test.cjs", "**/*.test.mts", "**/*.test.cts",
     "**/*.spec.mjs", "**/*.spec.cjs", "**/*.spec.mts", "**/*.spec.cts",
 ]
+_TEST_SOURCE_SUFFIXES = {".py", ".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx", ".mts", ".cts"}
 
 
 def _iter_files(root: Path):
@@ -35,6 +36,8 @@ def _test_name(path: str) -> bool:
     normalized = path.replace("\\", "/").lower()
     name = normalized.rsplit("/", 1)[-1]
     parts = normalized.split("/")
+    if Path(name).suffix not in _TEST_SOURCE_SUFFIXES:
+        return False
     return (
         any(part in {"test", "tests", "__tests__"} for part in parts)
         or name.startswith("test_")

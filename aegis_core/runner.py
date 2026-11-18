@@ -25,8 +25,8 @@ def terms(text):
     return result
 
 
-def retrieve(root, wish, *, token_budget=4000):
-    graph = ImportGraph(root)
+def retrieve(root, wish, *, token_budget=4000, graph=None):
+    graph = graph or ImportGraph(root)
     query = terms(wish)
     documents = {}
     for key, node in graph.symbols.items():

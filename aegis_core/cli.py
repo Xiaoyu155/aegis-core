@@ -4,6 +4,7 @@ import ast
 import hashlib
 import math
 import json
+import os
 from pathlib import Path
 import shlex
 import subprocess
@@ -237,7 +238,8 @@ def _execute(args):
     manager._paths(ticket)
     router = Router(load_models(Path(document["models_path"]))) if document["allow_model"] else _offline_router()
     from .world_model import CausalWorldModel
-    world_model = CausalWorldModel.load_if_available(root / "artifacts" / "causal_world_model")
+    model_path = Path(os.environ.get("AEGIS_WORLD_MODEL_DIR", root / "artifacts" / "causal_world_model")).resolve()
+    world_model = CausalWorldModel.load_if_available(model_path)
 
     def verify_probe_baseline():
         from .sandbox import validate_probe_patch, run_exam_gate, ProbeNotFailingError
@@ -382,7 +384,8 @@ def _execute(args):
             reward = compute_step_reward(baseline_failed=result["baseline_failed"], after_passed=result["after_passed"],
                                          target_files=document["compilation"]["target_files"], changed_files=result["changed_files"],
                                          diff_lines=result["diff_lines"], elapsed_sec=elapsed, latency_budget_sec=document["timeout_sec"],
-                                         cheat_detected=result["cheat_detected"], repeated_patch=result["repeated_patch"])
+                                         cheat_detected=result["cheat_detected"], repeated_patch=result["repeated_patch"],
+                                         timeout_killed=result.get("timeout_killed", False))
             if not result['passed'] and 'diagnosis' not in result:
                 if not result.get("pre_blocked"):
                     from .runner import diagnose

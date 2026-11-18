@@ -64,7 +64,7 @@ def build_task_dag(requirement: str, repo: str | Path, *, max_tasks: int = 8) ->
     if type(max_tasks) is not int or not 1 <= max_tasks <= 32:
         raise ValueError("max_tasks must be 1..32")
     graph = ImportGraph(root)
-    retrieval = retrieve(root, requirement, token_budget=6000)
+    retrieval = retrieve(root, requirement, token_budget=6000, graph=graph)
     query = terms(requirement)
     candidates = {}
     for row in retrieval["candidates"]:
@@ -89,10 +89,23 @@ def build_task_dag(requirement: str, repo: str | Path, *, max_tasks: int = 8) ->
         if score:
             candidates[relative] = max(score, candidates.get(relative, 0.0))
     request_lower = requirement.lower().replace("\\", "/")
-    mentioned_stems = {Path(relative).stem for relative in candidates
-                       if re.search(rf"(?<![a-z0-9_]){re.escape(Path(relative).stem.lower())}(?![a-z0-9_])",
-                                    request_lower)}
-    if len(mentioned_stems) >= 2:
+    mentioned_source_paths = set(re.findall(
+        r"(?<![a-z0-9_./-])((?:[a-z0-9_.-]+/)*[a-z0-9_.-]+\.(?:py|js|jsx|mjs|cjs|ts|tsx|mts|cts))(?=$|[^a-z0-9_])",
+        request_lower))
+    planned_new_paths = sorted(relative for relative in mentioned_source_paths
+                               if relative not in graph.paths and relative not in graph.js_modules
+                               and "/" in relative
+                               and _is_business_path(relative)
+                               and (root / Path(relative).parent).is_dir())
+    mentioned_stems = {Path(relative).stem for relative in planned_new_paths}
+    mentioned_paths = {relative for relative in candidates if relative.lower() in request_lower}
+    mentioned_stems.update(Path(relative).stem for relative in candidates
+                           if re.search(rf"(?<![a-z0-9_]){re.escape(Path(relative).stem.lower())}(?![a-z0-9_])",
+                                        request_lower))
+    if mentioned_paths:
+        candidates = {relative: score for relative, score in candidates.items()
+                      if relative in mentioned_paths}
+    elif len(mentioned_stems) >= 2:
         candidates = {relative: score for relative, score in candidates.items()
                       if Path(relative).stem in mentioned_stems}
     integration_modules = []
@@ -138,12 +151,37 @@ def build_task_dag(requirement: str, repo: str | Path, *, max_tasks: int = 8) ->
             "source_dirs": [str(Path(relative).parent).replace(".", "", 1) or "."],
         })
         task_by_file[relative] = task_id
+    for index, relative in enumerate(planned_new_paths):
+        task_id = f"create-{_slug(Path(relative).stem)}-{index + 1}"
+        repair_tasks.append({
+            "task_id": task_id,
+            "kind": "repair",
+            "title": f"Create business module {relative}",
+            "depends_on": [],
+            "contract": {
+                "intent": requirement,
+                "target_files": [relative],
+                "success_criteria": ["create the explicitly requested business module",
+                                     "satisfy the frozen acceptance probe"],
+                "ast_context": {"new_module": relative, "consumer_context": []},
+            },
+            "risk_estimate": 0.3,
+            "patches": [],
+            "fail_before_cmd": [],
+            "pass_after_cmd": [],
+            "source_dirs": [str(Path(relative).parent)],
+        })
+        task_by_file[relative] = task_id
     selected = set(ranked)
+    selected.update(planned_new_paths)
     # A caller depends on the module it imports, so the lower-level contract
     # is completed first. Lexical fallback makes otherwise disconnected work
     # deterministic and keeps each task independently addressable.
     for relative, task_id in task_by_file.items():
         imports = set(graph.file_dependencies.get(relative, []))
+        if relative in ranked and Path(relative).stem in mentioned_stems:
+            imports.update(new_path for new_path in planned_new_paths
+                           if new_path != relative and Path(new_path).parent == Path(relative).parent)
         task_by_file[relative]
         repair = next(task for task in repair_tasks if task["task_id"] == task_id)
         repair["depends_on"] = sorted(task_by_file[dependency] for dependency in imports
@@ -221,7 +259,10 @@ def execute_task_dag(plan_path: str | Path, *, db: str | Path | None = None,
             blocked = [task_id for task_id in layer if task_id not in ready]
             for task_id in blocked:
                 statuses[task_id] = "blocked"
-                results.append({"task_id": task_id, "status": "blocked", "reason": "upstream_gate_failed"})
+                results.append({"task_id": task_id, "status": "blocked", "reason": "upstream_gate_failed",
+                                "cascade_status": "SKIPPED_UPSTREAM_FAILED",
+                                "failed_dependencies": [parent for parent in task_map[task_id]["depends_on"]
+                                                        if statuses.get(parent) != "passed"]})
             repair_tasks = [task_map[task_id] for task_id in ready if task_map[task_id]["kind"] == "repair"]
             manifests = []
             manifest_tasks = {}
@@ -248,7 +289,8 @@ def execute_task_dag(plan_path: str | Path, *, db: str | Path | None = None,
                     allow_model=False, models=None, target=targets, proposal=None, constraints=None,
                     selected_module=None, db=str(ledger_path), ticket_id=ticket_id,
                     fail_before=json.dumps(probe), pass_after=json.dumps(task.get("pass_after_cmd") or probe),
-                    source_dir=task.get("source_dirs") or ["."], patch=patches, max_attempts=1,
+                    source_dir=task.get("source_dirs") or ["."], patch=patches,
+                    max_attempts=task.get("max_attempts", len(patches)),
                     timeout=float(task.get("timeout_sec", 180)), out=str(manifest))
                 document, code = _wish(args)
                 if code or document["compilation"]["status"] != "COMPILED":
@@ -265,14 +307,28 @@ def execute_task_dag(plan_path: str | Path, *, db: str | Path | None = None,
                     task = manifest_tasks[str(manifest)]
                     task_id = task["task_id"]
                     if code == 0 and result.get("status") == "succeeded":
-                        statuses[task_id] = "passed"
-                        # Materialize only a patch that passed both frozen probes.
+                        passed_attempts = [attempt for attempt in result.get("results", [])
+                                           if attempt.get("passed") and attempt.get("patch_sha256")]
+                        winning_hash = passed_attempts[-1]["patch_sha256"] if passed_attempts else None
+                        matching = []
                         for patch_path in task["patches"]:
-                            patch_bytes = Path(patch_path).read_bytes()
-                            subprocess.run(["git", "apply", "--check", "--whitespace=error", "-"], cwd=stage_dir,
-                                           input=patch_bytes, capture_output=True, check=True)
-                            subprocess.run(["git", "apply", "--whitespace=error", "-"], cwd=stage_dir,
-                                           input=patch_bytes, capture_output=True, check=True)
+                            patch_text = Path(patch_path).read_text(encoding="utf-8")
+                            if hashlib.sha256(patch_text.encode("utf-8")).hexdigest() == winning_hash:
+                                matching.append(Path(patch_path).read_bytes())
+                        if len(matching) != 1:
+                            statuses[task_id] = "failed"
+                            results.append({"task_id": task_id, "status": "failed",
+                                            "reason": "passing_patch_artifact_not_identified",
+                                            "aegis_result": result, "exit_code": code})
+                            manifest.unlink(missing_ok=True)
+                            continue
+                        statuses[task_id] = "passed"
+                        # Materialize exactly the candidate whose two probes passed.
+                        patch_bytes = matching[0]
+                        subprocess.run(["git", "apply", "--check", "--whitespace=error", "-"], cwd=stage_dir,
+                                       input=patch_bytes, capture_output=True, check=True)
+                        subprocess.run(["git", "apply", "--whitespace=error", "-"], cwd=stage_dir,
+                                       input=patch_bytes, capture_output=True, check=True)
                         subprocess.run(["git", "add", "--all"], cwd=stage_dir, check=True, capture_output=True)
                         subprocess.run(["git", "-c", "user.name=Aegis", "-c", "user.email=aegis@localhost",
                                         "commit", "-m", f"Aegis DAG: {task['title']}"], cwd=stage_dir,

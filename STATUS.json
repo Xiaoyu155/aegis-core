@@ -1,7 +1,7 @@
 {
-  "phase": 7,
-  "tests": 234,
-  "preserved_previous_tests": 182,
+  "phase": 8,
+  "tests": 275,
+  "preserved_previous_tests": 234,
   "campaign": {
     "cases": 8,
     "all_passed": true,
@@ -185,5 +185,113 @@
     "validated_code_head": "17fc84f9222f3516d8cd6bfd1a31271f4ed52362",
     "push_run": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44215427275",
     "pull_request_run": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44215464933"
+  },
+  "pr8": {
+    "branch": "feat/world-model-v9",
+    "base_branch": "feat/world-model-v8",
+    "features": [
+      "Private mixed-language repository attachment and isolated cross-repository DAG execution.",
+      "Process-group hard timeout kill, Linux descendant reaping, timeout negative reward, and downstream cascade fuse.",
+      "Versioned SQLite ExperienceBank with high-surprise trace summaries and human arbitration rules.",
+      "Anchored online replay fine-tuning that stores model and experience-bank versions."
+    ],
+    "external_repository": {
+      "path": "/workspace/external_target_repo",
+      "file_count": 1327,
+      "languages": {
+        "python": 283,
+        "javascript": 238,
+        "typescript": 0
+      },
+      "test_frameworks": [
+        "node --test",
+        "npm test",
+        "pytest"
+      ],
+      "protected_code_test_files": 91,
+      "profile": ".aegis/repo_profile.json",
+      "dag_id": "dag-809038fa2c04",
+      "dag_status": "succeeded",
+      "dag_tasks": {
+        "create-interaction-1": "passed",
+        "repair-core-1": "passed",
+        "validate-integration": "passed"
+      },
+      "headless_probe_passed": true,
+      "npm_test_passed": true,
+      "main_worktree_clean": true
+    },
+    "chaos_drill": {
+      "status": "passed",
+      "failure_diagnosis": {
+        "kind": "FailureDiagnosis",
+        "category": "assertion",
+        "assertions": [
+          ">       assert double(3) == 6",
+          "E       assert 5 == 6",
+          "tests/test_guard.py:4: AssertionError",
+          "FAILED tests/test_guard.py::test_double - assert 5 == 6"
+        ],
+        "evidence_excerpt": "F                                                                        [100%]\n=================================== FAILURES ===================================\n_________________________________ test_double __________________________________\n\n    def test_double():\n>       assert double(3) == 6\nE       assert 5 == 6\nE        +  where 5 = double(3)\n\ntests/test_guard.py:4: AssertionError\n=============================== warnings summary ===============================\n../../../../../opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/site-packages/anyio/pytest_plugin.py:14\n  /opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/site-packages/anyio/pytest_plugin.py:14: PytestRemovedIn10Warning: _pytest.python.CallSpec2 has been renamed to CallSpec.\n  The CallSpec2 alias will be removed in pytest 10.\n  Update imports to use CallSpec instead.\n  See https://docs.pytest.org/en/stable/deprecations.html#callspec2-renamed\n    from _pytest.python import CallSpec2\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n=========================== short test summary info ============================\nFAILED tests/test_guard.py::test_double - assert 5 == 6\n1 failed, 1 warning in 0.03s\n\n"
+      },
+      "node1_attempts": 2,
+      "node1_final_passed": true,
+      "node2_pre_block_reason": "HIGH_RISK_PRE_BLOCK",
+      "node3_cascade_status": "SKIPPED_UPSTREAM_FAILED",
+      "node4_timeout_killed": true,
+      "node4_reward": -1.455974516533315,
+      "timeout_child_reaped": true,
+      "residual_worktrees": [],
+      "temporary_repo_clean": true
+    },
+    "online_replay": {
+      "status": "updated",
+      "min_surprise": 0.3,
+      "selected_traces": 12,
+      "replay_examples": 12,
+      "anchor_examples": 51,
+      "replay_loss_before_after": [
+        2.0534598553644865,
+        2.0417900684809496
+      ],
+      "anchor_validation_loss_before_after": [
+        0.6103337491508805,
+        0.6134535734472578
+      ],
+      "anchor_validation_loss_tolerance": 0.02,
+      "latest_model_version": "bde814c83bd926cf67540dcf64774da0f24bed5a15f15abff52f440c47114692",
+      "weights_sha256": "0a8069a7fcb9e1f95a34d1e858ac0ba31e30d742d3935f945425cdea02a0f778",
+      "experience_bank": {
+        "added": 6,
+        "experience_count": 12,
+        "version": 2,
+        "version_sha256": "d6d12cabeffba3e17ea2ae5efafd3cf28ec0cf2ae8b50fd351dd047684effdc3"
+      }
+    },
+    "external_ledger": {
+      "tickets": 12,
+      "statuses": {
+        "failed": 6,
+        "succeeded": 6
+      },
+      "traces": 88,
+      "terminal_tickets": 12,
+      "success_rate": 0.5,
+      "repair_attempts": 14,
+      "cheat_interceptions": 2,
+      "replay_interceptions": 0,
+      "mean_reward": 0.12068298647405197
+    },
+    "tests": {
+      "total": 275,
+      "passed": 275,
+      "pr8_new_cases": 41,
+      "previous_cases_preserved": 234
+    },
+    "ci": {
+      "state": "pending",
+      "checks_expected": 8,
+      "matrix": "Linux/Windows x Python 3.11/3.12; push + pull_request"
+    }
   }
 }
