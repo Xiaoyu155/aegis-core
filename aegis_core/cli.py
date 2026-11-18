@@ -11,9 +11,12 @@ import uuid
 
 from .ledger import Ledger
 from .mediator import compile_wish, compile_request, is_business_source, validate_compilation
+from .probes import PROBE_KINDS, freeze_probes, verify_probe_files
+from .repo_adapter import load_tool_source_globs, validate_tool_source_globs
 from .reward import compute_step_reward
 from .router import Router, load_models, route_complexity
 from .sandbox import Sandbox, run_git
+from .world_model import load_repository_model, prediction_telemetry
 
 
 def _git(root, *args):
@@ -85,12 +88,15 @@ def _argv(value):
 def _wish(args):
     root = _repo(args.repo)
     skeleton = _skeleton(root)
-    sources = [name for name in skeleton if is_business_source(name)]
+    globs = getattr(args, "tool_source_globs", None)
+    globs = load_tool_source_globs(root) if globs is None else validate_tool_source_globs(globs)
+    sources = [name for name in skeleton if is_business_source(name, tool_source_globs=globs)]
     if not sources:
         raise ValueError("repository has no existing business source targets")
     enhanced = None
     if args.auto_probe:
-        enhanced = compile_wish(root, args.text, targets=args.target, allow_model=args.allow_model, models=args.models)
+        enhanced = compile_wish(root, args.text, targets=args.target, allow_model=args.allow_model,
+                                models=args.models, tool_source_globs=globs)
     candidates = None
     if enhanced:
         proposal = {key: enhanced[key] for key in ('target_files', 'contract_stub')}
@@ -118,6 +124,14 @@ def _wish(args):
         proposal["target_files"] = [selection]
     if args.selected_module:
         constraints["selected_module"] = args.selected_module
+    probe_kind = getattr(args, "probe_kind", "unit")
+    default_command = ["{python}", "-B", "-m", "pytest", "-q", "tests/test_aegis_probe.py"] if enhanced else []
+    (fail_before, pass_after), probe_hashes = freeze_probes(
+        root, (_argv(args.fail_before) or default_command, _argv(args.pass_after) or default_command),
+        kind=probe_kind, scripts=getattr(args, "probe_scripts", ()) or ())
+    expected_hashes = getattr(args, "probe_script_sha256", None)
+    if expected_hashes is not None and probe_hashes != expected_hashes:
+        raise ValueError("PROBE_INTEGRITY_VIOLATION: DAG probe script hashes differ from the plan")
     ledger = _ledger(root, args.db)
     ticket = args.ticket_id or ("wish-" + uuid.uuid4().hex[:12])
     try:
@@ -140,7 +154,7 @@ def _wish(args):
                               action_a0={'op': 'compile'}, actual_state_s1={'status': 'MISSING_CONSTRAINT', 'compilation': result}, reward=0)
         else:
             result = compile_request(ticket, args.text, skeleton, proposal, constraints=constraints,
-                                 candidates=candidates, ledger=ledger, lease_token=token)
+                                     candidates=candidates, ledger=ledger, lease_token=token, tool_source_globs=globs)
     finally:
         ledger.release_lease(ticket, token)
     if not enhanced:
@@ -148,8 +162,9 @@ def _wish(args):
         legacy_context = retrieve(root, ' '.join(proposal['target_files']))['context']
     document = {"schema_version": "aegis.cli.v1", "ticket_id": ticket, "repo_root": str(root),
                 "base_commit": _git(root, "rev-parse", "HEAD"), "compilation": result,
-                "fail_before_cmd": _argv(args.fail_before) or (["{python}", "-B", "-m", "pytest", "-q", "tests/test_aegis_probe.py"] if enhanced else []), "pass_after_cmd": _argv(args.pass_after) or (["{python}", "-B", "-m", "pytest", "-q", "tests/test_aegis_probe.py"] if enhanced else []),
-                "source_dirs": args.source_dir or ["."],
+                "fail_before_cmd": fail_before, "pass_after_cmd": pass_after,
+                "probe_kind": probe_kind, "probe_script_sha256": probe_hashes,
+                "source_dirs": args.source_dir or ["."], "tool_source_globs": list(globs),
                 "patches": [str(Path(path).resolve()) for path in args.patch or []],
                 "models_path": str(Path(args.models).resolve()) if args.models else None,
                 "probe_patch": enhanced['probe_patch'] if enhanced else "", "context": enhanced['context'] if enhanced else legacy_context,
@@ -180,14 +195,17 @@ def _wish(args):
 def _validate_manifest(document, root, ledger):
     fields = {"schema_version", "ticket_id", "repo_root", "base_commit", "compilation", "fail_before_cmd", "pass_after_cmd",
               "source_dirs", "patches", "models_path", "allow_model", "max_attempts", "timeout_sec", "contract_sha256", "probe_patch", "context"}
-    if (set(document) - {"interface_lock", "expanded_spec"} != fields or document["schema_version"] != "aegis.cli.v1"
+    optional = {"interface_lock", "expanded_spec", "tool_source_globs", "probe_kind", "probe_script_sha256"}
+    if (set(document) - optional != fields or document["schema_version"] != "aegis.cli.v1"
             or _digest(document) != document["contract_sha256"]):
         raise ValueError("invalid or modified frozen manifest")
     if Path(document["repo_root"]).resolve() != root or _git(root, "rev-parse", "HEAD") != document["base_commit"]:
         raise ValueError("repository baseline changed; compile a new contract")
     if _git(root, "diff", "--name-only", "HEAD", "--"):
         raise ValueError("tracked working tree changed; commit or restore before run")
-    compilation = validate_compilation(document["compilation"], _skeleton(root))
+    globs = document.get("tool_source_globs")
+    globs = load_tool_source_globs(root) if globs is None else validate_tool_source_globs(globs)
+    compilation = validate_compilation(document["compilation"], _skeleton(root), tool_source_globs=globs)
     if compilation["status"] != "COMPILED" or compilation["ticket_id"] != document["ticket_id"]:
         raise ValueError("unresolved constraint questions")
     ticket = ledger.get_ticket(document["ticket_id"])
@@ -198,6 +216,11 @@ def _validate_manifest(document, root, ledger):
         command = document[key]
         if type(command) is not list or not command or any(type(arg) is not str or not arg for arg in command):
             raise ValueError("frozen probe argv required")
+    probe_kind = document.get("probe_kind", "unit")
+    probe_hashes = document.get("probe_script_sha256", {})
+    if probe_kind not in PROBE_KINDS or (probe_kind == "browser_visual" and not probe_hashes):
+        raise ValueError("invalid or unfrozen probe_kind")
+    verify_probe_files(root, probe_hashes)
     if not document["source_dirs"] or any(type(p) is not str for p in document["source_dirs"]):
         raise ValueError("source directories required")
     if type(document["max_attempts"]) is not int or not 1 <= document["max_attempts"] <= 20:
@@ -253,8 +276,11 @@ def _execute(args):
     interface_lock = InterfaceContractLock.from_dict(document["interface_lock"]) if "interface_lock" in document else None
     graph = ImportGraph(root)
     target_files = document["compilation"]["target_files"]
-    from .world_model import load_repository_model
-    world_model = load_repository_model(root)
+    world_model = args.world_model if hasattr(args, "world_model") else load_repository_model(root)
+    active_model = world_model is not None and world_model.model_source != "bundled"
+    args.telemetry = prediction_telemetry(world_model, scope="repair_attempts")
+    probe = {"probe_kind": document.get("probe_kind", "unit"),
+             "probe_script_sha256": document.get("probe_script_sha256", {})}
 
     def verify_probe_baseline():
         from .sandbox import validate_probe_patch, run_exam_gate, ProbeNotFailingError
@@ -263,8 +289,10 @@ def _execute(args):
         path = manager.create(check, base=document['base_commit'])
         try:
             manager.apply_patch(check, document['probe_patch'])
-            before = run_exam_gate(path, [sys.executable if a == '{python}' else a for a in document['fail_before_cmd']], timeout=min(60, document['timeout_sec']))
-            if before['exit_code'] != 1 or before['changed']:
+            before = run_exam_gate(path, [sys.executable if a == '{python}' else a for a in document['fail_before_cmd']],
+                                   timeout=min(60, document['timeout_sec']), **probe)
+            if before['exit_code'] != 1 or before['changed'] or before['failure_code'] in {
+                    'ENVIRONMENT_UNAVAILABLE', 'PROBE_INTEGRITY_VIOLATION'}:
                 raise ProbeNotFailingError(json.dumps(before))
         finally:
             manager.cleanup(check)
@@ -272,7 +300,7 @@ def _execute(args):
     probe_checked = False
     # Legacy repositories without trained weights keep the existing precheck path.
     # With a model, each proposed action is predicted and durably recorded first.
-    if document.get('probe_patch') and world_model is None:
+    if document.get('probe_patch') and not active_model:
         verify_probe_baseline()
         probe_checked = True
     for candidate in document['patches']:
@@ -280,7 +308,7 @@ def _execute(args):
             raise FileNotFoundError(candidate)
     proposed = {"op": "repair_attempt", "target_files": target_files, "contract": document["compilation"]}
     planned_risk = (world_model.predict(ledger.get_state(ticket), proposed, context=document["context"])["risk_probability"]
-                    if world_model is not None else None)
+                    if active_model else None)
     planned_route = route_complexity(graph, target_files, risk_probability=planned_risk)
     tier = planned_route["tier"] if planned_route["tier"] in router.chain else router.chain[0]
     token = ledger.acquire_lease(ticket, "cli-runner", ttl=document["timeout_sec"] + 60)
@@ -335,16 +363,17 @@ def _execute(args):
                               "target_files": target_files, "slot_id": slot,
                               "model_tier": admitted.get("tier", tier) if document["allow_model"] else None,
                               "context": document["context"], "contract": document["compilation"],
-                              "repeated_patch": breaker["repeated_patch"]}
+                              "repeated_patch": breaker["repeated_patch"], **probe}
             prediction = None
             complexity = planned_route
             if world_model is not None:
                 prediction_state = ledger.get_state(ticket)
                 prediction = world_model.predict(prediction_state, attempt_action,
                                                  context=document["context"], prior_attempts=results)
-                actual_route = route_complexity(graph, target_files, risk_probability=prediction["risk_probability"])
-                if actual_route["level"] >= planned_route["level"]:
-                    complexity = actual_route
+                if active_model:
+                    actual_route = route_complexity(graph, target_files, risk_probability=prediction["risk_probability"])
+                    if actual_route["level"] >= planned_route["level"]:
+                        complexity = actual_route
                 ledger.transition(ticket, token, "running", "running", state_s0=prediction_state,
                                   action_a0={**attempt_action, "op": "world_model_prediction"},
                                   actual_state_s1=prediction_state, reward=0,
@@ -352,11 +381,14 @@ def _execute(args):
                                   predicted_reward=prediction["predicted_reward"],
                                   prediction_confidence=prediction["prediction_confidence"],
                                   predicted_reward_interval=prediction["predicted_reward_interval"])
+                args.telemetry["predictions_made"] += 1
+            else:
+                args.telemetry["no_prediction_count"] += 1
             work_id = "run-" + uuid.uuid4().hex[:16]
             result = {"baseline_failed": False, "after_passed": False, "passed": False, "cheat_detected": False,
                       "changed_files": [], "diff_lines": 0, "repeated_patch": breaker["repeated_patch"],
                       "patch_sha256": patch_sha256, "complexity": complexity,
-                      "model_tier": attempt_action["model_tier"]}
+                      "model_tier": attempt_action["model_tier"], **probe}
             if prediction is not None:
                 result.update({"predicted_next_state": prediction["predicted_next_state"],
                                "predicted_reward": prediction["predicted_reward"],
@@ -366,7 +398,7 @@ def _execute(args):
                                "world_model_version": prediction["model_version"]})
             started = time.monotonic()
             pre_block_reason = (prediction["predicted_next_state"].get("pre_block_reason")
-                                if prediction is not None else None)
+                                if active_model else None)
             if pre_block_reason:
                 paths = prediction["predicted_next_state"].get("changed_paths", [])
                 result.update(pre_blocked=True, pre_block_reason="HIGH_RISK_PRE_BLOCK",
@@ -395,7 +427,8 @@ def _execute(args):
                                                          pass_after_cmd=resolve(document["pass_after_cmd"]), source_dirs=tuple(document["source_dirs"]),
                                                          timeout=remaining, probe_patch=document.get('probe_patch', ''),
                                                          interface_lock=interface_lock,
-                                                         require_review=complexity["level"] == "L3"))
+                                                         require_review=complexity["level"] == "L3",
+                                                         tool_source_globs=document.get("tool_source_globs"), **probe))
                         except (ValueError, subprocess.SubprocessError) as error:
                             result["error_type"] = type(error).__name__
                         outside = set(result["changed_files"]) - set(document["compilation"]["target_files"])
@@ -467,7 +500,8 @@ def _execute(args):
     finally:
         if ledger.get_ticket(ticket)["status"] not in {"succeeded", "failed"}:
             ledger.release_lease(ticket, token)
-    return {"ticket_id": ticket, "status": terminal, "reason": reason, "attempts": len(results), "results": results}, 0 if terminal == "succeeded" else 1
+    return {"ticket_id": ticket, "status": terminal, "reason": reason, "attempts": len(results),
+            "results": results, "telemetry": args.telemetry}, 0 if terminal == "succeeded" else 1
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -485,6 +519,9 @@ def main(argv: list[str] | None = None) -> int:
     wish.add_argument("--source-dir", action="append")
     wish.add_argument("--fail-before")
     wish.add_argument("--pass-after")
+    wish.add_argument("--probe-kind", choices=PROBE_KINDS, default="unit")
+    wish.add_argument("--probe-script", dest="probe_scripts", action="append",
+                      help="Also lock this script or fixture by its SHA-256")
     wish.add_argument("--patch", action="append")
     wish.add_argument("--models")
     wish.add_argument("--allow-model", action="store_true")
@@ -522,6 +559,8 @@ def main(argv: list[str] | None = None) -> int:
     learn.add_argument("--seed", type=int, default=20261118)
     attach = commands.add_parser("attach")
     attach.add_argument("--repo", required=True)
+    attach.add_argument("--tool-source-glob", action="append", dest="tool_source_globs",
+                        help="Replace the default tool source patterns; repeat for additional patterns")
     for name in ("stats", "export-traces"):
         command = commands.add_parser(name)
         command.add_argument("--repo", default=".")
@@ -539,7 +578,9 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "run":
             if args.dag:
                 from .planner import execute_task_dag
-                result, code = execute_task_dag(args.dag, db=args.db, workers=args.workers, repo=args.repo, models=args.models)
+                args.telemetry = {}
+                result, code = execute_task_dag(args.dag, db=args.db, workers=args.workers, repo=args.repo,
+                                                models=args.models, telemetry=args.telemetry)
             else:
                 if args.models:
                     raise ValueError("provide --models when freezing the contract with aegis wish")
@@ -555,7 +596,7 @@ def main(argv: list[str] | None = None) -> int:
             _save(destination, result)
             result = {"status": "planned", "dag_id": result["dag_id"],
                       "tasks": len(result["tasks"]), "layers": result["topological_layers"],
-                      "spec": result["spec"], "output": str(destination)}
+                      "spec": result["spec"], "output": str(destination), "telemetry": result["telemetry"]}
             if result["spec"]["questions"]:
                 result["status"] = "MISSING_CONSTRAINT"
             code = 2 if result["spec"]["questions"] else 0
@@ -577,7 +618,7 @@ def main(argv: list[str] | None = None) -> int:
             code = 0
         elif args.command == "attach":
             from .repo_adapter import attach_repository
-            result = attach_repository(args.repo)
+            result = attach_repository(args.repo, tool_source_globs=args.tool_source_globs)
             code = 0
         else:
             ledger = _ledger(_repo(args.repo), args.db)
@@ -590,8 +631,11 @@ def main(argv: list[str] | None = None) -> int:
             code = 0
         print(json.dumps(result, ensure_ascii=False, allow_nan=False))
         return code
-    except (ValueError, KeyError, OSError, PermissionError, subprocess.SubprocessError) as error:
-        print(json.dumps({"status": "error", "error_type": type(error).__name__, "message": str(error)}, ensure_ascii=False), file=sys.stderr)
+    except (ValueError, KeyError, OSError, PermissionError, RuntimeError, subprocess.SubprocessError) as error:
+        result = {"status": "error", "error_type": type(error).__name__, "message": str(error)}
+        if args.command in {"plan", "run", "learn"}:
+            result["telemetry"] = getattr(args, "telemetry", None) or prediction_telemetry()
+        print(json.dumps(result, ensure_ascii=False), file=sys.stderr)
         return 1
 
 

@@ -3,11 +3,12 @@ from __future__ import annotations
 
 import ast
 from collections import Counter
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 import re
 
 from .ast_slicer import JS_SUFFIXES, _mask_js_comments_and_strings, decode
+from .frontend import HTML_SUFFIXES, css_references, parse_html
 from .sandbox import run_git
 
 _SECRET = re.compile(r"(?:^|_)(?:api_?key|access_?token|secret(?:_?key)?|password|private_?key)(?:_|$)", re.I)
@@ -266,19 +267,46 @@ def _scan_js(source, path):
     patterns = (
         ("DIVISION_BY_ZERO", r"(?:/|%)\s*0\b(?!\.)", "Literal zero divisor"),
         ("EXCEPTION_SWALLOWED", r"\bcatch\s*(?:\([^)]*\))?\s*\{\s*(?:return\s*;)?\s*\}", "Empty catch discards failures"),
-        ("UNBOUNDED_GROWTH", r"\bthis\.([\w$]+)\.(?:push|add|set)\s*\(", "Persistent receiver may grow without a bound"),
     )
     for code, pattern, detail in patterns:
         for match in re.finditer(pattern, masked):
-            if code == "UNBOUNDED_GROWTH" and re.search(
-                    rf"\bthis\.{re.escape(match[1])}\.(?:pop|shift|splice|delete|clear)\s*\(", masked):
-                continue
-            symbol = match[1] if match.lastindex else "<module>"
-            findings.append(Finding(code, path, symbol, masked.count("\n", 0, match.start()) + 1, detail))
+            findings.append(Finding(code, path, "<module>", masked.count("\n", 0, match.start()) + 1, detail))
+    collections = set()
+    for declaration in re.finditer(r"\b(?:const|let|var)\s+([\w$]+)\s*=\s*(?:\[|new\s+(?:Array|Map|Set)\s*\()", masked):
+        if masked.count("{", 0, declaration.start()) == masked.count("}", 0, declaration.start()):
+            collections.add(declaration[1])
+    for mutation in re.finditer(r"(?<![\w$.])((?:(?:this|window|globalThis)\.)?[\w$]+)\.(push|unshift|add|set)\s*\(", masked):
+        receiver = mutation[1]
+        if "." not in receiver and receiver not in collections:
+            continue
+        if re.search(rf"(?<![\w$.]){re.escape(receiver)}\.(?:pop|shift|splice|delete|clear)\s*\(", masked):
+            continue
+        symbol = receiver.removeprefix("this.")
+        findings.append(Finding("UNBOUNDED_GROWTH", path, symbol, masked.count("\n", 0, mutation.start()) + 1,
+                                "Persistent receiver may grow without a bound"))
     for match in re.finditer(r"\b([A-Za-z_$][\w$]*)\s*[:=]\s*(['\"])([^'\"]+)\2", source):
         if masked[match.start():match.start() + len(match[1])].strip() and _SECRET.search(match[1]):
             findings.append(Finding("HARDCODED_SECRET", path, "<module>", source.count("\n", 0, match.start()) + 1,
                                     "Credential field contains a literal value"))
+    return findings, {}
+
+
+def _unsafe_references(references, path):
+    return [Finding("UNSAFE_FRONTEND_URL", path, "<module>", ref.line, "Script URL in a frontend resource reference")
+            for ref in references if re.match(r"^\s*(?:javascript|vbscript):", ref.value, re.I)]
+
+
+def _scan_css(source, path):
+    return _unsafe_references(css_references(source), path), {}
+
+
+def _scan_html(source, path):
+    blocks, references = parse_html(source)
+    findings = _unsafe_references(references, path)
+    for block in blocks:
+        if block.language == "javascript":
+            inline, _ = _scan_js(block.source, path)
+            findings.extend(replace(item, line=item.line + block.start_line - 1) for item in inline)
     return findings, {}
 
 
@@ -289,7 +317,12 @@ def audit_candidate(root: Path, baseline: str, changed_files):
     for relative in sorted(set(changed_files)):
         path = root / relative
         suffix = path.suffix.lower()
-        scanner = _scan_python if suffix == ".py" else _scan_js if suffix in JS_SUFFIXES else None
+        if suffix in JS_SUFFIXES:
+            scanner = _scan_js
+        elif suffix in HTML_SUFFIXES:
+            scanner = _scan_html
+        else:
+            scanner = {".py": _scan_python, ".css": _scan_css}.get(suffix)
         if scanner is None:
             findings.append(Finding("AUDIT_UNSUPPORTED_LANGUAGE", relative, "<module>", 1,
                                     "No independent static reviewer is configured for this file type"))

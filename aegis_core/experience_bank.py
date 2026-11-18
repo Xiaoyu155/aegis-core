@@ -153,6 +153,25 @@ class ExperienceBank:
                   "resolution": resolution[:500], "human_rule": rule}
         return self._append([record])
 
+    def ingest_verified_recoveries(self, pairs: list[dict]) -> dict:
+        """Index diagnosed failures that were followed by a verified repair."""
+        records = []
+        for pair in pairs:
+            failure = pair["failed_trace"]
+            action = failure["action_a0"]
+            diagnosis = failure["actual_state_s1"]["diagnosis"]
+            cause = str(diagnosis.get("failure_code") or diagnosis["category"])
+            paths = action.get("target_files", [])
+            kind = action.get("probe_kind", "unit")
+            finding_codes = sorted({item["code"] for item in diagnosis.get("evidence", [])
+                                    if isinstance(item, dict) and isinstance(item.get("code"), str)})
+            pattern = " ".join([*paths, cause, *finding_codes, kind, "verified recovery"])
+            records.append({"source_kind": "verified_recovery", "trace_id": int(failure["trace_id"]),
+                            "surprise": 0.0, "pattern": pattern[:10000], "outcome": "gate_passed",
+                            "cause": cause[:120], "resolution": f"dual_probe_recovered:{int(pair['passed_trace_id'])}",
+                            "human_rule": {}})
+        return self._append(records)
+
     def search(self, query: str, *, top_k: int = 5, min_similarity: float = 0.05) -> list[dict]:
         if type(query) is not str or not query.strip():
             raise ValueError("experience query is required")

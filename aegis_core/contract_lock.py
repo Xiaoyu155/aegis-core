@@ -11,6 +11,7 @@ import re
 
 from .ast_slicer import (ImportGraph, JS_SUFFIXES, _brace_end, _js_symbols, _mask_js_comments_and_strings,
                          decode, is_protected_test_path)
+from .frontend import HTML_SUFFIXES, parse_html
 
 _FUNCTION = (ast.FunctionDef, ast.AsyncFunctionDef)
 _TYPE_ALIAS = getattr(ast, "TypeAlias", ())
@@ -162,6 +163,24 @@ def _surface(path, relative):
         return _python_surface(source)
     if path.suffix.lower() in JS_SUFFIXES:
         return _js_surface(source)
+    if path.suffix.lower() in HTML_SUFFIXES:
+        blocks, _ = parse_html(source)
+        browser_api = {}
+        for block in blocks:
+            if block.language != "javascript":
+                continue
+            surface = _js_surface(block.source)
+            browser_api.update({key: value for key, value in surface.items()
+                                if key[1] == "export" or (key[1] == "signature" and value.startswith("export "))})
+            masked = _mask_js_comments_and_strings(block.source)
+            for match in re.finditer(r"\b(?:window|globalThis)\.([\w$]+)\s*=(?!=)\s*([\w$]+)?", masked):
+                name, target = match[1], match[2]
+                browser_api[name, "export"] = name
+                if (target, "signature") in surface:
+                    browser_api[name, "signature"] = surface[target, "signature"]
+                if (target, "state_keys") in surface:
+                    browser_api[name, "state_keys"] = surface[target, "state_keys"]
+        return browser_api
     return {}
 
 
@@ -183,7 +202,7 @@ class InterfaceContractLock:
     @classmethod
     def capture(cls, graph: ImportGraph, baseline: str, targets) -> InterfaceContractLock:
         targets = set(targets)
-        consumers = set()
+        consumers = {relative for relative in targets if Path(relative).suffix.lower() in HTML_SUFFIXES}
         for caller, dependencies in graph.file_dependencies.items():
             if not is_protected_test_path(caller):
                 consumers.update(targets.intersection(dependencies))

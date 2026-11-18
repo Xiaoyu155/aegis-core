@@ -8,6 +8,9 @@ from __future__ import annotations
 
 from collections import Counter
 import hashlib
+import gzip
+from functools import lru_cache
+from importlib import resources
 import json
 import math
 from pathlib import Path
@@ -373,16 +376,22 @@ class CausalWorldNet:
 class CausalWorldModel:
     """Load trained artifacts and predict one state transition before execution."""
 
-    def __init__(self, encoder: FeatureEncoder, network: CausalWorldNet, *, model_version: str):
+    def __init__(self, encoder: FeatureEncoder, network: CausalWorldNet, *, model_version: str,
+                 model_source: str = "explicit"):
         self.encoder = encoder
         self.network = network
         self.model_version = model_version
+        self.model_source = model_source
 
     @classmethod
-    def load(cls, artifact_dir: str | Path):
+    def load(cls, artifact_dir: str | Path, *, model_source="explicit"):
         path = Path(artifact_dir)
         encoder_payload = json.loads((path / "feature_encoder.json").read_text(encoding="utf-8"))
         weight_payload = json.loads((path / "model_weights.json").read_text(encoding="utf-8"))
+        return cls.from_payloads(encoder_payload, weight_payload, model_source=model_source)
+
+    @classmethod
+    def from_payloads(cls, encoder_payload, weight_payload, *, model_source):
         if weight_payload.get("schema_version") != "aegis.world_model.weights.v1":
             raise ValueError("unsupported world-model weights")
         encoder = FeatureEncoder.from_dict(encoder_payload)
@@ -391,14 +400,14 @@ class CausalWorldModel:
             raise ValueError("world-model artifact dimensions disagree")
         version = weight_payload.get("model_version") or hashlib.sha256(
             json.dumps(weight_payload, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
-        return cls(encoder, network, model_version=version)
+        return cls(encoder, network, model_version=version, model_source=model_source)
 
     @classmethod
-    def load_if_available(cls, artifact_dir: str | Path):
+    def load_if_available(cls, artifact_dir: str | Path, *, model_source="explicit"):
         path = Path(artifact_dir)
         if not (path / "model_weights.json").is_file():
             return None
-        return cls.load(path)
+        return cls.load(path, model_source=model_source)
 
     def predict(self, state, action, context=None, prior_attempts=()) -> dict:
         features = self.encoder.encode(state, action, context, prior_attempts)
@@ -435,9 +444,44 @@ class CausalWorldModel:
         }
 
 
+@lru_cache(maxsize=1)
+def bundled_replay_anchors():
+    resource = resources.files("aegis_core").joinpath("data", "replay_anchors.json.gz")
+    with resource.open("rb") as packed, gzip.open(packed, "rt", encoding="utf-8") as stream:
+        return json.load(stream)
+
+
+@lru_cache(maxsize=1)
+def _bundled_model():
+    artifacts = resources.files("aegis_core").joinpath("data")
+    encoder = json.loads(artifacts.joinpath("feature_encoder.json").read_text(encoding="utf-8"))
+    weights = json.loads(artifacts.joinpath("model_weights.json").read_text(encoding="utf-8"))
+    return CausalWorldModel.from_payloads(encoder, weights, model_source="bundled")
+
+
+def encoder_digest(encoder):
+    encoded = json.dumps(encoder.to_dict(), sort_keys=True, separators=(",", ":"), allow_nan=False)
+    return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+
+
 def load_repository_model(root):
-    """Load the repository model, honoring the attached-repository override."""
+    """Load override, target checkpoint, or the immutable package seed."""
     import os
 
-    path = Path(os.environ.get("AEGIS_WORLD_MODEL_DIR", Path(root) / "artifacts" / "causal_world_model"))
-    return CausalWorldModel.load_if_available(path.resolve())
+    override = os.environ.get("AEGIS_WORLD_MODEL_DIR")
+    if override:
+        return CausalWorldModel.load_if_available(Path(override).resolve(), model_source="environment")
+    local = Path(root) / "artifacts" / "causal_world_model"
+    model = CausalWorldModel.load_if_available(local, model_source="repository")
+    return model if model is not None else _bundled_model()
+
+
+def prediction_telemetry(model=None, *, predictions_made=0, no_prediction_count=0,
+                         below_threshold_count=0, **diagnostics):
+    mode = None if model is None else "observe" if model.model_source == "bundled" else "active"
+    return {"model_loaded": model is not None,
+            "world_model_version": model.model_version if model is not None else None,
+            "model_source": model.model_source if model is not None else None,
+            "model_mode": mode,
+            "predictions_made": predictions_made, "no_prediction_count": no_prediction_count,
+            "below_threshold_count": below_threshold_count, **diagnostics}

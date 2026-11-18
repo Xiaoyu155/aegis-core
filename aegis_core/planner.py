@@ -15,10 +15,12 @@ import uuid
 from .ast_slicer import ImportGraph, is_protected_test_path
 from .contract_lock import InterfaceContractLock
 from .pm_expander import expand_requirement
+from .probes import freeze_probes
+from .repo_adapter import load_tool_source_globs
 from .router import Router, load_models, route_complexity
 from .runner import retrieve, terms
 from .sandbox import run_git
-from .world_model import load_repository_model
+from .world_model import load_repository_model, prediction_telemetry
 
 
 def _git(root: Path, *args: str) -> str:
@@ -30,9 +32,9 @@ def _slug(value: str) -> str:
     return slug[:36] or "task"
 
 
-def _is_business_path(path: str) -> bool:
+def _is_business_path(path: str, tool_source_globs) -> bool:
     from .mediator import is_business_source
-    return is_business_source(path) and not is_protected_test_path(path)
+    return is_business_source(path, tool_source_globs=tool_source_globs) and not is_protected_test_path(path)
 
 
 def _topological_layers(tasks: list[dict]) -> list[list[str]]:
@@ -57,6 +59,26 @@ def _topological_layers(tasks: list[dict]) -> list[list[str]]:
     return layers
 
 
+def _freeze_task_probes(root, task):
+    if task["kind"] == "repair":
+        before = task.get("fail_before_cmd") or task.get("pass_after_cmd")
+        commands = {"fail_before_cmd": before, "pass_after_cmd": task.get("pass_after_cmd") or before}
+    elif task["kind"] in {"validation", "command"}:
+        commands = {"command": task.get("command")}
+    else:
+        return task
+    if not all(commands.values()):
+        return task
+    if any(type(argv) is not list or any(type(a) is not str or not a for a in argv)
+           for argv in commands.values()):
+        raise ValueError("DAG probe command must be a nonempty argument array")
+    normalized, frozen = freeze_probes(root, tuple(commands.values()), kind=task.get("probe_kind", "unit"),
+                                      scripts=task.get("probe_scripts", []))
+    if task.get("probe_script_sha256", frozen) != frozen:
+        raise ValueError(f"PROBE_INTEGRITY_VIOLATION: DAG probe script hashes differ for {task['task_id']}")
+    return {**task, **dict(zip(commands, normalized)), "probe_scripts": list(frozen), "probe_script_sha256": frozen}
+
+
 def build_task_dag(requirement: str, repo: str | Path, *, max_tasks: int = 8,
                    answers=None, experience_db=None) -> dict:
     """Plan a requirement from repository symbols, imports and matching tests."""
@@ -72,15 +94,16 @@ def build_task_dag(requirement: str, repo: str | Path, *, max_tasks: int = 8,
     spec = expand_requirement(requirement, root, answers=answers, experience_db=experience_db,
                               graph=graph, retrieval=retrieval).to_dict()
     model = load_repository_model(root)
+    globs = load_tool_source_globs(root)
     query = terms(requirement)
     candidates = {}
     for row in retrieval["candidates"]:
-        if _is_business_path(row["file"]):
+        if _is_business_path(row["file"], globs):
             candidates[row["file"]] = max(float(row["score"]), candidates.get(row["file"], 0.0))
     # Score complete source files as well as top symbol hits so multi-module
     # requirements don't collapse to a single retrieval result.
     for relative in [*graph.paths, *graph.js_modules]:
-        if not _is_business_path(relative):
+        if not _is_business_path(relative, globs):
             continue
         if relative in graph.paths:
             module = graph.paths[relative]
@@ -93,16 +116,16 @@ def build_task_dag(requirement: str, repo: str | Path, *, max_tasks: int = 8,
                                if key.startswith(relative + ":"))
         overlap = query & terms(relative + " " + content)
         score = len(overlap) / max(1, len(query))
-        if score:
+        if score or relative.lower() in requirement.lower():
             candidates[relative] = max(score, candidates.get(relative, 0.0))
     request_lower = requirement.lower().replace("\\", "/")
     mentioned_source_paths = set(re.findall(
-        r"(?<![a-z0-9_./-])((?:[a-z0-9_.-]+/)*[a-z0-9_.-]+\.(?:py|js|jsx|mjs|cjs|ts|tsx|mts|cts))(?=$|[^a-z0-9_])",
+        r"(?<![\w./-])((?:[\w.-]+/)*[\w.-]+\.(?:py|js|jsx|mjs|cjs|ts|tsx|mts|cts|html?|css))(?=$|[^\w])",
         request_lower))
     planned_new_paths = sorted(relative for relative in mentioned_source_paths
                                if relative not in graph.paths and relative not in graph.js_modules
                                and "/" in relative
-                               and _is_business_path(relative)
+                               and _is_business_path(relative, globs)
                                and (root / Path(relative).parent).is_dir())
     mentioned_stems = {Path(relative).stem for relative in planned_new_paths}
     mentioned_paths = {relative for relative in candidates if relative.lower() in request_lower}
@@ -224,8 +247,10 @@ def build_task_dag(requirement: str, repo: str | Path, *, max_tasks: int = 8,
         contract["business_parameters"] = spec["business_parameters"]
         prediction = model.predict({"status": "COMPILED"}, {"op": "repair_attempt", "target_files": targets,
                                    "contract": contract}, context=contract["ast_context"]) if model else None
-        task["complexity"] = route_complexity(graph, targets,
-                                              risk_probability=prediction["risk_probability"] if prediction else None)
+        if prediction is not None:
+            task["prediction"] = prediction
+        risk = prediction["risk_probability"] if prediction is not None and model.model_source != "bundled" else None
+        task["complexity"] = route_complexity(graph, targets, risk_probability=risk)
     tasks = repair_tasks + [validation]
     layers = _topological_layers(tasks)
     by_id = {task["task_id"]: task for task in repair_tasks}
@@ -243,6 +268,10 @@ def build_task_dag(requirement: str, repo: str | Path, *, max_tasks: int = 8,
         "base_commit": baseline,
         "requirement": requirement,
         "spec": spec,
+        "telemetry": prediction_telemetry(model, scope="planned_repairs",
+                                          predictions_made=len(repair_tasks) if model else 0,
+                                          no_prediction_count=0 if model else len(repair_tasks)),
+        "tool_source_globs": list(globs),
         "interface_locks": interface_locks,
         "tasks": tasks,
         "topological_layers": layers,
@@ -253,7 +282,8 @@ def build_task_dag(requirement: str, repo: str | Path, *, max_tasks: int = 8,
 
 
 def execute_task_dag(plan_path: str | Path, *, db: str | Path | None = None,
-                     workers: int = 4, repo: str | Path | None = None, models: str | Path | None = None) -> tuple[dict, int]:
+                     workers: int = 4, repo: str | Path | None = None, models: str | Path | None = None,
+                     telemetry=None) -> tuple[dict, int]:
     """Run each DAG layer through ordinary Aegis contracts and a staged worktree."""
     plan_path = Path(plan_path).resolve(strict=True)
     plan = json.loads(plan_path.read_text(encoding="utf-8"))
@@ -266,10 +296,14 @@ def execute_task_dag(plan_path: str | Path, *, db: str | Path | None = None,
         raise ValueError("TaskDAG repository does not match --repo")
     if _git(root, "rev-parse", "HEAD") != plan["base_commit"]:
         raise ValueError("TaskDAG baseline changed; regenerate the plan")
-    if _git(root, "status", "--porcelain"):
+    status = _git(root, "status", "--porcelain=v1", "-z", "--untracked-files=all")
+    if set(status.split("\0")) - {"", "?? .aegis/repo_profile.json"}:
         raise ValueError("DAG execution requires a clean repository")
+    globs = load_tool_source_globs(root)
+    if "tool_source_globs" in plan and plan["tool_source_globs"] != list(globs):
+        raise ValueError("repository tool_source_globs changed; regenerate the plan")
     layers = _topological_layers(plan["tasks"])
-    task_map = {task["task_id"]: task for task in plan["tasks"]}
+    task_map = {task["task_id"]: _freeze_task_probes(root, task) for task in plan["tasks"]}
     from .mediator import canonical_path
     for layer in layers:
         targets = Counter(os.path.normcase(canonical_path(target))
@@ -281,6 +315,10 @@ def execute_task_dag(plan_path: str | Path, *, db: str | Path | None = None,
     ledger_path.parent.mkdir(parents=True, exist_ok=True)
     models = Path(models).resolve(strict=True) if models else None
     router = Router(load_models(models)) if models else None
+    world_model = load_repository_model(root)
+    if telemetry is None:
+        telemetry = {}
+    telemetry.update(prediction_telemetry(world_model, scope="repair_attempts"))
     stage_id = "aegis/dag-" + uuid.uuid4().hex[:10]
     stage_dir = root / ".worktrees" / ("dag-" + uuid.uuid4().hex[:10])
     if stage_dir.parent.is_symlink():
@@ -336,7 +374,9 @@ def execute_task_dag(plan_path: str | Path, *, db: str | Path | None = None,
                     fail_before=json.dumps(probe), pass_after=json.dumps(task.get("pass_after_cmd") or probe),
                     source_dir=task.get("source_dirs") or ["."], patch=patches,
                     max_attempts=task.get("max_attempts", 3 if use_model else len(patches)),
-                    timeout=float(task.get("timeout_sec", 180)), out=str(manifest), interface_lock=interface_lock)
+                    timeout=float(task.get("timeout_sec", 180)), out=str(manifest), interface_lock=interface_lock,
+                    tool_source_globs=globs, probe_kind=task.get("probe_kind", "unit"),
+                    probe_scripts=task.get("probe_scripts"), probe_script_sha256=task.get("probe_script_sha256"))
                 document, code = _wish(args)
                 if code or document["compilation"]["status"] != "COMPILED":
                     statuses[task["task_id"]] = "failed"
@@ -347,8 +387,11 @@ def execute_task_dag(plan_path: str | Path, *, db: str | Path | None = None,
                 manifest_tasks[str(manifest)] = task
             if manifests:
                 from .queue_worker import run_contracts
-                executions = run_contracts(manifests, db=ledger_path, workers=min(workers, len(manifests)), router=router)
+                executions = run_contracts(manifests, db=ledger_path, workers=min(workers, len(manifests)),
+                                            router=router, world_model=world_model)
                 for manifest, (result, code) in zip(manifests, executions):
+                    for key in ("predictions_made", "no_prediction_count"):
+                        telemetry[key] += result.get("telemetry", {}).get(key, 0)
                     task = manifest_tasks[str(manifest)]
                     task_id = task["task_id"]
                     if code == 0 and result.get("status") == "succeeded":
@@ -399,7 +442,10 @@ def execute_task_dag(plan_path: str | Path, *, db: str | Path | None = None,
                     results.append({"task_id": task_id, "status": "failed", "reason": "validation_command_required"})
                     continue
                 from .sandbox import run_exam_gate
-                gate = run_exam_gate(stage_dir, command, timeout=float(task.get("timeout_sec", 180)))
+                probe_kind = task.get("probe_kind", "unit")
+                command = [sys.executable if arg == "{python}" else arg for arg in command]
+                gate = run_exam_gate(stage_dir, command, timeout=float(task.get("timeout_sec", 180)),
+                                     probe_kind=probe_kind, probe_script_sha256=task.get("probe_script_sha256"))
                 statuses[task_id] = "passed" if gate["passed"] else "failed"
                 results.append({"task_id": task_id, "status": statuses[task_id], "gate": gate})
             # A task that was selected but did not yield an explicit result is
@@ -411,7 +457,7 @@ def execute_task_dag(plan_path: str | Path, *, db: str | Path | None = None,
         passed = all(statuses.get(task["task_id"]) == "passed" for task in plan["tasks"])
         return {"dag_id": plan["dag_id"], "status": "succeeded" if passed else "failed",
                 "tasks": results, "task_statuses": statuses, "interface_locks": executed_locks,
-                "staged_commit": _git(stage_dir, "rev-parse", "HEAD")}, 0 if passed else 1
+                "telemetry": telemetry, "staged_commit": _git(stage_dir, "rev-parse", "HEAD")}, 0 if passed else 1
     finally:
         try:
             for manifest in temporary_manifests:

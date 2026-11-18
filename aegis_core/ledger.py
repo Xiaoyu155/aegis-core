@@ -12,6 +12,41 @@ def _json(value):
     return json.dumps(value, ensure_ascii=False, sort_keys=True, allow_nan=False)
 
 
+def _probe_invalid(actual, diagnostic):
+    invalid = {"ENVIRONMENT_UNAVAILABLE", "PROBE_INTEGRITY_VIOLATION", "PROBE_MUTATED_WORKTREE"}
+    return (diagnostic.get("failure_code") in invalid
+            or any((actual.get(key) or {}).get("failure_code") in invalid for key in ("baseline", "final")))
+
+
+def _verified_recoveries(attempts, limit):
+    """Match an observed failure to a different passing patch under the same ticket."""
+    pending = {}
+    pairs = []
+    for row in reversed(attempts):
+        actual, action = row["actual_state_s1"], row["action_a0"]
+        diagnosis = actual.get("diagnosis") or {}
+        if (not actual.get("baseline_failed") or row["ticket_status"] != "succeeded"
+                or any(actual.get(key) for key in ("pre_blocked", "error_type", "error", "cheat_detected",
+                                                  "repeated_patch", "timeout_killed"))
+                or _probe_invalid(actual, diagnosis) or not action.get("patch_sha256")):
+            continue
+        ticket_id = row["ticket_id"]
+        if actual.get("passed") and actual.get("after_passed"):
+            for failure in pending.pop(ticket_id, {}).values():
+                earlier = failure["action_a0"]
+                if earlier["patch_sha256"] == action["patch_sha256"]:
+                    continue
+                if any(earlier.get(key) != action.get(key) for key in ("contract", "probe_kind", "probe_script_sha256")):
+                    continue
+                pairs.append({"failed_trace": failure, "passed_trace_id": row["trace_id"]})
+        elif (not actual.get("passed") and diagnosis.get("kind") == "FailureDiagnosis"
+              and (actual.get("gate_failure") or (actual.get("final") or {}).get("exit_code") == 1)):
+            code = diagnosis.get("failure_code") or diagnosis.get("category")
+            if code:
+                pending.setdefault(ticket_id, {})[code] = row
+    return pairs[-limit:]
+
+
 class Ledger:
     def __init__(self, path: str | Path) -> None:
         self.path = str(path)
@@ -130,39 +165,54 @@ class Ledger:
 
     def high_surprise_traces(self, min_surprise: float = 0.3, *, limit: int = 256) -> list[dict]:
         """Return immutable, real repair outcomes above the composite-error threshold."""
+        return self.learning_selection(min_surprise, limit=limit)[0]
+
+    def learning_selection(self, min_surprise: float = 0.3, *, limit: int = 256):
+        """Separate scored repair outcomes from observed recoveries in one ledger snapshot."""
         if type(min_surprise) not in (int, float) or not math.isfinite(min_surprise) or min_surprise < 0:
             raise ValueError("min_surprise must be finite and nonnegative")
         if type(limit) is not int or not 1 <= limit <= 10000:
             raise ValueError("limit must be 1..10000")
         with self._connection() as db:
-            rows = db.execute("""SELECT trace_id,ticket_id,step_idx,state_s0,action_a0,
-                                       actual_state_s1,reward,predicted_next_state,predicted_reward,
-                                       prediction_confidence,prediction_error,predicted_reward_interval,timestamp
-                                FROM causal_traces WHERE prediction_error IS NOT NULL
-                                ORDER BY timestamp DESC,trace_id DESC""").fetchall()
-        decoded = [(row, json.loads(row["action_a0"]), json.loads(row["actual_state_s1"])) for row in rows]
-        invalid_tickets = {row["ticket_id"] for row, action, actual in decoded
-                           if action.get("op") == "repair_attempt" and actual.get("error_type")}
-        result = []
-        for row, decoded_action, decoded_actual in decoded:
+            rows = db.execute("""SELECT trace.*, ticket.status AS ticket_status
+                                FROM causal_traces AS trace JOIN tickets AS ticket USING (ticket_id)
+                                WHERE json_extract(trace.action_a0, '$.op') = 'repair_attempt'
+                                ORDER BY trace.timestamp DESC, trace.trace_id DESC""").fetchall()
+        decoded = []
+        for row in rows:
             item = dict(row)
-            error = json.loads(item["prediction_error"])
-            action = decoded_action
-            actual = decoded_actual
-            if (action.get("op") != "repair_attempt" or actual.get("pre_blocked")
-                    or actual.get("error_type") or item["ticket_id"] in invalid_tickets):
-                continue
-            surprise = error.get("composite_error")
-            if type(surprise) not in (int, float) or not math.isfinite(surprise) or surprise <= min_surprise:
-                continue
             for key in ("state_s0", "action_a0", "actual_state_s1", "predicted_next_state",
                         "prediction_error", "predicted_reward_interval"):
                 item[key] = json.loads(item[key]) if item[key] is not None else None
-            item["composite_error"] = float(surprise)
-            result.append(item)
-            if len(result) >= limit:
-                break
-        return result
+            decoded.append(item)
+        invalid_tickets = {item["ticket_id"] for item in decoded
+                           if item["prediction_error"] is not None and item["actual_state_s1"].get("error_type")}
+        counters = {"predictions_made": 0, "no_prediction_count": 0, "below_threshold_count": 0,
+                    "unscored_count": 0, "excluded_count": 0, "above_threshold_count": 0}
+        selected = []
+        for item in decoded:
+            if item["predicted_next_state"] is None:
+                counters["no_prediction_count"] += 1
+                continue
+            counters["predictions_made"] += 1
+            actual = item["actual_state_s1"]
+            diagnostic = actual.get("diagnosis") or {}
+            if (actual.get("pre_blocked") or actual.get("error_type") or actual.get("error")
+                    or _probe_invalid(actual, diagnostic) or item["ticket_id"] in invalid_tickets):
+                counters["excluded_count"] += 1
+                continue
+            surprise = (item["prediction_error"] or {}).get("composite_error")
+            if type(surprise) not in (int, float) or not math.isfinite(surprise):
+                counters["unscored_count"] += 1
+            elif surprise <= min_surprise:
+                counters["below_threshold_count"] += 1
+            else:
+                counters["above_threshold_count"] += 1
+                if len(selected) < limit:
+                    selected.append({**item, "composite_error": float(surprise)})
+        counters["repair_attempt_count"] = len(decoded)
+        counters["selection_limited_count"] = counters["above_threshold_count"] - len(selected)
+        return selected, _verified_recoveries(decoded, limit), counters
 
     def get_ticket(self, ticket_id: str) -> dict:
         with self._connection() as db:

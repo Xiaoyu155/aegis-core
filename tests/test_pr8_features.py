@@ -168,7 +168,7 @@ def test_gate_timeout_kills_the_whole_child_process_group_and_reaps_descendants(
                f"child=subprocess.Popen([sys.executable,'-c','import time;time.sleep(30)']); "
                f"pathlib.Path({str(pid_file)!r}).write_text(str(child.pid)); "
                "exec('while True:\\n    pass')"]
-    result = run_exam_gate(repo, command, timeout=0.25)
+    result = run_exam_gate(repo, command, timeout=2)
     assert result["exit_code"] == 124
     assert result["timed_out"] and result["timeout_killed"] and result["killed_process_group"]
     assert result["termination_reason"] == "TIMEOUT_KILLED"

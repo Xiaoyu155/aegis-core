@@ -4,7 +4,6 @@ from __future__ import annotations
 import hashlib
 import io
 import json
-import math
 import os
 from pathlib import Path
 import random
@@ -13,7 +12,8 @@ import tempfile
 from .ledger import Ledger
 from .experience_bank import ExperienceBank
 from .runner import classify_causal_outcome
-from .world_model import CausalWorldModel, STATE_LABELS
+from .world_model import (CausalWorldModel, STATE_LABELS, bundled_replay_anchors,
+                          encoder_digest, load_repository_model, prediction_telemetry)
 
 
 def _atomic_bytes(path: Path, data: bytes):
@@ -29,8 +29,7 @@ def _atomic_bytes(path: Path, data: bytes):
         Path(temporary).unlink(missing_ok=True)
 
 
-def _load_numpy_weights(payload):
-    raw = payload["weights"]
+def _load_numpy_weights(raw):
     return {
         "W1": np.asarray(raw["W1"], dtype=np.float64),
         "b1": np.asarray(raw["b1"], dtype=np.float64),
@@ -43,6 +42,36 @@ def _load_numpy_weights(payload):
     }
 
 
+def _anchors(root, model, seed):
+    pack = bundled_replay_anchors()
+    if pack["encoder_sha256"] == encoder_digest(model.encoder):
+        return pack["training"], pack["validation"]
+    # A custom encoder needs anchors encoded in that encoder, from its own corpus.
+    if not (root / "datasets" / "sft_mediator_train.jsonl").is_file():
+        return [], []
+    try:
+        from scripts.train_and_eval_world_model import build_corpus, split_by_group
+    except ImportError:
+        return [], []
+    examples, _ = build_corpus(root)
+    train, validation, _ = split_by_group(examples)
+    rng = random.Random(seed)
+    training_indices = []
+    for label in STATE_LABELS:
+        candidates = [i for i in train if examples[i]["label"] == label]
+        rng.shuffle(candidates)
+        training_indices.extend(candidates[:24])
+
+    def rows(indices):
+        return [{**examples[index], "features": _encode(model, examples[index])} for index in indices]
+
+    return rows(training_indices), rows(validation[:96])
+
+
+def _encode(model, row):
+    return model.encoder.encode(row["state"], row["action"], row.get("context"), row.get("prior_attempts", []))
+
+
 def learn_from_ledger(*, repo: str | Path, db: str | Path, min_surprise: float = 0.3,
                       artifact_dir: str | Path | None = None, limit: int = 256,
                       epochs: int = 4, seed: int = 20261118) -> dict:
@@ -51,47 +80,38 @@ def learn_from_ledger(*, repo: str | Path, db: str | Path, min_surprise: float =
         raise ValueError("epochs must be 1..20")
     root = Path(repo).resolve(strict=True)
     artifacts = Path(artifact_dir or root / "artifacts" / "causal_world_model").resolve()
-    traces = Ledger(db).high_surprise_traces(min_surprise, limit=limit)
+    traces, recoveries, coverage = Ledger(db).learning_selection(min_surprise, limit=limit)
+    model = (CausalWorldModel.load_if_available(artifacts, model_source="artifact_dir")
+             if artifact_dir is not None else None)
+    if model is None:
+        model = load_repository_model(root)
     experience_bank = ExperienceBank(db)
-    experience_report = experience_bank.ingest_traces(traces)
+    surprise_report = experience_bank.ingest_traces(traces)
+    experience_report = experience_bank.ingest_verified_recoveries(recoveries)
+    experience_report.update(added=surprise_report["added"] + experience_report["added"],
+                             surprise_added=surprise_report["added"], recovery_added=experience_report["added"])
+    telemetry = prediction_telemetry(model, scope="ledger_repair_attempts", **coverage,
+                                     verified_recoveries=[
+                                         {"failed_trace_id": i["failed_trace"]["trace_id"],
+                                          "passed_trace_id": i["passed_trace_id"]} for i in recoveries])
+    summary = {"threshold": min_surprise, "selected_traces": len(traces), "updated": False,
+               "world_model_version": model.model_version if model else None,
+               "telemetry": telemetry, "experience_bank": experience_report}
     if not traces:
-        weight_path = artifacts / "model_weights.json"
-        current = json.loads(weight_path.read_text(encoding="utf-8")) if weight_path.is_file() else None
-        return {"status": "no_surprises", "threshold": min_surprise, "selected_traces": 0,
-                "world_model_version": current.get("model_version") if current else None,
-                "updated": False}
+        return {"status": "no_surprises", **summary}
+    if model is None:
+        return {"status": "model_unavailable", **summary}
     global np
     try:
         import numpy as np
-    except ImportError as error:
-        raise RuntimeError("online replay requires the optional 'training' extra (numpy)") from error
-    if not (artifacts / "model_weights.json").is_file():
-        raise FileNotFoundError("trained world-model artifacts are required before online learning")
+    except ImportError:
+        return {"status": "training_dependency_unavailable", **summary}
+    from .replay_math import RISK_LABELS, _loss, _serialize_weights, _train_epoch
 
-    # The offline trainer is the single source of truth for feature encoding,
-    # class-weighted losses and gradient updates.
-    from scripts.train_and_eval_world_model import (
-        RISK_LABELS, _forward, _loss, _serialize_weights, _train_epoch,
-        build_corpus, split_by_group,
-    )
-
-    model = CausalWorldModel.load(artifacts)
-    weights_payload = json.loads((artifacts / "model_weights.json").read_text(encoding="utf-8"))
-    anchor_weights = _load_numpy_weights(weights_payload)
-    examples, _ = build_corpus(root)
-    train_indices, validation_indices, _, _ = split_by_group(examples, return_summary=True)
-    rng = random.Random(seed)
-    anchors_by_label = {label: [] for label in STATE_LABELS}
-    for index in train_indices:
-        anchors_by_label[examples[index]["label"]].append(examples[index])
-    anchors = []
-    per_class_anchor_cap = 24
-    for label in STATE_LABELS:
-        values = anchors_by_label[label]
-        rng.shuffle(values)
-        anchors.extend(values[:per_class_anchor_cap])
-    if not anchors:
-        raise ValueError("no historical anchor examples are available")
+    anchor_weights = _load_numpy_weights(model.network.weights)
+    anchors, calibration_rows = _anchors(root, model, seed)
+    if not anchors or not calibration_rows:
+        return {"status": "anchor_corpus_unavailable", **summary}
     replay = []
     for trace in traces:
         actual = trace["actual_state_s1"]
@@ -99,20 +119,14 @@ def learn_from_ledger(*, repo: str | Path, db: str | Path, min_surprise: float =
         if label not in STATE_LABELS:
             continue
         action = trace["action_a0"]
-        replay.append({"state": trace["state_s0"], "action": action,
-                       "context": action.get("context", {}), "prior_attempts": [],
-                       "label": label, "reward": float(trace["reward"]),
-                       "high_risk": label in RISK_LABELS})
+        replay.append({"features": _encode(model, {"state": trace["state_s0"], "action": action,
+                                                   "context": action.get("context", {})}),
+                       "label": label, "reward": float(trace["reward"]), "high_risk": label in RISK_LABELS})
     if not replay:
-        return {"status": "no_usable_surprises", "threshold": min_surprise,
-                "selected_traces": len(traces), "updated": False,
-                "world_model_version": model.model_version, "experience_bank": experience_report}
+        return {"status": "no_usable_surprises", **summary}
 
     rows = anchors + replay * 2
-    feature_matrix = np.asarray([
-        model.encoder.encode(row["state"], row["action"], row.get("context"), row.get("prior_attempts", []))
-        for row in rows
-    ], dtype=np.float64)
+    feature_matrix = np.asarray([row["features"] for row in rows], dtype=np.float64)
     labels = np.asarray([STATE_LABELS.index(row["label"]) for row in rows], dtype=np.int64)
     reward_mean, reward_scale = model.network.reward_mean, model.network.reward_scale
     reward_targets = np.asarray([(row["reward"] - reward_mean) / reward_scale for row in rows], dtype=np.float64)
@@ -127,9 +141,7 @@ def learn_from_ledger(*, repo: str | Path, db: str | Path, min_surprise: float =
             class_weights[index] = min(8.0, len(rows) / (present * count))
     before_loss = _loss(feature_matrix, labels, reward_targets, risk_targets,
                         anchor_weights, class_weights, risk_positive_weight)
-    calibration_rows = [examples[index] for index in validation_indices[:min(96, len(validation_indices))]]
-    validation_x = np.asarray([model.encoder.encode(row["state"], row["action"], row.get("context"),
-                               row.get("prior_attempts", [])) for row in calibration_rows], dtype=np.float64)
+    validation_x = np.asarray([row["features"] for row in calibration_rows], dtype=np.float64)
     validation_labels = np.asarray([STATE_LABELS.index(row["label"]) for row in calibration_rows], dtype=np.int64)
     validation_rewards = np.asarray([(row["reward"] - reward_mean) / reward_scale for row in calibration_rows])
     validation_risks = np.asarray([row["high_risk"] for row in calibration_rows], dtype=np.float64)
@@ -170,14 +182,12 @@ def learn_from_ledger(*, repo: str | Path, db: str | Path, min_surprise: float =
             best_epoch = epoch
             best_weights = {name: value.copy() for name, value in weights.items()}
     if best_weights is None:
-        report = {"schema_version": "aegis.online_replay_report.v1",
-                  "status": "anchor_protection_rejected", "threshold": float(min_surprise),
-                  "selected_traces": len(traces), "replay_examples": len(replay),
+        report = {**summary, "schema_version": "aegis.online_replay_report.v1",
+                  "status": "anchor_protection_rejected", "replay_examples": len(replay),
                   "previous_world_model_version": model.model_version,
                   "world_model_version": model.model_version,
                   "replay_loss_before": before_loss, "anchor_validation_loss_before": validation_before,
-                  "experience_bank": experience_report,
-                  "anchor_tolerance": anchor_tolerance, "history": history, "updated": False}
+                  "anchor_tolerance": anchor_tolerance, "history": history}
         _atomic_bytes(artifacts / "online_replay_report.json",
                       (json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False) + "\n").encode())
         return report
@@ -191,7 +201,9 @@ def learn_from_ledger(*, repo: str | Path, db: str | Path, min_surprise: float =
                                allow_nan=False) + "\n").encode("utf-8")
     weight_sha = hashlib.sha256(weight_bytes).hexdigest()
     version = new_payload["model_version"]
+    telemetry.update(initial_world_model_version=model.model_version, world_model_version=version)
     report = {
+        **summary,
         "schema_version": "aegis.online_replay_report.v1",
         "status": "updated",
         "threshold": float(min_surprise),
@@ -217,6 +229,9 @@ def learn_from_ledger(*, repo: str | Path, db: str | Path, min_surprise: float =
         "experience_bank": experience_report,
     }
     version_path = artifacts / "versions" / f"{version}.json"
+    encoder_bytes = (json.dumps(model.encoder.to_dict(), ensure_ascii=False, separators=(",", ":"),
+                                allow_nan=False) + "\n").encode("utf-8")
+    _atomic_bytes(artifacts / "feature_encoder.json", encoder_bytes)
     _atomic_bytes(version_path, weight_bytes)
     _atomic_bytes(artifacts / "model_weights.json", weight_bytes)
     npz_buffer = io.BytesIO()

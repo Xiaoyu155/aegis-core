@@ -320,8 +320,11 @@ def test_learn_without_surprises_preserves_existing_model_version(tmp_path):
     shutil.copytree(ROOT / "artifacts" / "causal_world_model", artifacts)
     version = CausalWorldModel.load(artifacts).model_version
     result = learn_from_ledger(repo=ROOT, db=tmp_path / "empty.sqlite", artifact_dir=artifacts)
-    assert result == {"status": "no_surprises", "threshold": 0.3, "selected_traces": 0,
-                      "world_model_version": version, "updated": False}
+    assert {key: result[key] for key in ("status", "threshold", "selected_traces", "world_model_version", "updated")} == {
+        "status": "no_surprises", "threshold": 0.3, "selected_traces": 0, "world_model_version": version,
+        "updated": False,
+    }
+    assert result["telemetry"]["model_loaded"] and result["telemetry"]["predictions_made"] == 0
 
 
 def test_learn_updates_weights_and_writes_versioned_online_calibration_report(tmp_path):

@@ -13,6 +13,9 @@ import subprocess
 import tempfile
 import time
 
+from .probes import PROBE_INTEGRITY_VIOLATION, classify_probe_failure, verify_probe_files
+from .repo_adapter import load_tool_source_globs
+
 _GIT_LOCK = threading.RLock()
 _EXCLUDED = {".git", ".worktrees", "__pycache__", ".pytest_cache", ".venv"}
 
@@ -93,7 +96,8 @@ def tree_hash(root: Path) -> str:
     return digest.hexdigest()
 
 
-def run_exam_gate(worktree_path: Path, test_cmd: str | list[str] = "pytest", *, timeout: float = 60) -> dict:
+def run_exam_gate(worktree_path: Path, test_cmd: str | list[str] = "pytest", *, timeout: float = 60,
+                  probe_kind="unit", probe_script_sha256=None) -> dict:
     path = Path(worktree_path).resolve()
     command = shlex.split(test_cmd, posix=os.name != "nt") if isinstance(test_cmd, str) else list(test_cmd)
     if not command:
@@ -101,7 +105,10 @@ def run_exam_gate(worktree_path: Path, test_cmd: str | list[str] = "pytest", *, 
     before = tree_hash(path)
     timed_out = False
     killed_process_group = False
+    probe_hashes = {} if probe_script_sha256 is None else probe_script_sha256
+    integrity_error = False
     try:
+        verify_probe_files(path, probe_hashes)
         # A fresh cache prevents same-size/same-second edits from reusing stale pyc.
         with tempfile.TemporaryDirectory(prefix="aegis-pycache-") as cache:
             environment = dict(os.environ, PYTHONPYCACHEPREFIX=cache,
@@ -143,13 +150,24 @@ def run_exam_gate(worktree_path: Path, test_cmd: str | list[str] = "pytest", *, 
                     _restore_child_subreaper(subreaper_state)
                 code = 124
                 stderr = (stderr or "") + "\nExam timed out; process group killed (TIMEOUT_KILLED)"
+    except ValueError as error:
+        code, stdout, stderr = 125, "", str(error)
+        integrity_error = True
     except OSError as error:
         code, stdout, stderr = 127, "", str(error)
     after = tree_hash(path)
+    if not integrity_error:
+        try:
+            verify_probe_files(path, probe_hashes)
+        except ValueError as error:
+            stderr += "\n" + str(error)
+            integrity_error = True
+    failure = (PROBE_INTEGRITY_VIOLATION if integrity_error else
+               classify_probe_failure(code, stdout + "\n" + stderr, kind=probe_kind, changed=before != after))
     return {"command": command, "exit_code": code, "stdout": stdout, "stderr": stderr,
             "before_hash": before, "after_hash": after, "changed": before != after,
-            "reward": 1.0 if code == 0 and before == after else -1.0,
-            "passed": code == 0 and before == after,
+            "reward": 1.0 if failure is None else -1.0, "passed": failure is None,
+            "probe_kind": probe_kind, "probe_script_sha256": probe_hashes, "failure_code": failure,
             "timed_out": timed_out, "timeout_killed": timed_out,
             "termination_reason": "TIMEOUT_KILLED" if timed_out else None,
             "killed_process_group": killed_process_group}
@@ -214,7 +232,8 @@ class Sandbox:
 
     def repair(self, ticket_id: str, patch: str, *, fail_before_cmd,
                pass_after_cmd, source_dirs: tuple[str, ...], timeout: float = 60, probe_patch: str = "",
-               interface_lock=None, require_review: bool = False) -> dict:
+               interface_lock=None, require_review: bool = False, tool_source_globs=None,
+               probe_kind="unit", probe_script_sha256=None) -> dict:
         import time
         if not 0 < timeout < float("inf"):
             raise ValueError("positive finite repair timeout required")
@@ -225,7 +244,8 @@ class Sandbox:
         # Include committed edits: HEAD itself must still be the frozen baseline.
         if self._git("rev-parse", "HEAD", cwd=path).strip() != base:
             raise ValueError("repair baseline HEAD changed")
-        prior = detect_source_cheat(path, source_dirs, base=base)
+        globs = load_tool_source_globs(path) if tool_source_globs is None else tool_source_globs
+        prior = detect_source_cheat(path, source_dirs, base=base, tool_source_globs=globs)
         if prior["changed_files"]:
             raise ValueError("repair baseline must be clean")
         if interface_lock is not None and interface_lock.baseline != base:
@@ -238,8 +258,10 @@ class Sandbox:
             base = self._git("rev-parse", "HEAD", cwd=path).strip()
             self._bases[ticket_id] = base
         start = time.monotonic()
-        before = run_exam_gate(path, fail_before_cmd, timeout=timeout)
-        baseline_failed = before["exit_code"] == 1 and not before["changed"]
+        probe = {"probe_kind": probe_kind, "probe_script_sha256": probe_script_sha256}
+        before = run_exam_gate(path, fail_before_cmd, timeout=timeout, **probe)
+        baseline_failed = (before["exit_code"] == 1 and not before["changed"]
+                           and before["failure_code"] not in {"ENVIRONMENT_UNAVAILABLE", PROBE_INTEGRITY_VIOLATION})
         result = {"baseline": before, "baseline_failed": baseline_failed,
                   "final": None, "after_passed": False, "passed": False,
                   "cheat_detected": False, "changed_files": [], "diff_lines": 0,
@@ -248,7 +270,7 @@ class Sandbox:
                   "reward": -1.0}
         if baseline_failed:
             self.apply_patch(ticket_id, patch)
-            scope = detect_source_cheat(path, source_dirs, base=base)
+            scope = detect_source_cheat(path, source_dirs, base=base, tool_source_globs=globs)
             result.update(scope)
             if not scope["cheat_detected"] and interface_lock is not None:
                 differences = interface_lock.violations(path, scope["changed_files"])
@@ -258,7 +280,7 @@ class Sandbox:
             if not scope["cheat_detected"] and "gate_failure" not in result:
                 remaining = timeout - (time.monotonic() - start)
                 if remaining > 0:
-                    after = run_exam_gate(path, pass_after_cmd, timeout=remaining)
+                    after = run_exam_gate(path, pass_after_cmd, timeout=remaining, **probe)
                     result["final"] = after
                     result["after_passed"] = after["passed"]
                     result["passed"] = after["passed"]
@@ -304,7 +326,8 @@ class Sandbox:
         return self._git("rev-parse", "HEAD").strip()
 
 
-def detect_source_cheat(worktree_path: Path, source_dirs: tuple[str, ...], *, base: str = "HEAD") -> dict:
+def detect_source_cheat(worktree_path: Path, source_dirs: tuple[str, ...], *, base: str = "HEAD",
+                        tool_source_globs=None) -> dict:
     """Compare tracked/staged/untracked files against the frozen baseline ref."""
     from .mediator import canonical_path, is_business_source
     from .ast_slicer import is_protected_test_path
@@ -316,6 +339,7 @@ def detect_source_cheat(worktree_path: Path, source_dirs: tuple[str, ...], *, ba
     if base.startswith("-"):
         raise ValueError("invalid baseline")
     path = Path(worktree_path)
+    globs = load_tool_source_globs(path) if tool_source_globs is None else tool_source_globs
     def git(*args):
         return run_git(path, *args).stdout.decode("utf-8")
     entries = git("diff", "--no-renames", "--numstat", "-z", base, "--").split("\0")
@@ -331,12 +355,12 @@ def detect_source_cheat(worktree_path: Path, source_dirs: tuple[str, ...], *, ba
     def protected(name):
         p = Path(name)
         return (is_protected_test_path(name)
-                or any(part.lower() in {"config", ".github", "__tests__"} for part in p.parts)
+                or any(part.lower() in {"config", ".github", "__tests__", ".aegis"} for part in p.parts)
                 or p.name.startswith(("test_", "check_", "verify_", "validate_"))
                 or p.name in {"conftest.py", "setup.py", "Makefile", ".gitignore", ".gitattributes", ".env"}
                 or p.stem.lower() in {"config", "settings", "test", "tests"}
                 or p.suffix.lower() in {".json", ".yaml", ".yml", ".toml", ".ini", ".cfg"})
-    source_lines = sum(count for name, count in changes.items() if is_business_source(name)
+    source_lines = sum(count for name, count in changes.items() if is_business_source(name, tool_source_globs=globs)
                        and any(not prefix or name.startswith(prefix) for prefix in directories))
     protected_files = sorted(name for name in changes if protected(name))
     return {"changed_files": sorted(changes), "diff_lines": sum(changes.values()),

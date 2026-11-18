@@ -3,17 +3,24 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from . import cli
 
+_UNSET = object()
 
-def run_contracts(paths, *, db, workers=4, router=None):
+
+def run_contracts(paths, *, db, workers=4, router=None, world_model=_UNSET):
     if type(workers) is not int or not 1 <= workers <= 32:
         raise ValueError('workers 1..32')
     # Never redirect process-global stdout from worker threads.
     def execute(path):
         import argparse
+        args = argparse.Namespace(contract=str(path), db=str(db), router=router)
+        if world_model is not _UNSET:
+            args.world_model = world_model
         try:
-            return cli._run(argparse.Namespace(contract=str(path), db=str(db), router=router))
+            return cli._run(args)
         except Exception as error:
-            return {'status': 'error', 'error_type': type(error).__name__, 'detail': str(getattr(error,'stderr',str(error)))[:500]}, 1
+            return {'status': 'error', 'error_type': type(error).__name__,
+                    'detail': str(getattr(error, 'stderr', str(error)))[:500],
+                    'telemetry': getattr(args, 'telemetry', cli.prediction_telemetry())}, 1
     with ThreadPoolExecutor(max_workers=workers) as pool:
         return list(pool.map(execute, paths))
 

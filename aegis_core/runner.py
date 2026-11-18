@@ -4,6 +4,7 @@ from collections import Counter
 import math
 import re
 from .ast_slicer import ImportGraph, is_protected_test_path
+from .probes import classify_probe_failure
 
 CONCEPTS = {
  'depth': ('depth','sort','occlusion','perspective','anchor','层级','遮挡','透视'),
@@ -76,18 +77,21 @@ def retrieve(root, wish, *, token_budget=4000, graph=None):
 
 
 def diagnose(root, feedback, *, attempt, token_budget=4000):
+    final = feedback.get('final') or feedback.get('baseline') or {}
+    probe_kind = feedback.get('probe_kind') or final.get('probe_kind', 'unit')
     if feedback.get("gate_failure"):
         category = feedback["gate_failure"]
-        evidence = feedback.get("interface_contract_differences") or feedback["review"]["findings"]
+        evidence = feedback.get("interface_contract_differences") or feedback.get("review", {}).get("findings", [])
         return {"kind": "FailureDiagnosis", "attempt": attempt, "category": category,
+                "failure_code": category, "probe_kind": probe_kind,
                 "evidence": evidence, "next_action": "Address the reported violations in the candidate source."}
     graph = ImportGraph(root)
-    final = feedback.get('final') or feedback.get('baseline') or {}
     output = final.get('stdout','') + '\n' + final.get('stderr','')
     frames=[]
-    for filename, line in re.findall(r'([\w./\\-]+\.py):(\d+)',output):
+    for filename, line in re.findall(r'([\w./\\-]+\.(?:py|[cm]?[jt]sx?|html?)):(\d+)', output):
         normalized=filename.replace('\\','/')
-        matches=[path for path in graph.paths if normalized.endswith(path)]
+        matches=[path for path in (*graph.paths, *graph.js_modules)
+                 if normalized == path or normalized.endswith('/' + path)]
         if matches:
             path=max(matches,key=len)
             frames.append({'file':path,'line':int(line)})
@@ -97,7 +101,12 @@ def diagnose(root, feedback, *, attempt, token_budget=4000):
         except (KeyError,ValueError): pass
     category = ('cheat' if feedback.get('cheat_detected') else 'replay' if feedback.get('repeated_patch') else
                 'timeout' if final.get('exit_code')==124 else 'assertion' if 'AssertionError' in output or 'assert ' in output else 'execution')
+    failure_code = final.get('failure_code') or classify_probe_failure(
+        final.get('exit_code'), output, kind=probe_kind, changed=final.get('changed', False))
+    if category in {'cheat', 'replay'}:
+        failure_code = category.upper()
     return {'kind':'FailureDiagnosis','attempt':attempt,'category':category,'frames':frames[:10],
+            'failure_code': failure_code, 'probe_kind': probe_kind,
             'assertions':[line for line in output.splitlines() if 'assert ' in line or 'Error' in line][-12:],
             'contexts':contexts,'evidence_excerpt':output[-4000:],
             'next_action':'change the failed causal assumption; preserve frozen tests; do not repeat the rejected patch'}

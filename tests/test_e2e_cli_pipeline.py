@@ -60,8 +60,10 @@ def test_wish_question_resume_run_stats_and_export_full_cli(tmp_path):
     assert stats["mean_reward"] > 0
     out = tmp_path / "latest.jsonl"
     code, exported = call("export-traces", "--repo", root, "--db", db, "--out", out)
-    assert code == 0 and exported["exported"] == 7
+    assert code == 0 and exported["exported"] == 8
     rows = [json.loads(line) for line in out.read_text(encoding="utf-8").splitlines()]
+    assert any(row["action_a0"]["op"] == "world_model_prediction" and row["predicted_next_state"]
+               for row in rows)
     for a, b in zip(rows, rows[1:]):
         assert a["state_s1"] == b["state_s0"]
     assert rows[-1]["state_s1"]["status"] == "succeeded"

@@ -155,7 +155,8 @@ def expand_requirement(intent, repo, *, answers=None, experience_db=None, graph=
         boundary = "Exercise drawdown immediately below, exactly at and immediately above the supplied trigger threshold."
     for record in experience:
         cause = record["cause"]
-        if record["resolution"] == "gate_rejected" and cause not in {"unknown", "failed"}:
+        if (record["resolution"] == "gate_rejected" or record["source_kind"] == "verified_recovery") \
+                and cause not in {"unknown", "failed"}:
             case = f"Check recurrence of the observed failure mode {cause} (experience {record['experience_id']})."
             if case not in cases:
                 cases.append(case)

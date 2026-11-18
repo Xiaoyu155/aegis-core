@@ -2,12 +2,20 @@
 from __future__ import annotations
 
 import json
+from fnmatch import fnmatchcase
+from functools import lru_cache
 from pathlib import Path
 import re
 import uuid
 
+from .ast_slicer import MAX_INDEX_BYTES, decode
+from .frontend import HTML_SUFFIXES, parse_html
 
 SKIP_DIRS = {".git", ".aegis", ".venv", "venv", "node_modules", "dist", "build", ".worktrees"}
+DEFAULT_TOOL_SOURCE_GLOBS = tuple(
+    f"**/tools/**/*.{suffix}"
+    for suffix in ("py", "js", "jsx", "cjs", "mjs", "ts", "tsx", "mts", "cts", "html", "htm", "css")
+)
 PROTECTED_TEST_PATTERNS = [
     "**/tests/**", "**/test/**", "**/__tests__/**", "**/test_*.py", "**/test_*.js",
     "**/test_*.jsx", "**/test_*.mjs", "**/test_*.cjs", "**/test_*.ts",
@@ -46,7 +54,45 @@ def _test_name(path: str) -> bool:
     )
 
 
-def inspect_repository(repo: str | Path) -> dict:
+def validate_tool_source_globs(globs):
+    if type(globs) not in (list, tuple) or len(globs) > 64:
+        raise ValueError("tool_source_globs must be a list of at most 64 repository-relative patterns")
+    normalized = []
+    for glob in globs:
+        if (type(glob) is not str or len(glob) > 256 or any(not part or part in {".", ".."} for part in glob.split("/"))
+                or any(char in glob for char in ("\\", ":", "\0"))):
+            raise ValueError("tool_source_globs require canonical repository-relative patterns")
+        if glob not in normalized:
+            normalized.append(glob)
+    return tuple(normalized)
+
+
+@lru_cache(maxsize=4096)
+def _match_glob(path, pattern):
+    if not pattern:
+        return not path
+    if pattern[0] == "**":
+        return _match_glob(path, pattern[1:]) or bool(path and _match_glob(path[1:], pattern))
+    return bool(path and fnmatchcase(path[0], pattern[0]) and _match_glob(path[1:], pattern[1:]))
+
+
+def matches_tool_source(path, globs):
+    return any(_match_glob(tuple(path.split("/")), tuple(glob.split("/"))) for glob in globs)
+
+
+def load_tool_source_globs(root):
+    path = Path(root) / ".aegis" / "repo_profile.json"
+    if path.is_symlink() or path.parent.is_symlink():
+        raise ValueError("repository profile cannot be a symlink")
+    if not path.is_file():
+        return DEFAULT_TOOL_SOURCE_GLOBS
+    profile = json.loads(path.read_text(encoding="utf-8-sig"))
+    if not isinstance(profile, dict):
+        raise ValueError("repository profile must be a JSON object")
+    return validate_tool_source_globs(profile.get("tool_source_globs", DEFAULT_TOOL_SOURCE_GLOBS))
+
+
+def inspect_repository(repo: str | Path, *, tool_source_globs=None) -> dict:
     root = Path(repo).expanduser().resolve(strict=True)
     if not root.is_dir():
         raise ValueError("--repo must be a directory")
@@ -54,12 +100,24 @@ def inspect_repository(repo: str | Path) -> dict:
     extension_counts = {}
     paths = []
     test_paths = []
-    for _, relative in files:
+    frontend_entries = []
+    for path, relative in files:
         suffix = Path(relative).suffix.lower()
         extension_counts[suffix] = extension_counts.get(suffix, 0) + 1
+        paths.append(relative)
         if _test_name(relative):
             test_paths.append(relative)
-        paths.append(relative)
+        if suffix in HTML_SUFFIXES:
+            try:
+                if path.stat().st_size > MAX_INDEX_BYTES:
+                    continue
+                blocks, references = parse_html(decode(path)[0])
+            except (OSError, ValueError):
+                pass
+            else:
+                if any(block.language == "javascript" for block in blocks) or any(
+                        reference.kind == "script" for reference in references):
+                    frontend_entries.append(relative)
     languages = {
         "python": sum(extension_counts.get(suffix, 0) for suffix in (".py",)),
         "javascript": sum(extension_counts.get(suffix, 0) for suffix in (".js", ".jsx", ".mjs", ".cjs")),
@@ -87,7 +145,7 @@ def inspect_repository(repo: str | Path) -> dict:
         tests.add("pytest")
 
     entry_names = {"main.py", "app.py", "__main__.py", "index.js", "index.ts", "main.js", "main.ts"}
-    entry_points = [path for path in paths if Path(path).name in entry_names]
+    entry_points = [path for path in paths if Path(path).name in entry_names] + frontend_entries
     if isinstance(package, dict) and isinstance(package.get("main"), str):
         entry = package["main"].replace("\\", "/")
         if entry in paths and entry not in entry_points:
@@ -103,15 +161,19 @@ def inspect_repository(repo: str | Path) -> dict:
         "test_frameworks": sorted(tests),
         "test_files": sorted(test_paths),
         "protected_test_patterns": list(PROTECTED_TEST_PATTERNS),
+        "tool_source_globs": list(load_tool_source_globs(root) if tool_source_globs is None
+                                  else validate_tool_source_globs(tool_source_globs)),
         "package_scripts": scripts if isinstance(scripts, dict) else {},
     }
 
 
-def attach_repository(repo: str | Path) -> dict:
+def attach_repository(repo: str | Path, *, tool_source_globs=None) -> dict:
     """Write a profile atomically under the selected repository's .aegis dir."""
-    profile = inspect_repository(repo)
+    profile = inspect_repository(repo, tool_source_globs=tool_source_globs)
     root = Path(profile["repo_root"])
     directory = root / ".aegis"
+    if directory.is_symlink() or (directory / "repo_profile.json").is_symlink():
+        raise ValueError("repository profile cannot be a symlink")
     directory.mkdir(parents=True, exist_ok=True)
     destination = directory / "repo_profile.json"
     temp = directory / ("repo_profile." + uuid.uuid4().hex + ".tmp")

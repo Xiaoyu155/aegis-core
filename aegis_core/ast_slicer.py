@@ -4,11 +4,12 @@ import copy
 import json
 import os
 from pathlib import Path
-import posixpath
 import re
 
+from .frontend import FRONTEND_SUFFIXES, HTML_SUFFIXES, css_references, local_reference, parse_html
 
 JS_SUFFIXES = {'.js', '.jsx', '.mjs', '.cjs', '.ts', '.tsx', '.mts', '.cts'}
+_JS_IMPORT = re.compile(r'\b(?:from\s*|import\s*\(?\s*|require\s*\()\s*[\'\"]([^\'\"]+)')
 
 
 def is_protected_test_path(path: str) -> bool:
@@ -107,7 +108,7 @@ def _js_symbols(source: str):
                         'signature': source[start:opening].strip()}
     return result
 
-SKIP = {'.git', '.venv', '.worktrees', '__pycache__', 'node_modules', 'dist', 'build', 'vendor',
+SKIP = {'.git', '.aegis', '.venv', '.worktrees', '__pycache__', 'node_modules', 'dist', 'build', 'vendor',
         '.next', 'coverage', 'out', 'target'}
 MAX_INDEX_BYTES = 512 * 1024
 
@@ -140,6 +141,7 @@ class ImportGraph:
         self.root = Path(repo_root).resolve()
         self.modules, self.paths, self.symbols, self.bindings, self.diagnostics = {}, {}, {}, {}, []
         self.js_modules, self.js_symbols, self.file_dependencies = {}, {}, {}
+        self.frontend_documents = {}
         for directory, names, files in os.walk(self.root, followlinks=False):
             names[:] = sorted(n for n in names if n not in SKIP and not Path(directory, n).is_symlink())
             for name in sorted(files):
@@ -186,7 +188,8 @@ class ImportGraph:
                 if path.is_symlink():
                     continue
                 relative = path.relative_to(self.root).as_posix()
-                if path.suffix.lower() in JS_SUFFIXES:
+                suffix = path.suffix.lower()
+                if suffix in JS_SUFFIXES | FRONTEND_SUFFIXES:
                     if path.stat().st_size > MAX_INDEX_BYTES:
                         self.diagnostics.append({'file': relative, 'error': 'SourceTooLarge'})
                         continue
@@ -195,22 +198,55 @@ class ImportGraph:
                     except (ValueError, OSError) as error:
                         self.diagnostics.append({'file': relative, 'error': type(error).__name__})
                         continue
-                    symbols = _js_symbols(text)
+                    if suffix in HTML_SUFFIXES:
+                        blocks, references = parse_html(text)
+                        self.frontend_documents[relative] = (blocks, references)
+                        symbols = {}
+                        for index, block in enumerate(blocks, 1):
+                            if block.language != 'javascript':
+                                continue
+                            for key, value in _js_symbols(block.source).items():
+                                offset = block.start_line - 1
+                                name = key if key not in symbols else f'{key}@script{index}'
+                                symbols[name] = {**value, 'start_line': value['start_line'] + offset,
+                                                 'end_line': value['end_line'] + offset}
+                    elif suffix == '.css':
+                        self.frontend_documents[relative] = ((), tuple(css_references(text)))
+                        symbols = {}
+                    else:
+                        symbols = _js_symbols(text)
+                    if suffix in FRONTEND_SUFFIXES and not symbols:
+                        symbols['<module>'] = {'name': '<module>', 'start_line': 1,
+                                               'end_line': text.count('\n') + 1,
+                                               'source': text, 'signature': relative}
                     self.js_modules[relative] = (text, symbols)
                     self.js_symbols.update({relative + ':' + key: {"file": relative, **value}
                                             for key, value in symbols.items()})
-        # Resolve relative module specifiers after every JS file is indexed.
+        # Resolve browser and JS dependencies after indexing all candidate files.
         js_paths = set(self.js_modules)
         for relative, (source, _) in self.js_modules.items():
             dependencies = set()
-            masked = _mask_js_comments_and_strings(source)
-            for match in re.finditer(r'\b(?:from\s*|import\s*\(?\s*|require\s*\()\s*[\'\"]([^\'\"]+)', source):
-                specifier = match[1]
-                if masked[match.start()].strip() and specifier.startswith('.'):
-                    base = posixpath.normpath(posixpath.join(posixpath.dirname(relative), specifier))
-                    candidates = [base, *(base + suffix for suffix in JS_SUFFIXES),
-                                  *(base + '/index' + suffix for suffix in JS_SUFFIXES)]
-                    dependencies.update(path for path in candidates if path in js_paths and path != relative)
+            document = self.frontend_documents.get(relative)
+            script_sources = [source] if document is None else [
+                block.source for block in document[0] if block.language == 'javascript']
+            for script in script_sources:
+                masked = _mask_js_comments_and_strings(script)
+                for match in _JS_IMPORT.finditer(script):
+                    specifier = match[1]
+                    if masked[match.start()].strip() and specifier.startswith(('.', '/')):
+                        base = local_reference(relative, specifier)
+                        if base is not None:
+                            candidates = [base, *(base + suffix for suffix in JS_SUFFIXES),
+                                          *(base + '/index' + suffix for suffix in JS_SUFFIXES)]
+                            dependencies.update(path for path in candidates if path in js_paths)
+            if document is not None:
+                for reference in document[1]:
+                    target = local_reference(relative, reference.value)
+                    if target in js_paths or (target and reference.kind == 'css_url'
+                                              and (self.root / target).is_file()
+                                              and (self.root / target).resolve().is_relative_to(self.root)):
+                        dependencies.add(target)
+            dependencies.discard(relative)
             self.file_dependencies[relative] = sorted(dependencies)
         for module, (relative, _, _) in self.modules.items():
             dependencies = set()

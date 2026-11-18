@@ -19,6 +19,9 @@ training = ["numpy>=1.24"]
 [tool.setuptools.packages.find]
 include = ["aegis_core*"]
 
+[tool.setuptools.package-data]
+aegis_core = ["data/feature_encoder.json", "data/model_weights.json", "data/replay_anchors.json.gz"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
