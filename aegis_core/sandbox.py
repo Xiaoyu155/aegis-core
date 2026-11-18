@@ -298,6 +298,11 @@ class Sandbox:
                 if remaining > 0:
                     after = exam(path, pass_after_cmd, timeout=remaining, **probe,
                                           probe_runtime_sha256=before["probe_runtime_sha256"])
+                    if require_assertion_red and after["passed"]:
+                        from .probe_synth import is_true_green, static_cases
+                        if not is_true_green(after, len(static_cases(mutation_rule))):
+                            after.update(passed=False, failure_code="PROBE_CASES_INCOMPLETE", reward=-1.0)
+                            result["gate_failure"] = "PROBE_CASES_INCOMPLETE"
                     result["final"] = after
                     result["after_passed"] = after["passed"]
                     result["passed"] = after["passed"]

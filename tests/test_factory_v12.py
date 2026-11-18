@@ -221,3 +221,16 @@ def test_distinct_events_mutation_gate_physically_rejects_replay_bug(tmp_path):
         assert result["gate_failure"] == "MUTATION_PROBE_FAILED"
     finally:
         sandbox.cleanup("events")
+
+
+@pytest.mark.parametrize(("command", "receipt", "expected"), [
+    ("python", "6 passed in 0.21s", True),
+    ("python", "5 passed, 1 skipped in 0.21s", False),
+    ("python", "", False),
+    ("node", "# tests 6\n# pass 6\n# fail 0\n", True),
+    ("node", "# tests 6\n# pass 5\n# fail 0\n", False),
+])
+def test_green_requires_all_acceptance_cases_to_execute(command, receipt, expected):
+    from aegis_core.probe_synth import is_true_green
+
+    assert is_true_green({"command": [command], "stdout": receipt, "passed": True}, 6) is expected

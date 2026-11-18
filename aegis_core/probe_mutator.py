@@ -6,7 +6,7 @@ import random
 import sys
 import tempfile
 
-from .probe_synth import expected_value, render_probe, static_cases
+from .probe_synth import expected_value, is_true_green, render_probe, static_cases
 
 MUTATION_PROBE_FAILED = "MUTATION_PROBE_FAILED"
 DEFAULT_SEED = 20261118
@@ -67,4 +67,6 @@ def run_mutations(path, rule, *, timeout, seed=DEFAULT_SEED, exam=None):
                    for arg in command]
         result = (exam or run_exam_gate)(path, command, timeout=timeout,
                                probe_script_sha256={str(script): hashlib.sha256(payload).hexdigest()})
+    if result["passed"] and not is_true_green(result, len(cases)):
+        result.update(passed=False, failure_code="PROBE_CASES_INCOMPLETE", reward=-1.0)
     return {**result, "seed": seed, "cases": len(cases)}

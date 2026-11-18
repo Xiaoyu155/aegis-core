@@ -134,3 +134,14 @@ def is_true_red(receipt):
     return (receipt["exit_code"] == 1 and receipt["failure_code"] == "ASSERTION_FAILED"
             and not receipt["changed"] and
             bool(re.search(r"AssertionError: AEGIS_ACCEPTANCE|(?m:^    AEGIS_ACCEPTANCE\s*$)", output)))
+
+
+def is_true_green(receipt, cases):
+    """Require evidence that all generated cases ran, even on an exit code of zero."""
+    if not receipt["passed"]:
+        return False
+    output = receipt["stdout"]
+    if receipt["command"][0] == "node":
+        return all(re.search(rf"(?m)^# {key} {expected}\s*$", output)
+                   for key, expected in (("tests", cases), ("pass", cases), ("fail", 0)))
+    return bool(re.search(rf"(?m)^\s*{cases} passed(?:,| in )", output))
