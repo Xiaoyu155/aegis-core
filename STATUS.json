@@ -166,11 +166,15 @@
       ],
       "planned_dag_id": "dag-bdf139a2ea8a"
     },
-    "ci_status": "pending",
+    "ci_status": "success",
     "pr7_ci": {
-      "state": "pending",
+      "state": "success",
+      "checks_passed": 8,
       "checks_expected": 8,
-      "matrix": "Linux/Windows x Python 3.11/3.12"
+      "matrix": "Linux/Windows x Python 3.11/3.12; push + pull_request",
+      "validated_code_head": "17fc84f9222f3516d8cd6bfd1a31271f4ed52362",
+      "push_run": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44215427275",
+      "pull_request_run": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44215464933"
     }
   },
   "pr7_ci": {
