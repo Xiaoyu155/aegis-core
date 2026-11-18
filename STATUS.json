@@ -49,9 +49,9 @@
     "checks_passed": 8,
     "checks_expected": 8,
     "matrix": "Linux/Windows x Python 3.11/3.12; push + pull_request",
-    "validated_code_head": "bd600be763d6c5803d3fd639c62c0cc8b221a878",
-    "push_run": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44245613434",
-    "pull_request_run": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44245655121",
+    "validated_code_head": "3b06ee683caebdfd5328b114175590e2d4e6a94c",
+    "push_run": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44247523641",
+    "pull_request_run": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44247529339",
     "results": {
       "push": {
         "ubuntu-latest / 3.11": "success",
@@ -575,7 +575,12 @@
       "implementation_source_probe_exit_codes": [
         1,
         0
-      ]
+      ],
+      "windows_ci_recovery": {
+        "failed_job": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44246490029/job/134606574588",
+        "test": "tests/test_factory.py::test_parallel_wal_worktrees",
+        "resolution": "Share one Git metadata lock across worktrees, CLI reads, planning, and review."
+      }
     }
   }
 }

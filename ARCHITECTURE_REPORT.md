@@ -94,4 +94,6 @@ The script runs the production CLI against temporary Git repositories and a shar
 
 ### Verification
 
-The complete suite passed 385/385 tests, including the 294 existing cases. The implementation diff also passed an independent Fail-Before/Pass-After probe in a disposable worktree. The full matrix passed all eight push and pull_request jobs for code commit `bd600be763d6c5803d3fd639c62c0cc8b221a878`. [Push](https://github.com/Xiaoyu155/aegis-core/actions/runs/44245613434) · [Pull request](https://github.com/Xiaoyu155/aegis-core/actions/runs/44245655121)
+The complete suite passed 385/385 tests, including the 294 existing cases. The implementation diff also passed an independent Fail-Before/Pass-After probe in a disposable worktree. The full matrix passed all eight push and pull_request jobs for code commit `3b06ee683caebdfd5328b114175590e2d4e6a94c`. [Push](https://github.com/Xiaoyu155/aegis-core/actions/runs/44247523641) · [Pull request](https://github.com/Xiaoyu155/aegis-core/actions/runs/44247529339)
+
+A Windows 3.11 run exposed a Git config read racing with worktree metadata updates. The CLI, planner, scope gate and reviewer now acquire the same lock around Git commands. The concurrent worktree test passed in both Windows 3.11 matrix jobs after the fix.
