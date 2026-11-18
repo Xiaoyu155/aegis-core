@@ -97,7 +97,7 @@ def tree_hash(root: Path) -> str:
 
 
 def run_exam_gate(worktree_path: Path, test_cmd: str | list[str] = "pytest", *, timeout: float = 60,
-                  probe_kind="unit", probe_script_sha256=None) -> dict:
+                  probe_kind="unit", probe_script_sha256=None, probe_runtime_sha256=None) -> dict:
     path = Path(worktree_path).resolve()
     command = shlex.split(test_cmd, posix=os.name != "nt") if isinstance(test_cmd, str) else list(test_cmd)
     if not command:
@@ -107,8 +107,11 @@ def run_exam_gate(worktree_path: Path, test_cmd: str | list[str] = "pytest", *, 
     killed_process_group = False
     probe_hashes = {} if probe_script_sha256 is None else probe_script_sha256
     integrity_error = False
+    raw_hashes = {}
     try:
-        verify_probe_files(path, probe_hashes)
+        raw_hashes = verify_probe_files(path, probe_hashes)
+        if probe_runtime_sha256 is not None and raw_hashes != probe_runtime_sha256:
+            raise ValueError(f"{PROBE_INTEGRITY_VIOLATION}: probe bytes differ from Fail-Before")
         # A fresh cache prevents same-size/same-second edits from reusing stale pyc.
         with tempfile.TemporaryDirectory(prefix="aegis-pycache-") as cache:
             environment = dict(os.environ, PYTHONPYCACHEPREFIX=cache,
@@ -158,7 +161,8 @@ def run_exam_gate(worktree_path: Path, test_cmd: str | list[str] = "pytest", *, 
     after = tree_hash(path)
     if not integrity_error:
         try:
-            verify_probe_files(path, probe_hashes)
+            if verify_probe_files(path, probe_hashes) != raw_hashes:
+                raise ValueError(f"{PROBE_INTEGRITY_VIOLATION}: probe bytes changed during execution")
         except ValueError as error:
             stderr += "\n" + str(error)
             integrity_error = True
@@ -167,7 +171,8 @@ def run_exam_gate(worktree_path: Path, test_cmd: str | list[str] = "pytest", *, 
     return {"command": command, "exit_code": code, "stdout": stdout, "stderr": stderr,
             "before_hash": before, "after_hash": after, "changed": before != after,
             "reward": 1.0 if failure is None else -1.0, "passed": failure is None,
-            "probe_kind": probe_kind, "probe_script_sha256": probe_hashes, "failure_code": failure,
+            "probe_kind": probe_kind, "probe_script_sha256": probe_hashes, "probe_runtime_sha256": raw_hashes,
+            "failure_code": failure,
             "timed_out": timed_out, "timeout_killed": timed_out,
             "termination_reason": "TIMEOUT_KILLED" if timed_out else None,
             "killed_process_group": killed_process_group}
@@ -280,7 +285,8 @@ class Sandbox:
             if not scope["cheat_detected"] and "gate_failure" not in result:
                 remaining = timeout - (time.monotonic() - start)
                 if remaining > 0:
-                    after = run_exam_gate(path, pass_after_cmd, timeout=remaining, **probe)
+                    after = run_exam_gate(path, pass_after_cmd, timeout=remaining, **probe,
+                                          probe_runtime_sha256=before["probe_runtime_sha256"])
                     result["final"] = after
                     result["after_passed"] = after["passed"]
                     result["passed"] = after["passed"]

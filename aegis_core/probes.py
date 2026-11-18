@@ -11,6 +11,14 @@ PROBE_SUFFIXES = JS_SUFFIXES | {".py", ".sh", ".ps1", ".bat", ".cmd"}
 PROBE_INTEGRITY_VIOLATION = "PROBE_INTEGRITY_VIOLATION"
 
 
+def _content_hash(name, data):
+    path = Path(name)
+    if not path.is_absolute() and path.suffix.lower() in PROBE_SUFFIXES and b"\0" not in data:
+        # Git may check out the same tracked script with platform-specific EOLs.
+        data = data.replace(b"\r\n", b"\n")
+    return hashlib.sha256(data).hexdigest()
+
+
 def _probe_path(root, name):
     path = Path(name)
     absolute = path if path.is_absolute() else root / path
@@ -33,7 +41,7 @@ def freeze_probes(root, commands, *, kind="unit", scripts=()):
     def freeze(name):
         path = _probe_path(root, name)
         key = path.relative_to(root).as_posix() if path.is_relative_to(root) else str(path)
-        frozen[key] = hashlib.sha256(path.read_bytes()).hexdigest()
+        frozen[key] = _content_hash(key, path.read_bytes())
         return key
 
     rewritten = []
@@ -60,6 +68,7 @@ def verify_probe_files(root, locked):
     if not isinstance(locked, dict):
         raise ValueError("probe_script_sha256 must be a path-to-hash object")
     root = Path(root).resolve()
+    raw_hashes = {}
     for name, expected in locked.items():
         if not isinstance(name, str) or not name or not isinstance(expected, str) or not re.fullmatch(r"[a-f0-9]{64}", expected):
             raise ValueError("invalid probe path or SHA-256")
@@ -67,10 +76,13 @@ def verify_probe_files(root, locked):
             path = _probe_path(root, name)
             # Reject substitution through a changed symbolic link.
             expected_path = Path(name) if Path(name).is_absolute() else root / name
-            if path != expected_path or hashlib.sha256(path.read_bytes()).hexdigest() != expected:
+            data = path.read_bytes()
+            if path != expected_path or _content_hash(name, data) != expected:
                 raise ValueError("probe content changed")
+            raw_hashes[name] = hashlib.sha256(data).hexdigest()
         except (OSError, RuntimeError, ValueError) as error:
             raise ValueError(f"{PROBE_INTEGRITY_VIOLATION}: {name}") from error
+    return raw_hashes
 
 
 def classify_probe_failure(exit_code, output, *, kind, changed=False):

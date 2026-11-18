@@ -239,6 +239,37 @@ def test_gate_checks_external_script_after_execution(tmp_path):
     assert result["passed"] is False
 
 
+def test_tracked_script_lock_survives_git_crlf_checkout_and_pins_runtime_bytes(tmp_path):
+    relative = "tests/render.py"
+    root = repository(tmp_path / "external", {relative: "print('render probe')\n"})
+    git(root, "config", "core.autocrlf", "true")
+    [argv], hashes = freeze_probes(root, [[sys.executable, relative]], kind="browser_visual")
+    worktree = tmp_path / "candidate"
+    git(root, "worktree", "add", "--detach", str(worktree), "HEAD")
+    before_bytes = (root / relative).read_bytes()
+    assert b"\r\n" not in before_bytes
+    assert (worktree / relative).read_bytes() == before_bytes.replace(b"\n", b"\r\n")
+    before = run_exam_gate(worktree, argv, probe_kind="browser_visual", probe_script_sha256=hashes)
+    assert before["passed"] and before["probe_runtime_sha256"][relative] != hashes[relative]
+    (worktree / relative).write_bytes(before_bytes)
+    after = run_exam_gate(worktree, argv, probe_kind="browser_visual", probe_script_sha256=hashes,
+                          probe_runtime_sha256=before["probe_runtime_sha256"])
+    assert after["failure_code"] == "PROBE_INTEGRITY_VIOLATION"
+    assert after["stdout"] == ""
+
+
+def test_external_script_lock_does_not_normalize_line_endings(tmp_path):
+    root = tmp_path / "repo"
+    root.mkdir()
+    script = tmp_path / "visual.py"
+    script.write_bytes(b"print('render probe')\r\n")
+    _, hashes = freeze_probes(root, [[sys.executable, str(script)]], kind="browser_visual")
+    assert hashes[str(script.resolve())] == hashlib.sha256(script.read_bytes()).hexdigest()
+    script.write_bytes(b"print('render probe')\n")
+    with pytest.raises(ValueError, match="PROBE_INTEGRITY_VIOLATION"):
+        verify_probe_files(root, hashes)
+
+
 def test_cli_rejects_probe_changed_after_wish(tmp_path, capsys):
     root = repository(tmp_path / "external", {"preview.html": "<script>function render() {}</script>\n"})
     script = write(tmp_path, "browser-check.py", "assert False\n")

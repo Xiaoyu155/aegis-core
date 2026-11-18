@@ -22,7 +22,7 @@ pytest -v
 - 模型加载顺序为显式 AEGIS_WORLD_MODEL_DIR、目标仓的 artifacts/causal_world_model、安装包内的训练权重。包内模型跨仓默认只记录预测。显式与仓内模型沿用原有路由策略。学到的新权重与报告保存到目标仓的模型目录或 learn --artifact-dir 指定的位置。包内权重不参与写入。
 - plan、run、learn 的 JSON 都包含 telemetry。plan 按修复节点计数，run 按补丁候选计数，learn 按账本中的修复尝试计数。below_threshold_count 仅在 learn 中有筛选意义，恰好等于阈值的样本也计入该项。learn 会将同一工单内的真实失败和通过双探针的不同补丁关联，以 verified_recovery 存入 ExperienceBank。重复执行 learn 不会重复写入该案例。
 - attach 会识别包含可执行脚本的 HTML 入口，并保留 .aegis/repo_profile.json 中的 tool_source_globs。默认涵盖根目录和子项目 tools/ 下的 Python、JavaScript/TypeScript、HTML 及 CSS，测试和配置仍受保护。用 aegis attach --tool-source-glob 重设工具范围。
-- 浏览器修复工单在 DAG 中声明 "probe_kind": "browser_visual"，也可用 aegis wish --no-auto-probe --probe-kind browser_visual 冻结契约。至少要锁定一个探针脚本。直接传入的脚本参数会自动锁定；间接入口或额外夹具可用 probe_scripts（CLI 为重复 --probe-script）显式指定。probe_script_sha256 回执包含各路径的 SHA-256，运行前后检查脚本完整性。验证节点也支持相同声明。
+- 浏览器修复工单在 DAG 中声明 "probe_kind": "browser_visual"，也可用 aegis wish --no-auto-probe --probe-kind browser_visual 冻结契约。至少要锁定一个探针脚本。直接传入的脚本参数会自动锁定；间接入口或额外夹具可用 probe_scripts（CLI 为重复 --probe-script）显式指定。probe_script_sha256 对仓内文本脚本统一使用 LF，其余路径按原始字节计算。门禁在每次执行前后核验，红绿两次探针在同一个 worktree 内还须具有相同的 probe_runtime_sha256 原始字节摘要。验证节点也支持相同声明。
 - 浏览器探针自行运行项目的浏览器脚本，断言布局、像素或帧时；Aegis 记录退出和证据。FailureDiagnosis.failure_code 区分断言失败、模块未实现、浏览器等待超时和环境不可用。HTML 内联 JS 与 CSS 引用可由 L3 原生审查，静态规则只覆盖可识别的源码模式。
 
 ## 四个原语
