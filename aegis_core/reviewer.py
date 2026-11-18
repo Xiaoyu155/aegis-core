@@ -6,9 +6,9 @@ from collections import Counter
 from dataclasses import asdict, dataclass
 from pathlib import Path
 import re
-import subprocess
 
 from .ast_slicer import JS_SUFFIXES, _mask_js_comments_and_strings, decode
+from .sandbox import run_git
 
 _SECRET = re.compile(r"(?:^|_)(?:api_?key|access_?token|secret(?:_?key)?|password|private_?key)(?:_|$)", re.I)
 _CONTROL = re.compile(r"(?:risk|guard|limit|authoriz|validate|circuit|permission|quota|check)", re.I)
@@ -296,8 +296,7 @@ def audit_candidate(root: Path, baseline: str, changed_files):
             continue
         audited.append(relative)
         try:
-            prior = subprocess.run(["git", "cat-file", "blob", f"{baseline}:{relative}"], cwd=root,
-                                   capture_output=True, check=False)
+            prior = run_git(root, "cat-file", "blob", f"{baseline}:{relative}", check=False)
             source_before = ""
             if prior.returncode == 0:
                 try:

@@ -277,8 +277,8 @@ def compile_wish(root, wish, *, targets=None, allow_model=False, models=None, ex
     ambiguity_threshold = 0.15
     try:
         if experience_db is None:
-            git_common = subprocess.run(["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
-                                        cwd=root, capture_output=True, text=True, check=True).stdout.strip()
+            from .sandbox import run_git
+            git_common = run_git(root, "rev-parse", "--path-format=absolute", "--git-common-dir").stdout.decode("utf-8").strip()
             git_common = Path(git_common)
             if not git_common.is_absolute():
                 git_common = Path(root) / git_common

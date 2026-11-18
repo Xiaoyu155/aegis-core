@@ -13,11 +13,11 @@ from .ledger import Ledger
 from .mediator import compile_wish, compile_request, is_business_source, validate_compilation
 from .reward import compute_step_reward
 from .router import Router, load_models, route_complexity
-from .sandbox import Sandbox
+from .sandbox import Sandbox, run_git
 
 
 def _git(root, *args):
-    return subprocess.run(["git", *args], cwd=root, capture_output=True, check=True).stdout.decode("utf-8").strip()
+    return run_git(root, *args).stdout.decode("utf-8").strip()
 
 
 def _load(path):

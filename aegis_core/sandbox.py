@@ -17,6 +17,12 @@ _GIT_LOCK = threading.RLock()
 _EXCLUDED = {".git", ".worktrees", "__pycache__", ".pytest_cache", ".venv"}
 
 
+def run_git(root: Path, *args: str, input: bytes | None = None, check: bool = True):
+    # Windows requires Git metadata readers to wait while worktree commands update config.
+    with _GIT_LOCK:
+        return subprocess.run(["git", *args], cwd=root, input=input, capture_output=True, check=check)
+
+
 def _reap_process_group(process_group: int) -> None:
     """Reap killed grandchildren on Linux after adopting them as a subreaper."""
     if not sys_platform_linux():
@@ -163,10 +169,8 @@ class Sandbox:
     def _git(self, *args, cwd=None, input=None):
         # Text-mode stdin rewrites LF to CRLF on Windows, corrupting patches
         # against LF fixtures. Preserve exact UTF-8 patch bytes on every OS.
-        with _GIT_LOCK:
-            result = subprocess.run(["git", *args], cwd=cwd or self.repo_root,
-                                input=input.encode("utf-8") if input is not None else None,
-                                capture_output=True, check=True)
+        result = run_git(cwd or self.repo_root, *args,
+                         input=input.encode("utf-8") if input is not None else None)
         return result.stdout.decode("utf-8", errors="replace")
 
     def _paths(self, ticket_id):
@@ -313,7 +317,7 @@ def detect_source_cheat(worktree_path: Path, source_dirs: tuple[str, ...], *, ba
         raise ValueError("invalid baseline")
     path = Path(worktree_path)
     def git(*args):
-        return subprocess.run(["git", *args], cwd=path, capture_output=True, text=True, check=True).stdout
+        return run_git(path, *args).stdout.decode("utf-8")
     entries = git("diff", "--no-renames", "--numstat", "-z", base, "--").split("\0")
     changes = {}
     for entry in entries:

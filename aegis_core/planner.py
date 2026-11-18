@@ -17,12 +17,12 @@ from .contract_lock import InterfaceContractLock
 from .pm_expander import expand_requirement
 from .router import Router, load_models, route_complexity
 from .runner import retrieve, terms
+from .sandbox import run_git
 from .world_model import load_repository_model
 
 
 def _git(root: Path, *args: str) -> str:
-    return subprocess.run(["git", *args], cwd=root, capture_output=True, text=True,
-                         encoding="utf-8", check=True).stdout.strip()
+    return run_git(root, *args).stdout.decode("utf-8").strip()
 
 
 def _slug(value: str) -> str:
@@ -379,14 +379,11 @@ def execute_task_dag(plan_path: str | Path, *, db: str | Path | None = None,
                         statuses[task_id] = "passed"
                         # Materialize exactly the candidate whose two probes passed.
                         patch_bytes = matching[0]
-                        subprocess.run(["git", "apply", "--check", "--whitespace=error", "-"], cwd=stage_dir,
-                                       input=patch_bytes, capture_output=True, check=True)
-                        subprocess.run(["git", "apply", "--whitespace=error", "-"], cwd=stage_dir,
-                                       input=patch_bytes, capture_output=True, check=True)
-                        subprocess.run(["git", "add", "--all"], cwd=stage_dir, check=True, capture_output=True)
-                        subprocess.run(["git", "-c", "user.name=Aegis", "-c", "user.email=aegis@localhost",
-                                        "commit", "-m", f"Aegis DAG: {task['title']}"], cwd=stage_dir,
-                                       check=True, capture_output=True)
+                        run_git(stage_dir, "apply", "--check", "--whitespace=error", "-", input=patch_bytes)
+                        run_git(stage_dir, "apply", "--whitespace=error", "-", input=patch_bytes)
+                        run_git(stage_dir, "add", "--all")
+                        run_git(stage_dir, "-c", "user.name=Aegis", "-c", "user.email=aegis@localhost",
+                                "commit", "-m", f"Aegis DAG: {task['title']}")
                     else:
                         statuses[task_id] = "failed"
                     results.append({"task_id": task_id, "status": statuses[task_id],
