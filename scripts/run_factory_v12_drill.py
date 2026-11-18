@@ -122,7 +122,8 @@ def main():
         baseline = second["baseline"]
         sha = next(iter(frozen["probe_script_sha256"].values()))
         assert baseline["failure_code"] == "ASSERTION_FAILED" and baseline["exit_code"] == 1
-        assert list(baseline["probe_runtime_sha256"].values()) == [sha]
+        assert baseline["probe_script_sha256"] == frozen["probe_script_sha256"]
+        assert baseline["probe_runtime_sha256"] == second["final"]["probe_runtime_sha256"]
         print(f"2 | ExpandedSpec -> pytest red={baseline['failure_code']} sha256={sha} run={result['status']}",
               flush=True)
 

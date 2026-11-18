@@ -60,7 +60,7 @@ def run_mutations(path, rule, *, timeout, seed=DEFAULT_SEED, exam=None):
     cases = mutation_cases(rule, seed=seed)
     filename, source, command = render_probe(rule, cases)
     with tempfile.TemporaryDirectory(prefix="aegis-mutations-") as folder:
-        script = Path(folder) / Path(filename).name
+        script = Path(folder).resolve(strict=True) / Path(filename).name
         payload = source.encode("utf-8")
         script.write_bytes(payload)
         command = [sys.executable if arg == "{python}" else str(script) if arg == filename else arg
