@@ -1,7 +1,7 @@
 {
-  "phase": 5,
-  "tests": 176,
-  "preserved_previous_tests": 136,
+  "phase": 7,
+  "tests": 234,
+  "preserved_previous_tests": 182,
   "campaign": {
     "cases": 8,
     "all_passed": true,
@@ -47,5 +47,135 @@
     "matrix": "Linux/Windows x Python 3.11/3.12; push + pull_request",
     "push_run": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44071133635",
     "pull_request_run": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44071142938"
+  },
+  "pr7": {
+    "branch": "feat/world-model-v8",
+    "base_branch": "feat/world-model-v7",
+    "features": [
+      "Deterministic pre-block states now use negative reward intervals that cover observed penalties.",
+      "Ticket/template-connected stratified train/validation/holdout split has no group leakage.",
+      "aegis plan and run --dag schedule independent repair gates by dependency layer and block downstream tasks after failure.",
+      "aegis learn performs anchored online replay updates and records versioned calibration reports.",
+      "aegis attach profiles Python/JavaScript/TypeScript repositories; ImportGraph indexes JS/TS symbols and protected tests."
+    ],
+    "world_model": {
+      "dataset_examples": 1069,
+      "raw_unique_records": 1133,
+      "physical_transitions": 83,
+      "physical_actionable_outcomes": 19,
+      "train_validation_holdout": [
+        704,
+        182,
+        183
+      ],
+      "label_counts": {
+        "gate_passed": 530,
+        "assertion_error": 532,
+        "missing_constraint": 1,
+        "cheat_detected": 3,
+        "replay_blocked": 3
+      },
+      "risk_group_components": {
+        "cheat_detected": 3,
+        "replay_blocked": 3
+      },
+      "split_risk_support": {
+        "train": {
+          "cheat_detected": 1,
+          "replay_blocked": 1
+        },
+        "validation": {
+          "cheat_detected": 1,
+          "replay_blocked": 1
+        },
+        "test": {
+          "cheat_detected": 1,
+          "replay_blocked": 1
+        }
+      },
+      "group_leakage": false,
+      "holdout_before_after": {
+        "loss": [
+          2.477981983966706,
+          0.4126329990858255
+        ],
+        "state_accuracy": [
+          0.48633879781420764,
+          0.9726775956284153
+        ],
+        "reward_mae": [
+          0.7432406860633408,
+          0.30492306679702835
+        ],
+        "learned_risk_precision": [
+          0.2,
+          0.6666666666666666
+        ],
+        "learned_risk_recall": [
+          0.5,
+          1.0
+        ],
+        "deterministic_preblock_precision_recall": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "support": 2
+        },
+        "reward_interval_coverage": 0.9781420765027322
+      },
+      "trained_model_version": "7c0e02850bd625a7f19034d5294c3f51d29b6c1267ccadae528aae8da7fc11ca",
+      "latest_online_model_version": "0ab485ac93e08d95a3934a016a27c6d78174fc8e5b8d012527cd6798384c16e0"
+    },
+    "online_replay": {
+      "status": "updated",
+      "min_surprise": 0.3,
+      "selected_traces": 6,
+      "replay_examples": 6,
+      "anchor_examples": 51,
+      "replay_loss_before_after": [
+        0.3940543162495503,
+        0.39179364951076134
+      ],
+      "anchor_validation_loss_before_after": [
+        0.6068057788879644,
+        0.6101966902513176
+      ],
+      "anchor_validation_loss_tolerance": 0.02,
+      "latest_model_version": "0ab485ac93e08d95a3934a016a27c6d78174fc8e5b8d012527cd6798384c16e0"
+    },
+    "e2e": {
+      "dag_id": "dag-7f6b6644fafa",
+      "dag_status": "succeeded",
+      "dag_tasks": {
+        "repair-regime-gate-2": "passed",
+        "repair-risk-guard-1": "passed",
+        "validate-integration": "passed"
+      },
+      "mixed_repo_languages": {
+        "python": 2,
+        "javascript": 2,
+        "typescript": 2
+      },
+      "mixed_repo_test_runners": [
+        "node --test",
+        "npm test",
+        "pytest"
+      ],
+      "protected_test_files": [
+        "test/render.test.js",
+        "tests/test_main.py"
+      ],
+      "planned_dag_id": "dag-bdf139a2ea8a"
+    },
+    "ci_status": "pending",
+    "pr7_ci": {
+      "state": "pending",
+      "checks_expected": 8,
+      "matrix": "Linux/Windows x Python 3.11/3.12"
+    }
+  },
+  "pr7_ci": {
+    "state": "pending",
+    "checks_expected": 8,
+    "matrix": "Linux/Windows x Python 3.11/3.12"
   }
 }

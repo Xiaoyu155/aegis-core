@@ -3,7 +3,7 @@ import ast
 from collections import Counter
 import math
 import re
-from .ast_slicer import ImportGraph
+from .ast_slicer import ImportGraph, is_protected_test_path
 
 CONCEPTS = {
  'depth': ('depth','sort','occlusion','perspective','anchor','层级','遮挡','透视'),
@@ -31,11 +31,16 @@ def retrieve(root, wish, *, token_budget=4000):
     documents = {}
     for key, node in graph.symbols.items():
         filename, source, _ = graph.modules[graph.symbol_modules[key]]
-        if filename.split('/')[-1].startswith('test_') or any(part in {'tests','training','scripts'} for part in filename.split('/')):
+        if is_protected_test_path(filename) or any(part in {'training','scripts'} for part in filename.split('/')):
             continue
         # Names, docstrings, signatures and referenced field names carry meaning.
         text = key + ' ' + (ast.get_docstring(node) or '') + ' ' + ast.unparse(node)
         documents[key] = terms(text)
+    for key, item in graph.js_symbols.items():
+        filename = item['file']
+        if is_protected_test_path(filename) or any(part in {'training','scripts'} for part in filename.split('/')):
+            continue
+        documents[key] = terms(key + ' ' + item['source'])
     counts = Counter(term for values in documents.values() for term in values)
     ranked = []
     for key, values in documents.items():
@@ -43,18 +48,26 @@ def retrieve(root, wish, *, token_budget=4000):
         if not overlap:
             continue
         score = sum(math.log(1 + len(documents) / counts[term]) for term in overlap) / math.log2(2+len(values))
-        node = graph.symbols[key]
-        score += .5 * len(query & terms((ast.get_docstring(node) or '') + ' ' + key))
-        if isinstance(node, ast.ClassDef):
-            score *= .5
+        node = graph.symbols.get(key)
+        if node is not None:
+            score += .5 * len(query & terms((ast.get_docstring(node) or '') + ' ' + key))
+            if isinstance(node, ast.ClassDef):
+                score *= .5
         if key.endswith('.__init__'):
             score *= .5
-        filename, _, _ = graph.modules[graph.symbol_modules[key]]
+        if node is not None:
+            filename, _, _ = graph.modules[graph.symbol_modules[key]]
+        else:
+            filename = graph.js_symbols[key]["file"]
         if filename in wish or key.split(':')[-1] in wish:
             score += 10
-        node = graph.symbols[key]
-        ranked.append({'file':filename,'symbol':key.split(':',1)[1], 'line':node.lineno,
-                       'end_line':node.end_lineno,'score':score, 'matched_terms':sorted(overlap)})
+        if node is not None:
+            start_line, end_line = node.lineno, node.end_lineno
+        else:
+            js = graph.js_symbols[key]
+            start_line, end_line = js['start_line'], js['end_line']
+        ranked.append({'file':filename,'symbol':key.split(':',1)[1], 'line':start_line,
+                       'end_line':end_line,'score':score, 'matched_terms':sorted(overlap)})
     ranked.sort(key=lambda row:(-row['score'],row['file'],row['line']))
     context = graph.slice(ranked[0]['file'],ranked[0]['symbol'],token_budget=token_budget) if ranked else {}
     return {'candidates':ranked[:5], 'context':context,

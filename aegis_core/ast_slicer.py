@@ -4,6 +4,103 @@ import copy
 import json
 import os
 from pathlib import Path
+import re
+
+
+JS_SUFFIXES = {'.js', '.jsx', '.mjs', '.cjs', '.ts', '.tsx', '.mts', '.cts'}
+
+
+def is_protected_test_path(path: str) -> bool:
+    """Return whether a repository-relative path is a test or gate file."""
+    normalized = str(path).replace('\\', '/').lower()
+    parts = normalized.split('/')
+    name = parts[-1]
+    return (any(part in {'tests', 'test', '__tests__'} for part in parts)
+            or name.startswith(('test_', 'check_', 'verify_', 'validate_'))
+            or name.endswith(tuple(f'_test.{extension}' for extension in
+                                    ('py', 'js', 'jsx', 'mjs', 'cjs', 'ts', 'tsx', 'mts', 'cts')))
+            or name.endswith(('.test.py', '.spec.py', '.test.js', '.test.jsx', '.test.mjs',
+                              '.test.cjs', '.test.ts', '.test.tsx', '.test.mts', '.test.cts',
+                              '.spec.js', '.spec.jsx', '.spec.ts', '.spec.tsx', '.spec.mjs',
+                              '.spec.cjs', '.spec.mts', '.spec.cts')))
+
+
+def _mask_js_comments_and_strings(source: str) -> str:
+    """Mask comments and literals while preserving offsets and newlines."""
+    out = list(source)
+    i, state = 0, 'code'
+    quote = ''
+    while i < len(source):
+        char = source[i]
+        nxt = source[i + 1] if i + 1 < len(source) else ''
+        if state == 'code':
+            if char == '/' and nxt == '/':
+                state = 'line'; out[i] = out[i + 1] = ' '; i += 2; continue
+            if char == '/' and nxt == '*':
+                state = 'block'; out[i] = out[i + 1] = ' '; i += 2; continue
+            if char in ('"', "'", '`'):
+                quote = char; state = 'string'; out[i] = ' '
+        elif state == 'line':
+            if char == '\n': state = 'code'
+            else: out[i] = ' '
+        elif state == 'block':
+            if char == '*' and nxt == '/':
+                out[i] = out[i + 1] = ' '; i += 2; state = 'code'; continue
+            if char != '\n': out[i] = ' '
+        else:
+            if char == '\\':
+                if char != '\n': out[i] = ' '
+                if i + 1 < len(source) and source[i + 1] != '\n': out[i + 1] = ' '
+                i += 2; continue
+            if char == quote: state = 'code'
+            if char != '\n': out[i] = ' '
+        i += 1
+    return ''.join(out)
+
+
+def _brace_end(masked: str, opening: int) -> int:
+    depth = 0
+    for index in range(opening, len(masked)):
+        if masked[index] == '{': depth += 1
+        elif masked[index] == '}':
+            depth -= 1
+            if depth == 0: return index + 1
+    return len(masked)
+
+
+def _js_symbols(source: str):
+    """Extract named JS/TS functions, classes and class methods without executing code."""
+    masked = _mask_js_comments_and_strings(source)
+    patterns = [
+        re.compile(r'\b(?:export\s+)?(?:default\s+)?(?:async\s+)?function\s+([A-Za-z_$][\w$]*)[^{}]*\{'),
+        re.compile(r'\b(?:export\s+)?(?:default\s+)?class\s+([A-Za-z_$][\w$]*)[^{}]*\{'),
+        re.compile(r'\b(?:export\s+)?(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?(?:<[^>]+>\s*)?(?:\([^)]*\)|[A-Za-z_$][\w$]*)\s*(?::\s*[A-Za-z_$][\w$<>,.\[\] ]*)?=>\s*\{'),
+    ]
+    found = {}
+    for pattern in patterns:
+        for match in pattern.finditer(masked):
+            name = match.group(1)
+            opening = masked.find('{', match.start(), match.end())
+            end = _brace_end(masked, opening)
+            found.setdefault(name, (match.start(), end))
+    for class_match in re.finditer(r'\bclass\s+([A-Za-z_$][\w$]*)[^{}]*\{', masked):
+        class_name = class_match.group(1)
+        opening = masked.find('{', class_match.start(), class_match.end())
+        end = _brace_end(masked, opening)
+        body = masked[opening + 1:end - 1]
+        offset = opening + 1
+        for method in re.finditer(r'(?m)(?:^|[;{}\n])\s*(?:static\s+|async\s+|get\s+|set\s+)*([A-Za-z_$][\w$]*)(?:<[^>{}]+>)?\s*\([^;{}]*\)\s*(?::\s*[^;{}]+)?\{', body):
+            method_name = method.group(1)
+            method_open = offset + body.find('{', method.start(), method.end())
+            found.setdefault(class_name + '.' + method_name, (method_open, _brace_end(masked, method_open)))
+    lines = source.splitlines()
+    result = {}
+    for name, (start, end) in sorted(found.items(), key=lambda item: item[1][0]):
+        start_line = source.count('\n', 0, start) + 1
+        end_line = source.count('\n', 0, end) + 1
+        result[name] = {'name': name, 'start_line': start_line, 'end_line': end_line,
+                        'source': '\n'.join(lines[start_line - 1:end_line])}
+    return result
 
 SKIP = {'.git', '.venv', '.worktrees', '__pycache__', 'node_modules', 'dist', 'build', 'vendor'}
 
@@ -35,6 +132,7 @@ class ImportGraph:
     def __init__(self, repo_root: Path):
         self.root = Path(repo_root).resolve()
         self.modules, self.paths, self.symbols, self.bindings, self.diagnostics = {}, {}, {}, {}, []
+        self.js_modules, self.js_symbols, self.file_dependencies = {}, {}, {}
         for directory, names, files in os.walk(self.root, followlinks=False):
             names[:] = sorted(n for n in names if n not in SKIP and not Path(directory, n).is_symlink())
             for name in sorted(files):
@@ -71,6 +169,62 @@ class ImportGraph:
                             base = node.module or ''
                         for alias in node.names:
                             self.bindings[module][alias.asname or alias.name] = '.'.join(filter(None, (base, alias.name)))
+        for directory, names, files in os.walk(self.root, followlinks=False):
+            names[:] = sorted(n for n in names if n not in SKIP and not Path(directory, n).is_symlink())
+            for name in sorted(files):
+                path = Path(directory, name)
+                if path.is_symlink():
+                    continue
+                relative = path.relative_to(self.root).as_posix()
+                if path.suffix.lower() in JS_SUFFIXES:
+                    try:
+                        text, _ = decode(path)
+                    except (ValueError, OSError) as error:
+                        self.diagnostics.append({'file': relative, 'error': type(error).__name__})
+                        continue
+                    symbols = _js_symbols(text)
+                    self.js_modules[relative] = (text, symbols)
+                    self.js_symbols.update({relative + ':' + key: {"file": relative, **value}
+                                            for key, value in symbols.items()})
+                    dependencies = set()
+                    for specifier in re.findall(r'(?:from\s*|import\s*\(|require\s*\()\s*[\'\"]([^\'\"]+)', text):
+                        if not specifier.startswith('.'):
+                            continue
+                        base = (Path(relative).parent / specifier).as_posix()
+                        candidates = [base + suffix for suffix in JS_SUFFIXES]
+                        candidates += [base + '/index' + suffix for suffix in JS_SUFFIXES]
+                        dependencies.update(candidate for candidate in candidates if candidate in self.js_modules)
+                    self.file_dependencies[relative] = sorted(dependencies)
+        # Resolve JS imports after every file is indexed (walk order is not a dependency order).
+        js_paths = set(self.js_modules)
+        for relative, (text, _) in self.js_modules.items():
+            dependencies = set()
+            for specifier in re.findall(r'(?:from\s*|import\s*\(|require\s*\()\s*[\'\"]([^\'\"]+)', text):
+                if specifier.startswith('.'):
+                    base = (Path(relative).parent / specifier).as_posix()
+                    dependencies.update(candidate for candidate in
+                                        [base + suffix for suffix in JS_SUFFIXES] +
+                                        [base + '/index' + suffix for suffix in JS_SUFFIXES]
+                                        if candidate in js_paths)
+            self.file_dependencies[relative] = sorted(dependencies)
+        for module, (relative, _, _) in self.modules.items():
+            dependencies = set()
+            for bound in self.bindings.get(module, {}).values():
+                requested_module = bound.rsplit('.', 1)[0] if '.' in bound else bound
+                matches = []
+                for candidate in self.modules:
+                    if (requested_module == candidate or requested_module.startswith(candidate + '.')
+                            or candidate.endswith('.' + requested_module)
+                            or candidate.rsplit('.', 1)[-1] == requested_module):
+                        matches.append(candidate)
+                if matches:
+                    origin = Path(relative).parent
+                    candidate = min(matches, key=lambda name: (
+                        len(set((self.modules[name][0].split('/')[:-1])) ^ set(origin.parts)),
+                        len(self.modules[name][0]), name))
+                    if candidate != module:
+                        dependencies.add(self.modules[candidate][0])
+            self.file_dependencies[relative] = sorted(dependencies)
         self.calls = {key: set() for key in self.symbols}
         self.types = {key: set() for key in self.symbols}
         for key, node in self.symbols.items():
@@ -150,6 +304,31 @@ class ImportGraph:
         if not path.is_relative_to(self.root):
             raise ValueError('target outside repository')
         relative = path.relative_to(self.root).as_posix()
+        if relative in self.js_modules:
+            text, symbols = self.js_modules[relative]
+            if target_symbol:
+                name = target_symbol
+                if name not in symbols:
+                    raise KeyError('target symbol/line not indexed')
+            else:
+                matches = [name for name, item in symbols.items()
+                           if item['start_line'] <= (line or 0) <= item['end_line']]
+                if not matches:
+                    raise KeyError('target symbol/line not indexed')
+                name = min(matches, key=lambda key: symbols[key]['end_line'] - symbols[key]['start_line'])
+            key = relative + ':' + name
+            item = symbols[name]
+            package = {'target': key, 'items': [{'symbol': key, 'file': relative,
+                        'start_line': item['start_line'], 'end_line': item['end_line'],
+                        'relation': 'target', 'distance': 0, 'source': item['source']}],
+                       'truncated': False, 'diagnostics': self.diagnostics}
+            if len(json.dumps(package, ensure_ascii=False).encode()) + 32 > token_budget:
+                source = item['source']
+                package['items'][0]['source'] = source[:max(80, token_budget - 256)]
+                package['truncated'] = True
+            package['budget_unit'] = 'utf8_bytes_upper_bound'
+            package['token_upper_bound'] = len(json.dumps(package, ensure_ascii=False).encode()) + 32
+            return package
         module = self.paths.get(relative)
         keys = [key for key in self.symbols if self.symbol_modules[key] == module]
         if target_symbol:

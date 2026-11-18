@@ -455,8 +455,27 @@ def main(argv: list[str] | None = None) -> int:
     wish.add_argument("--out", "--output")
     wish.add_argument("--auto-probe", action=argparse.BooleanOptionalAction, default=True)
     run = commands.add_parser("run")
-    run.add_argument("--contract", required=True)
+    run_target = run.add_mutually_exclusive_group(required=True)
+    run_target.add_argument("--contract")
+    run_target.add_argument("--dag")
     run.add_argument("--db")
+    run.add_argument("--repo")
+    run.add_argument("--workers", type=int, default=4)
+    plan = commands.add_parser("plan")
+    plan.add_argument("text")
+    plan.add_argument("--repo", default=".")
+    plan.add_argument("--out", "--output", required=True)
+    plan.add_argument("--max-tasks", type=int, default=8)
+    learn = commands.add_parser("learn")
+    learn.add_argument("--repo", default=".")
+    learn.add_argument("--db")
+    learn.add_argument("--min-surprise", type=float, default=0.3)
+    learn.add_argument("--artifact-dir")
+    learn.add_argument("--limit", type=int, default=256)
+    learn.add_argument("--epochs", type=int, default=4)
+    learn.add_argument("--seed", type=int, default=20261118)
+    attach = commands.add_parser("attach")
+    attach.add_argument("--repo", required=True)
     for name in ("stats", "export-traces"):
         command = commands.add_parser(name)
         command.add_argument("--repo", default=".")
@@ -472,7 +491,33 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "wish":
             result, code = _wish(args)
         elif args.command == "run":
-            result, code = _run(args)
+            if args.dag:
+                from .planner import execute_task_dag
+                result, code = execute_task_dag(args.dag, db=args.db, workers=args.workers, repo=args.repo)
+            else:
+                result, code = _run(args)
+        elif args.command == "plan":
+            from .planner import build_task_dag
+            result = build_task_dag(args.text, args.repo, max_tasks=args.max_tasks)
+            destination = Path(args.out).resolve()
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            _save(destination, result)
+            result = {"status": "planned", "dag_id": result["dag_id"],
+                      "tasks": len(result["tasks"]), "layers": result["topological_layers"],
+                      "output": str(destination)}
+            code = 0
+        elif args.command == "learn":
+            root = _repo(args.repo)
+            ledger = _ledger(root, args.db)
+            from .learning import learn_from_ledger
+            result = learn_from_ledger(repo=root, db=ledger.path, min_surprise=args.min_surprise,
+                                       artifact_dir=args.artifact_dir, limit=args.limit,
+                                       epochs=args.epochs, seed=args.seed)
+            code = 0
+        elif args.command == "attach":
+            from .repo_adapter import attach_repository
+            result = attach_repository(args.repo)
+            code = 0
         else:
             ledger = _ledger(_repo(args.repo), args.db)
             if args.command == "stats":

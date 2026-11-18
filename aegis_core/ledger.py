@@ -128,6 +128,42 @@ class Ledger:
                     "replay_interceptions": sum(bool(state.get("repeated_patch", False)) for state, _ in attempts),
                     "mean_reward": sum(reward for _, reward in attempts) / len(attempts) if attempts else 0.0}
 
+    def high_surprise_traces(self, min_surprise: float = 0.3, *, limit: int = 256) -> list[dict]:
+        """Return immutable, real repair outcomes above the composite-error threshold."""
+        if type(min_surprise) not in (int, float) or not math.isfinite(min_surprise) or min_surprise < 0:
+            raise ValueError("min_surprise must be finite and nonnegative")
+        if type(limit) is not int or not 1 <= limit <= 10000:
+            raise ValueError("limit must be 1..10000")
+        with self._connection() as db:
+            rows = db.execute("""SELECT trace_id,ticket_id,step_idx,state_s0,action_a0,
+                                       actual_state_s1,reward,predicted_next_state,predicted_reward,
+                                       prediction_confidence,prediction_error,predicted_reward_interval,timestamp
+                                FROM causal_traces WHERE prediction_error IS NOT NULL
+                                ORDER BY timestamp DESC,trace_id DESC""").fetchall()
+        decoded = [(row, json.loads(row["action_a0"]), json.loads(row["actual_state_s1"])) for row in rows]
+        invalid_tickets = {row["ticket_id"] for row, action, actual in decoded
+                           if action.get("op") == "repair_attempt" and actual.get("error_type")}
+        result = []
+        for row, decoded_action, decoded_actual in decoded:
+            item = dict(row)
+            error = json.loads(item["prediction_error"])
+            action = decoded_action
+            actual = decoded_actual
+            if (action.get("op") != "repair_attempt" or actual.get("pre_blocked")
+                    or actual.get("error_type") or item["ticket_id"] in invalid_tickets):
+                continue
+            surprise = error.get("composite_error")
+            if type(surprise) not in (int, float) or not math.isfinite(surprise) or surprise <= min_surprise:
+                continue
+            for key in ("state_s0", "action_a0", "actual_state_s1", "predicted_next_state",
+                        "prediction_error", "predicted_reward_interval"):
+                item[key] = json.loads(item[key]) if item[key] is not None else None
+            item["composite_error"] = float(surprise)
+            result.append(item)
+            if len(result) >= limit:
+                break
+        return result
+
     def get_ticket(self, ticket_id: str) -> dict:
         with self._connection() as db:
             row = db.execute("SELECT * FROM tickets WHERE ticket_id=?", (ticket_id,)).fetchone()

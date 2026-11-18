@@ -28,7 +28,8 @@ routine reversible implementation choices. Verification, path anchoring, risk
 classification and state commits are enforced by deterministic host code.
 """
 
-_SOURCE_SUFFIXES = {".py", ".js", ".ts", ".tsx", ".jsx", ".html", ".c", ".cpp", ".rs", ".go"}
+_SOURCE_SUFFIXES = {".py", ".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx", ".mts", ".cts",
+                    ".html", ".c", ".cpp", ".rs", ".go"}
 
 
 def canonical_path(value: str) -> str:
@@ -42,12 +43,22 @@ def canonical_path(value: str) -> str:
 
 def is_business_source(path: str) -> bool:
     p = PurePosixPath(path)
+    normalized = p.as_posix().lower()
+    name = p.name.lower()
+    protected_test = (any(part.lower() in {"tests", "test", "__tests__"} for part in p.parts)
+                      or name.startswith(("test_", "check_", "verify_", "validate_"))
+                      or any(name.endswith(suffix) for suffix in
+                             ("_test.py", "_test.js", "_test.jsx", "_test.mjs", "_test.cjs",
+                              "_test.ts", "_test.tsx", "_test.mts", "_test.cts",
+                              ".test.py", ".spec.py", ".test.js", ".test.jsx",
+                              ".test.mjs", ".test.cjs", ".test.ts", ".test.tsx", ".test.mts", ".test.cts",
+                              ".spec.js", ".spec.jsx", ".spec.ts", ".spec.tsx",
+                              ".spec.mjs", ".spec.cjs", ".spec.mts", ".spec.cts")))
     return (p.suffix.lower() in _SOURCE_SUFFIXES
             and not any(part.lower() in {"tests", "test", "scripts", "tools", "config", ".github"} for part in p.parts)
-            and not p.name.lower().startswith(("test_", "check_", "verify_", "validate_"))
-            and not p.name.lower().endswith(("_test.py", ".test.js", ".test.ts"))
+            and not protected_test
             and p.stem.lower() not in {"conftest", "setup", "config", "settings", "test", "tests"}
-            and not p.name.lower().endswith((".spec.js", ".spec.ts")))
+            and not normalized.endswith((".spec.js", ".spec.jsx", ".spec.ts", ".spec.tsx")))
 
 
 def _stub(source):

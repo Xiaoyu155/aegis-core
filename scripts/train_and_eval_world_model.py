@@ -10,6 +10,7 @@ import math
 import os
 from pathlib import Path
 import platform
+import random
 import sys
 import time
 
@@ -27,6 +28,7 @@ from aegis_core.world_model import (
     STATE_LABELS,
     _extract_patch,
     preblock_reason,
+    preblock_reward_distribution,
 )
 
 
@@ -37,17 +39,8 @@ CAMPAIGN_GROUP_ALIAS = {
     "leverage": "template:quant_notional_cap",
     "regime": "template:quant_guard_period",
 }
-TEST_GROUPS = {
-    "template:cat_depth",
-    "template:quant_guard_period",
-    "template:quant_signal_period",
-    "ticket:cheat",
-}
-VALIDATION_GROUPS = {
-    "template:cat_blank",
-    "template:quant_notional_cap",
-    "ticket:self_heal",
-}
+OPTIONAL_TRACE_FILES = ("campaign/world_model_live_traces.jsonl",)
+RISK_LABELS = ("cheat_detected", "replay_blocked")
 
 
 def _read_jsonl(path: Path):
@@ -85,6 +78,7 @@ def build_corpus(root: Path = ROOT):
             examples.append({
                 "sample_id": f"synthetic:{filename}:{index}",
                 "group_id": f"template:{family}",
+                "group_keys": [f"template:{family}"],
                 "state": state,
                 "action": action,
                 "context": prompt.get("context", prompt.get("source", {})),
@@ -96,10 +90,18 @@ def build_corpus(root: Path = ROOT):
             })
             synthetic_count += 1
 
-    trace_path = root / "datasets" / "campaign" / "campaign_traces.jsonl"
-    physical_rows = _read_jsonl(trace_path)
+    trace_paths = [root / "datasets" / "campaign" / "campaign_traces.jsonl"]
+    trace_paths.extend(root / "datasets" / name for name in OPTIONAL_TRACE_FILES
+                       if (root / "datasets" / name).is_file())
+    physical_rows = []
+    for trace_path in trace_paths:
+        physical_rows.extend({**row, "_source_file": trace_path.relative_to(root / "datasets").as_posix()}
+                             for row in _read_jsonl(trace_path))
     history = defaultdict(list)
     real_actionable = 0
+    invalid_sandbox_tickets = {row["ticket_id"] for row in physical_rows
+                               if row.get("action_a0", {}).get("op") == "repair_attempt"
+                               and row.get("actual_state_s1", {}).get("error_type")}
     for row in physical_rows:
         ticket = row["ticket_id"]
         action = row.get("action_a0", {})
@@ -108,6 +110,9 @@ def build_corpus(root: Path = ROOT):
         operation = action.get("op")
         prior_attempts = [{"patch_sha256": digest} for digest in history[ticket]]
         if operation == "repair_attempt":
+            # A patch that fails to apply has no observed causal sandbox result.
+            if ticket in invalid_sandbox_tickets:
+                continue
             if actual.get("cheat_detected"):
                 label = "cheat_detected"
             elif actual.get("repeated_patch"):
@@ -118,11 +123,18 @@ def build_corpus(root: Path = ROOT):
                 label = "assertion_error"
             sample_action = dict(action)
             sample_action["target_files"] = row.get("action_a0", {}).get("contract", {}).get("target_files", [])
-            group_id = CAMPAIGN_GROUP_ALIAS.get(ticket, f"ticket:{ticket}")
+            template_family = row.get("template_family")
+            if template_family:
+                family_key = template_family if template_family.startswith("template:") else f"template:{template_family}"
+            else:
+                family_key = CAMPAIGN_GROUP_ALIAS.get(ticket, f"template:{ticket}")
+            group_keys = sorted({f"ticket:{ticket}", family_key})
+            group_id = "|".join(group_keys)
             reward = float(row["reward"])
             examples.append({
-                "sample_id": f"campaign:{ticket}:{row['step_idx']}",
+                "sample_id": f"{row['_source_file']}:{ticket}:{row['step_idx']}",
                 "group_id": group_id,
+                "group_keys": group_keys,
                 "state": state,
                 "action": sample_action,
                 "context": action.get("context", {}),
@@ -138,8 +150,9 @@ def build_corpus(root: Path = ROOT):
             history[ticket].append(digest)
         elif operation in {"compile", "compile_request"} and actual.get("status") == "MISSING_CONSTRAINT":
             examples.append({
-                "sample_id": f"campaign:{ticket}:{row['step_idx']}",
+                "sample_id": f"{row['_source_file']}:{ticket}:{row['step_idx']}",
                 "group_id": f"ticket:{ticket}",
+                "group_keys": [f"ticket:{ticket}"],
                 "state": state,
                 "action": action,
                 "context": action.get("context", {}),
@@ -151,10 +164,10 @@ def build_corpus(root: Path = ROOT):
             })
             real_actionable += 1
 
-    expected_source_count = 1050 + 47
-    if synthetic_count != 1050 or len(physical_rows) != 47 or real_actionable != 11:
+    expected_source_count = 1050 + len(physical_rows)
+    if synthetic_count != 1050 or real_actionable < 11:
         raise ValueError({"synthetic": synthetic_count, "physical": len(physical_rows), "labeled_physical": real_actionable})
-    if len(examples) != 1061 or len(examples) + (len(physical_rows) - real_actionable) != expected_source_count:
+    if len(examples) != synthetic_count + real_actionable or len(examples) + (len(physical_rows) - real_actionable) != expected_source_count:
         raise ValueError("unexpected causal dataset accounting")
     return examples, {
         "raw_unique_records": expected_source_count,
@@ -166,25 +179,129 @@ def build_corpus(root: Path = ROOT):
         "source_files": {
             "sft_mediator_train.jsonl": hashlib.sha256((root / "datasets" / SFT_FILES[0]).read_bytes()).hexdigest(),
             "sft_mediator_eval.jsonl": hashlib.sha256((root / "datasets" / SFT_FILES[1]).read_bytes()).hexdigest(),
-            "campaign/campaign_traces.jsonl": hashlib.sha256(trace_path.read_bytes()).hexdigest(),
+            **{path.relative_to(root / "datasets").as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
+               for path in trace_paths},
         },
     }
 
 
-def split_by_group(examples):
-    groups = {row["group_id"] for row in examples}
-    if not TEST_GROUPS <= groups or not VALIDATION_GROUPS <= groups:
-        raise ValueError({"missing_test_groups": sorted(TEST_GROUPS - groups),
-                          "missing_validation_groups": sorted(VALIDATION_GROUPS - groups)})
-    if TEST_GROUPS & VALIDATION_GROUPS:
-        raise ValueError("test/validation group overlap")
-    train = [i for i, row in enumerate(examples) if row["group_id"] not in TEST_GROUPS | VALIDATION_GROUPS]
-    validation = [i for i, row in enumerate(examples) if row["group_id"] in VALIDATION_GROUPS]
-    test = [i for i, row in enumerate(examples) if row["group_id"] in TEST_GROUPS]
-    group_sets = [{examples[i]["group_id"] for i in split} for split in (train, validation, test)]
-    if group_sets[0] & group_sets[1] or group_sets[0] & group_sets[2] or group_sets[1] & group_sets[2]:
-        raise ValueError("group leakage across train, validation and test")
-    return train, validation, test
+def split_by_group(examples, *, seed=20261118, return_summary=False):
+    """Stratify labels at connected ticket/template-group level without leakage."""
+    parent = {}
+
+    def find(key):
+        parent.setdefault(key, key)
+        while parent[key] != key:
+            parent[key] = parent[parent[key]]
+            key = parent[key]
+        return key
+
+    def union(left, right):
+        a, b = find(left), find(right)
+        if a != b:
+            parent[max(a, b)] = min(a, b)
+
+    row_keys = []
+    for row in examples:
+        keys = sorted(set(row.get("group_keys") or [row["group_id"]]))
+        if not keys:
+            raise ValueError("every example needs a ticket or template group")
+        for key in keys:
+            find(key)
+        for key in keys[1:]:
+            union(keys[0], key)
+        row_keys.append(keys)
+
+    components = defaultdict(list)
+    for index, keys in enumerate(row_keys):
+        components[find(keys[0])].append(index)
+    labels = sorted({row["label"] for row in examples})
+    totals = Counter(row["label"] for row in examples)
+    components_by_label = defaultdict(list)
+    group_stats = {}
+    for root_key, indices in components.items():
+        counts = Counter(examples[index]["label"] for index in indices)
+        keys = sorted({key for index in indices for key in row_keys[index]})
+        group_stats[root_key] = {"indices": indices, "counts": counts, "keys": keys}
+        for label, count in counts.items():
+            if label in RISK_LABELS and count:
+                components_by_label[label].append(root_key)
+
+    proportions = {"train": .6, "validation": .2, "test": .2}
+    assigned = {name: [] for name in proportions}
+    assigned_counts = {name: Counter() for name in proportions}
+    assigned_size = Counter()
+    unassigned = set(group_stats)
+    rng = random.Random(seed)
+
+    def add(root_key, split):
+        assigned[split].append(root_key)
+        assigned_counts[split].update(group_stats[root_key]["counts"])
+        assigned_size[split] += len(group_stats[root_key]["indices"])
+        unassigned.discard(root_key)
+
+    # Place high-risk groups first. When >=3 independent components exist for a
+    # label, reserve one for each split; otherwise report the unavoidable gap.
+    for label in RISK_LABELS:
+        candidates = sorted(components_by_label[label],
+                            key=lambda key: (-group_stats[key]["counts"][label],
+                                             len(group_stats[key]["indices"]), key))
+        if len(candidates) >= 3:
+            destinations = ("train", "validation", "test")
+        else:
+            destinations = tuple(sorted(proportions, key=lambda name: (
+                assigned_size[name] / max(1, proportions[name] * len(examples)), name)))[:len(candidates)]
+        for destination, root_key in zip(destinations, candidates):
+            if root_key in unassigned:
+                add(root_key, destination)
+
+    # Greedily minimize normalized label and size deviations for remaining groups.
+    def cost(split, root_key):
+        counts = group_stats[root_key]["counts"]
+        size = len(group_stats[root_key]["indices"])
+        total_cost = 0.0
+        for name in proportions:
+            proposed_size = assigned_size[name] + (size if name == split else 0)
+            desired_size = proportions[name] * len(examples)
+            total_cost += 0.35 * ((proposed_size - desired_size) / max(1.0, desired_size)) ** 2
+            for label in labels:
+                proposed = assigned_counts[name][label] + (counts[label] if name == split else 0)
+                desired = proportions[name] * totals[label]
+                total_cost += ((proposed - desired) / max(1.0, desired)) ** 2
+        return total_cost
+
+    remaining = sorted(unassigned, key=lambda key: (
+        min((totals[label] for label in group_stats[key]["counts"]), default=len(examples)),
+        -len(group_stats[key]["indices"]), key))
+    rng.shuffle(remaining)
+    remaining.sort(key=lambda key: (
+        min((totals[label] for label in group_stats[key]["counts"]), default=len(examples)),
+        -len(group_stats[key]["indices"]), key))
+    for root_key in remaining:
+        destination = min(proportions, key=lambda name: (cost(name, root_key), name))
+        add(root_key, destination)
+
+    splits = {name: sorted(index for key in group_keys for index in group_stats[key]["indices"])
+              for name, group_keys in assigned.items()}
+    group_sets = [{key for root_key in group_keys for key in group_stats[root_key]["keys"]}
+                  for group_keys in assigned.values()]
+    if any(group_sets[i] & group_sets[j] for i in range(3) for j in range(i + 1, 3)):
+        raise ValueError("ticket/template group leakage across train, validation and test")
+    summary = {
+        "group_leakage": False,
+        "groups": {name: [key for root_key in keys for key in group_stats[root_key]["keys"]]
+                   for name, keys in assigned.items()},
+        "risk_support": {name: {label: sum(examples[i]["label"] == label for i in indices)
+                                for label in RISK_LABELS}
+                         for name, indices in splits.items()},
+        "risk_groups": {label: len(keys) for label, keys in components_by_label.items()},
+        "unrepresented_risk_labels": [label for label in RISK_LABELS
+                                      if any(summary_count == 0 for summary_count in
+                                             (sum(examples[i]["label"] == label for i in splits[name])
+                                              for name in proportions))],
+    }
+    result = tuple(splits[name] for name in ("train", "validation", "test"))
+    return (*result, summary) if return_summary else result
 
 
 def _init_weights(input_size, hidden_size, seed):
@@ -213,18 +330,21 @@ def _forward(x, weights):
     return hidden, probabilities, reward, risk_logits, risk
 
 
-def _loss(x, labels, reward_targets, risk_targets, weights, class_weights):
+def _loss(x, labels, reward_targets, risk_targets, weights, class_weights, risk_positive_weight=1.0):
     _, probabilities, reward, risk_logits, _ = _forward(x, weights)
     sample_weights = class_weights[labels]
     denom = max(float(sample_weights.sum()), 1e-12)
     state_loss = float((-np.log(np.clip(probabilities[np.arange(len(labels)), labels], 1e-12, 1)) * sample_weights).sum() / denom)
     reward_loss = float(np.mean((reward - reward_targets) ** 2))
-    risk_loss = float(np.mean(np.logaddexp(0, risk_logits) - risk_targets * risk_logits))
+    risk_weights = np.where(risk_targets > 0.5, risk_positive_weight, 1.0)
+    risk_denominator = max(float(risk_weights.sum()), 1e-12)
+    risk_loss = float(((np.logaddexp(0, risk_logits) - risk_targets * risk_logits) * risk_weights).sum()
+                      / risk_denominator)
     return state_loss + 0.5 * reward_loss + 0.5 * risk_loss
 
 
 def _train_epoch(x, labels, reward_targets, risk_targets, weights, optimizer, class_weights,
-                 *, batch_size=64, learning_rate=0.005):
+                 *, batch_size=64, learning_rate=0.005, risk_positive_weight=1.0):
     m, v, step = optimizer
     order = np.random.permutation(len(labels))
     for start in range(0, len(order), batch_size):
@@ -238,7 +358,9 @@ def _train_epoch(x, labels, reward_targets, risk_targets, weights, optimizer, cl
         d_state[np.arange(len(yb)), yb] -= 1
         d_state *= (sample_weights / denom)[:, None]
         d_reward = (2.0 * 0.5 / len(yb)) * (reward - rb)[:, None]
-        d_risk = (0.5 / len(yb)) * (risk - kb)[:, None]
+        risk_sample_weights = np.where(kb > 0.5, risk_positive_weight, 1.0)
+        risk_denominator = max(float(risk_sample_weights.sum()), 1e-12)
+        d_risk = (0.5 / risk_denominator) * (risk - kb)[:, None] * risk_sample_weights[:, None]
         grads = {
             "Ws": hidden.T @ d_state,
             "bs": d_state.sum(axis=0),
@@ -272,26 +394,38 @@ def _binary_metrics(targets, predictions):
             "false_positive": fp, "false_negative": fn, "support": sum(bool(t) for t in targets)}
 
 
-def _evaluate(x, examples, indices, label_indices, reward_mean, reward_scale, weights, class_weights):
+def _evaluate(x, examples, indices, label_indices, reward_mean, reward_scale, weights, class_weights,
+              reward_interval_radius=None, reward_interval_radii=None, risk_positive_weight=1.0):
     chosen = [examples[i] for i in indices]
     labels = label_indices[indices]
     rewards = np.asarray([examples[i]["reward"] for i in indices], dtype=float)
     reward_targets = (rewards - reward_mean) / reward_scale
     risk_targets = np.asarray([examples[i]["high_risk"] for i in indices], dtype=float)
     subset_x = x[indices]
-    total_loss = _loss(subset_x, labels, reward_targets, risk_targets, weights, class_weights)
+    total_loss = _loss(subset_x, labels, reward_targets, risk_targets, weights, class_weights,
+                       risk_positive_weight)
     _, probabilities, predicted_reward_scaled, risk_logits, risk_probability = _forward(subset_x, weights)
     raw_predictions = probabilities.argmax(axis=1)
     guarded_predictions = []
     guard_predictions = []
+    predicted_rewards = np.clip(predicted_reward_scaled * reward_scale + reward_mean, -2, 1.5)
+    intervals = []
     for row, raw in zip(chosen, raw_predictions):
         reason, _ = preblock_reason(row["action"], row["prior_attempts"])
         guard_predictions.append(reason is not None)
         if reason:
-            guarded_predictions.append(STATE_LABELS.index("replay_blocked" if reason == "repeated_patch" else "cheat_detected"))
+            outcome = "replay_blocked" if reason == "repeated_patch" else "cheat_detected"
+            guarded_predictions.append(STATE_LABELS.index(outcome))
+            predicted_rewards[len(guarded_predictions) - 1], interval = preblock_reward_distribution(outcome)
+            intervals.append(interval)
         else:
             guarded_predictions.append(int(raw))
-    predicted_rewards = np.clip(predicted_reward_scaled * reward_scale + reward_mean, -2, 1.5)
+            if reward_interval_radius is not None:
+                value = float(predicted_rewards[len(guarded_predictions) - 1])
+                predicted_label = STATE_LABELS[int(raw)]
+                radius = (reward_interval_radii or {}).get(predicted_label, reward_interval_radius)
+                intervals.append([max(-2.0, value - radius),
+                                  min(1.5, value + radius)])
     actual_names = [STATE_LABELS[index] for index in labels]
     raw_names = [STATE_LABELS[index] for index in raw_predictions]
     guarded_names = [STATE_LABELS[index] for index in guarded_predictions]
@@ -299,7 +433,7 @@ def _evaluate(x, examples, indices, label_indices, reward_mean, reward_scale, we
     risk_binary = risk_probability >= 0.5
     true_risk = [row["high_risk"] for row in chosen]
     correct_guarded = sum(a == b for a, b in zip(actual_names, guarded_names))
-    return {
+    result = {
         "loss": total_loss,
         "state_accuracy": sum(a == b for a, b in zip(actual_names, raw_names)) / max(1, len(labels)),
         "state_log_loss": float(-np.log(np.clip(prob_true, 1e-12, 1)).mean()),
@@ -316,9 +450,16 @@ def _evaluate(x, examples, indices, label_indices, reward_mean, reward_scale, we
         "high_risk_support": sum(true_risk),
         "samples": len(indices),
     }
+    if reward_interval_radius is not None:
+        result["reward_interval_coverage"] = sum(
+            low - 1e-12 <= actual <= high + 1e-12 for (low, high), actual in zip(intervals, rewards)
+        ) / max(1, len(rewards))
+        result["reward_interval_samples"] = len(intervals)
+    return result
 
 
-def _serialize_weights(weights, input_size, reward_mean, reward_scale, reward_interval_radius, version_seed):
+def _serialize_weights(weights, input_size, reward_mean, reward_scale, reward_interval_radius,
+                       reward_interval_radii, version_seed):
     payload = {
         "schema_version": "aegis.world_model.weights.v1",
         "state_labels": list(STATE_LABELS),
@@ -327,6 +468,7 @@ def _serialize_weights(weights, input_size, reward_mean, reward_scale, reward_in
         "reward_mean": float(reward_mean),
         "reward_scale": float(reward_scale),
         "reward_interval_radius": float(reward_interval_radius),
+        "reward_interval_radii": {label: float(radius) for label, radius in reward_interval_radii.items()},
         "weights": {
             "W1": weights["W1"].tolist(), "b1": weights["b1"].tolist(),
             "Ws": weights["Ws"].tolist(), "bs": weights["bs"].tolist(),
@@ -346,7 +488,8 @@ def train_and_evaluate(*, root: Path = ROOT, output_dir: Path | None = None,
     output_dir = output_dir or root / "artifacts" / "causal_world_model"
     output_dir.mkdir(parents=True, exist_ok=True)
     examples, corpus_info = build_corpus(root)
-    train_indices, validation_indices, test_indices = split_by_group(examples)
+    train_indices, validation_indices, test_indices, split_summary = split_by_group(
+        examples, seed=seed, return_summary=True)
     train_rows = [examples[i] for i in train_indices]
     encoder = FeatureEncoder(max_vocab=768).fit(train_rows)
     x = np.asarray([encoder.encode(row["state"], row["action"], row["context"], row["prior_attempts"])
@@ -357,6 +500,10 @@ def train_and_evaluate(*, root: Path = ROOT, output_dir: Path | None = None,
     reward_scale = float(rewards[train_indices].std()) or 1.0
     reward_targets = (rewards - reward_mean) / reward_scale
     risk_targets = np.asarray([row["high_risk"] for row in examples], dtype=np.float64)
+    risk_train_positive = int(risk_targets[train_indices].sum())
+    risk_train_negative = len(train_indices) - risk_train_positive
+    risk_positive_weight = (min(64.0, risk_train_negative / max(1, risk_train_positive))
+                            if risk_train_positive else 1.0)
     counts = np.bincount(label_indices[train_indices], minlength=len(STATE_LABELS))
     present = max(1, int((counts > 0).sum()))
     class_weights = np.ones(len(STATE_LABELS), dtype=np.float64)
@@ -366,7 +513,7 @@ def train_and_evaluate(*, root: Path = ROOT, output_dir: Path | None = None,
     weights = _init_weights(encoder.input_size, 48, seed)
     baseline_weights = copy.deepcopy(weights)
     baseline = _evaluate(x, examples, test_indices, label_indices, reward_mean, reward_scale,
-                         baseline_weights, class_weights)
+                         baseline_weights, class_weights, risk_positive_weight=risk_positive_weight)
     moments = [{key: np.zeros_like(value) for key, value in weights.items()},
                {key: np.zeros_like(value) for key, value in weights.items()}, 0]
     history = []
@@ -378,12 +525,13 @@ def train_and_evaluate(*, root: Path = ROOT, output_dir: Path | None = None,
     np.random.seed(seed)
     for epoch in range(1, epochs + 1):
         _train_epoch(x[train_indices], label_indices[train_indices], reward_targets[train_indices],
-                     risk_targets[train_indices], weights, moments, class_weights)
+                     risk_targets[train_indices], weights, moments, class_weights,
+                     risk_positive_weight=risk_positive_weight)
         train_loss = _loss(x[train_indices], label_indices[train_indices], reward_targets[train_indices],
-                           risk_targets[train_indices], weights, class_weights)
+                           risk_targets[train_indices], weights, class_weights, risk_positive_weight)
         validation_loss = _loss(x[validation_indices], label_indices[validation_indices],
                                 reward_targets[validation_indices], risk_targets[validation_indices],
-                                weights, class_weights)
+                                weights, class_weights, risk_positive_weight)
         history.append({"epoch": epoch, "train_loss": train_loss, "eval_loss": validation_loss})
         if validation_loss < best_loss - 1e-7:
             best_loss = validation_loss
@@ -394,17 +542,50 @@ def train_and_evaluate(*, root: Path = ROOT, output_dir: Path | None = None,
             stale_epochs += 1
             if stale_epochs >= patience:
                 break
-    validation_hidden, _, validation_reward_scaled, _, _ = _forward(x[validation_indices], best_weights)
-    del validation_hidden
+    _, validation_probabilities, validation_reward_scaled, _, _ = _forward(x[validation_indices], best_weights)
+    validation_predicted_labels = validation_probabilities.argmax(axis=1)
+    ordinary_validation_positions = [position for position, index in enumerate(validation_indices)
+                                     if preblock_reason(examples[index]["action"],
+                                                        examples[index]["prior_attempts"])[0] is None]
     validation_reward = np.clip(validation_reward_scaled * reward_scale + reward_mean, -2, 1.5)
-    validation_residuals = np.abs(validation_reward - rewards[validation_indices])
+    validation_residuals = np.abs(
+        validation_reward[ordinary_validation_positions]
+        - rewards[np.asarray(validation_indices)[ordinary_validation_positions]]
+    )
+    if not len(validation_residuals):
+        validation_residuals = np.asarray([0.0])
     interval_rank = min(len(validation_residuals), max(1, math.ceil((len(validation_residuals) + 1) * 0.90)))
     reward_interval_radius = float(np.sort(validation_residuals)[interval_rank - 1])
-    interval_coverage = float(np.mean(validation_residuals <= reward_interval_radius))
+    reward_interval_radii = {}
+    reward_interval_calibration = {}
+    for label_index, label in enumerate(STATE_LABELS):
+        positions = [position for position, index in enumerate(validation_indices)
+                     if position in ordinary_validation_positions
+                     and validation_predicted_labels[position] == label_index]
+        if positions:
+            residuals = np.abs(validation_reward[positions]
+                               - rewards[np.asarray(validation_indices)[positions]])
+            rank = min(len(residuals), max(1, math.ceil((len(residuals) + 1) * 0.90)))
+            radius = float(np.sort(residuals)[rank - 1])
+            coverage = float(np.mean(residuals <= radius + 1e-12))
+        else:
+            residuals = np.asarray([], dtype=float)
+            radius = reward_interval_radius
+            coverage = None
+        reward_interval_radii[label] = radius
+        reward_interval_calibration[label] = {"radius": radius, "validation_support": len(positions),
+                                              "validation_coverage": coverage,
+                                              "fallback_to_global": not bool(positions)}
     trained = _evaluate(x, examples, test_indices, label_indices, reward_mean, reward_scale,
-                        best_weights, class_weights)
+                        best_weights, class_weights, reward_interval_radius, reward_interval_radii,
+                        risk_positive_weight)
+    calibrated_validation = _evaluate(x, examples, validation_indices, label_indices,
+                                       reward_mean, reward_scale, best_weights,
+                                       class_weights, reward_interval_radius, reward_interval_radii,
+                                       risk_positive_weight)
+    interval_coverage = calibrated_validation["reward_interval_coverage"]
     weight_payload = _serialize_weights(best_weights, encoder.input_size, reward_mean, reward_scale,
-                                        reward_interval_radius, seed)
+                                        reward_interval_radius, reward_interval_radii, seed)
     (output_dir / "model_weights.json").write_text(json.dumps(weight_payload, ensure_ascii=False,
         separators=(",", ":"), allow_nan=False) + "\n", encoding="utf-8")
     (output_dir / "feature_encoder.json").write_text(json.dumps(encoder.to_dict(), ensure_ascii=False,
@@ -412,15 +593,15 @@ def train_and_evaluate(*, root: Path = ROOT, output_dir: Path | None = None,
     np.savez_compressed(output_dir / "model_weights.npz", **best_weights,
                         reward_mean=np.asarray([reward_mean]), reward_scale=np.asarray([reward_scale]))
     split_groups = {
-        "train": sorted({examples[i]["group_id"] for i in train_indices}),
-        "validation": sorted({examples[i]["group_id"] for i in validation_indices}),
-        "test": sorted({examples[i]["group_id"] for i in test_indices}),
+        name: sorted({key for i in indices for key in examples[i].get("group_keys", [examples[i]["group_id"]])})
+        for name, indices in (("train", train_indices), ("validation", validation_indices), ("test", test_indices))
     }
     split_manifest = {
         "schema_version": "aegis.world_model.split.v1",
-        "strategy": "hold out complete template families and ticket IDs; no group may cross splits",
+        "strategy": "stratified connected components of complete ticket/template groups; rare-risk coverage is reported",
         "seed": seed,
         "groups": split_groups,
+        "stratification": split_summary,
         "sample_ids": {
             name: [examples[i]["sample_id"] for i in indices]
             for name, indices in (("train", train_indices), ("validation", validation_indices), ("test", test_indices))
@@ -429,9 +610,7 @@ def train_and_evaluate(*, root: Path = ROOT, output_dir: Path | None = None,
     }
     (output_dir / "split_manifest.json").write_text(json.dumps(split_manifest, ensure_ascii=False,
         indent=2, allow_nan=False) + "\n", encoding="utf-8")
-    group_leakage = bool(set(split_groups["train"]) & set(split_groups["validation"])
-                         or set(split_groups["train"]) & set(split_groups["test"])
-                         or set(split_groups["validation"]) & set(split_groups["test"]))
+    group_leakage = split_summary["group_leakage"]
     metrics = {
         "schema_version": "aegis.world_model.metrics.v1",
         "hardware": {"platform": platform.platform(), "python": sys.version.split()[0],
@@ -448,12 +627,15 @@ def train_and_evaluate(*, root: Path = ROOT, output_dir: Path | None = None,
                     "group_leakage": group_leakage},
         "training": {"architecture": "CausalWorldNet(shared tanh hidden layer; state softmax, reward regression, risk sigmoid heads)",
                      "optimizer": "Adam", "learning_rate": 0.005, "batch_size": 64, "hidden_size": 48,
+                     "risk_positive_class_weight": risk_positive_weight,
                      "vocabulary_size": len(encoder.vocabulary), "input_size": encoder.input_size,
                      "seed": seed, "epochs_requested": epochs, "epochs_completed": len(history),
                      "best_epoch": best_epoch, "best_validation_loss": best_loss,
-                     "reward_interval": {"method": "90% validation absolute-residual conformal radius",
+                     "reward_interval": {"method": "90% validation absolute-residual conformal radius by predicted outcome; deterministic pre-block profiles for risk states",
                                          "radius": reward_interval_radius,
+                                         "radii_by_predicted_outcome": reward_interval_calibration,
                                          "validation_coverage": interval_coverage,
+                                         "validation_calibrated_metrics": calibrated_validation,
                                          "validation_samples": len(validation_residuals)},
                      "elapsed_seconds": time.monotonic() - start_time,
                      "weights_sha256": hashlib.sha256((output_dir / "model_weights.json").read_bytes()).hexdigest()},

@@ -204,6 +204,7 @@ class Sandbox:
 def detect_source_cheat(worktree_path: Path, source_dirs: tuple[str, ...], *, base: str = "HEAD") -> dict:
     """Compare tracked/staged/untracked files against the frozen baseline ref."""
     from .mediator import canonical_path, is_business_source
+    from .ast_slicer import is_protected_test_path
     if not source_dirs:
         raise ValueError("trusted source_dirs required")
     directories = []
@@ -226,7 +227,8 @@ def detect_source_cheat(worktree_path: Path, source_dirs: tuple[str, ...], *, ba
             changes[name] = len(file.read_bytes().splitlines()) if file.is_file() and not file.is_symlink() else 0
     def protected(name):
         p = Path(name)
-        return (any(part in {"tests", "test", "config", ".github"} for part in p.parts)
+        return (is_protected_test_path(name)
+                or any(part.lower() in {"config", ".github", "__tests__"} for part in p.parts)
                 or p.name.startswith(("test_", "check_", "verify_", "validate_"))
                 or p.name in {"conftest.py", "setup.py", "Makefile", ".gitignore", ".gitattributes", ".env"}
                 or p.stem.lower() in {"config", "settings", "test", "tests"}

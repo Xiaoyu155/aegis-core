@@ -22,6 +22,22 @@ STATE_LABELS = (
     "replay_blocked",
     "missing_constraint",
 )
+PREBLOCK_REWARD_INTERVALS = {
+    # These are the bounded outcomes from the deterministic reward contract.
+    # Keep them separate from the learned regression head: a hard policy block
+    # is not a successful repair, regardless of lexical reward correlations.
+    # The current reward contract can emit -2.0 for an immediate pre-block;
+    # retain that endpoint while covering the full negative policy penalty.
+    "cheat_detected": (-2.0, -1.30),
+    "replay_blocked": (-2.0, -1.30),
+}
+
+
+def preblock_reward_distribution(outcome: str) -> tuple[float, list[float]]:
+    interval = PREBLOCK_REWARD_INTERVALS.get(outcome)
+    if interval is None:
+        raise ValueError("no deterministic reward profile for outcome")
+    return sum(interval) / 2.0, [float(interval[0]), float(interval[1])]
 
 TOKEN_RE = re.compile(r"[a-z0-9_]+|[\u4e00-\u9fff]")
 PATCH_PATH_RE = re.compile(r"^(?:\+\+\+ b/|--- a/)([^\t\r\n]+)", re.MULTILINE)
@@ -167,10 +183,9 @@ def preblock_reason(action, prior_attempts=()) -> tuple[str | None, list[str]]:
     paths = sorted({path.replace("\\", "/") for path in PATCH_PATH_RE.findall(patch)
                     if path != "/dev/null"})
     for path in paths:
-        parts = path.lower().split("/")
-        name = parts[-1]
-        if ("tests" in parts or "test" in parts or name.startswith("test_")
-                or name.endswith("_test.py") or name.endswith(".test.py")):
+        parts = path.split("/")
+        from .ast_slicer import is_protected_test_path
+        if is_protected_test_path(path):
             return "test_modification", paths
         if ".." in parts or path.startswith("/"):
             return "out_of_scope_path", paths
@@ -319,6 +334,10 @@ class CausalWorldNet:
         self.reward_mean = float(weights.get("reward_mean", 0.0))
         self.reward_scale = float(weights.get("reward_scale", 1.0)) or 1.0
         self.reward_interval_radius = max(0.0, float(weights.get("reward_interval_radius", 0.0)))
+        self.reward_interval_radii = {
+            str(label): max(0.0, float(radius))
+            for label, radius in weights.get("reward_interval_radii", {}).items()
+        }
         self.input_size = int(weights["input_size"])
 
     def predict(self, features):
@@ -336,11 +355,11 @@ class CausalWorldNet:
         probabilities = [value / total for value in exp]
         reward_scaled = w["br"][0] + sum(value * weight for value, weight in zip(hidden, w["Wr"]))
         reward = max(-2.0, min(1.5, reward_scaled * self.reward_scale + self.reward_mean))
-        reward_interval = [max(-2.0, reward - self.reward_interval_radius),
-                           min(1.5, reward + self.reward_interval_radius)]
         risk_logit = w["brisk"][0] + sum(value * weight for value, weight in zip(hidden, w["Wrisk"]))
         risk_probability = 1.0 / (1.0 + math.exp(-max(-60.0, min(60.0, risk_logit))))
         best = max(range(len(probabilities)), key=probabilities.__getitem__)
+        radius = self.reward_interval_radii.get(self.state_labels[best], self.reward_interval_radius)
+        reward_interval = [max(-2.0, reward - radius), min(1.5, reward + radius)]
         return {
             "outcome": self.state_labels[best],
             "probabilities": {label: probabilities[index] for index, label in enumerate(self.state_labels)},
@@ -390,12 +409,15 @@ class CausalWorldModel:
         risk_probability = prediction["risk_probability"]
         source = "causal_world_net"
         probabilities = prediction["probabilities"]
+        predicted_reward = prediction["predicted_reward"]
+        reward_interval = prediction["predicted_reward_interval"]
         if reason:
             outcome = "replay_blocked" if reason == "repeated_patch" else "cheat_detected"
             confidence = 1.0
             risk_probability = 1.0
             source = "deterministic_pre_block"
             probabilities = {label: float(label == outcome) for label in STATE_LABELS}
+            predicted_reward, reward_interval = preblock_reward_distribution(outcome)
         return {
             "predicted_next_state": {
                 "outcome": outcome,
@@ -405,8 +427,8 @@ class CausalWorldModel:
                 "pre_block_reason": reason,
                 "changed_paths": paths,
             },
-            "predicted_reward": prediction["predicted_reward"],
-            "predicted_reward_interval": prediction["predicted_reward_interval"],
+            "predicted_reward": predicted_reward,
+            "predicted_reward_interval": reward_interval,
             "prediction_confidence": confidence,
             "risk_probability": risk_probability,
             "model_version": self.model_version,
