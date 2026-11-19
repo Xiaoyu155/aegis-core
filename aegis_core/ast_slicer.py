@@ -85,6 +85,16 @@ def _js_symbols(source: str):
             opening = masked.find('{', match.start(), match.end())
             end = _brace_end(masked, opening)
             found.setdefault(name, (match.start(), opening, end))
+    # Expression-bodied arrows are common in TypeScript and import wrappers. Keep
+    # their declared type text while bounding the body at the statement line.
+    expression_arrow = re.compile(
+        r'\b(?:export\s+)?(?:default\s+)?(?:const|let|var)\s+'
+        r'([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?(?:\([^()\n]*\)|[A-Za-z_$][\w$]*)'
+        r'(?:\s*:\s*[^=\n]+)?\s*=>\s*(?!\{)([^\n;]+)')
+    for match in expression_arrow.finditer(masked):
+        name = match.group(1)
+        end = match.end(2)
+        found.setdefault(name, (match.start(), match.start(2), end))
     for class_match in re.finditer(r'\bclass\s+([A-Za-z_$][\w$]*)[^{}]*\{', masked):
         class_name = class_match.group(1)
         opening = masked.find('{', class_match.start(), class_match.end())

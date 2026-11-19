@@ -97,3 +97,35 @@ The script runs the production CLI against temporary Git repositories and a shar
 The complete suite passed 385/385 tests, including the 294 existing cases. The implementation diff also passed an independent Fail-Before/Pass-After probe in a disposable worktree. The full matrix passed all eight push and pull_request jobs for code commit `3b06ee683caebdfd5328b114175590e2d4e6a94c`. [Push](https://github.com/Xiaoyu155/aegis-core/actions/runs/44247523641) · [Pull request](https://github.com/Xiaoyu155/aegis-core/actions/runs/44247529339)
 
 A Windows 3.11 run exposed a Git config read racing with worktree metadata updates. The CLI, planner, scope gate and reviewer now acquire the same lock around Git commands. The concurrent worktree test passed in both Windows 3.11 matrix jobs after the fix.
+
+## PR #13 — symbol impact, candidate tournament, and self-healing autopilot
+
+PR #13 is stacked on PR #12 at baseline `e32c80469104e2bcaa42b19dd57bccc6d401a9c9`, branch `feat/world-model-v12`. It preserves all 507 baseline tests, the `training/` tree, and `scripts/bootstrap_local.ps1`. The final suite collected and passed 656 tests: 507 preserved and 149 added across the four implementation test modules.
+
+### Symbol impact and budget-aware context
+
+`aegis_core/impact_analyzer.py` builds a bidirectional symbol graph over Python, JavaScript, TypeScript, and HTML inline JavaScript. It resolves Python imports and aliases, local JS/TS imports, script references, calls, and visible type/reference edges. Caller and callee traversal is cycle safe and has a bounded depth. Reflection and computed property calls that cannot be resolved are surfaced as unresolved references instead of guessed edges.
+
+`ImpactAnalyzer.compress_context()` keeps each directly changed file complete, uses signatures and annotations for one-hop dependencies, and summarizes farther symbols. It reports the lexical-token count, source-tree baseline, compression ratio, and recall of affected symbols; it fails explicitly when the changed files alone exceed the budget. The physical scale check indexed a temporary 1,000-file repository with 1,000 symbols and 250 resolved edges in 0.117 seconds. The 41 new tests cover cycles, aliased cross-file imports, HTML inline calls, computed properties, depth boundaries, and budget/recall behavior.
+
+### Candidate tournament and structured probes
+
+`CandidateTournament` evaluates each patch in a detached Git worktree with static, dynamic, mutation, and independent L3 review gates. It computes weighted score and Pareto eligibility from gate results, complexity growth, and token/time cost. Rejected patch pairs are appended with stable identities under a cross-process file lock to `datasets/grpo_tournament_pairs.jsonl`.
+
+The expanded `probe_synth` compiler handles numeric bounds, finite-state transitions, idempotency/replay, bounded collections, async timeouts/fallbacks, and interface schema assertions. Each generated probe combines legal inputs, invalid inputs, and fixed-seed randomized cases. The compiler executes its probe against the frozen Git baseline and accepts it only after a real acceptance assertion fails with `ASSERTION_FAILED`. The 48 new probe cases and the tournament tests run against real temporary repositories and worktrees.
+
+### `aegis autopilot` and replay learning
+
+The new `aegis autopilot --config autopilot.json --repo . --out report.json` path expands the contract, retrieves experience hints, compresses impact context, compiles and red-checks a structured probe, runs candidate tournaments and records diagnosis before a retry. Token and wall-clock limits stop additional candidate processes when the budget fuse trips. Successful repairs paired with prior rejected traces are ingested as verified replay recoveries.
+
+The two-round physical recovery case rejected the first candidates, returned a dynamic-probe diagnosis and a matching ExperienceBank hint to round two, then accepted the targeted repair. Convergence took two rounds and produced one verified recovery. The suite covers the CLI parser, wrong-patch diagnostics, empty budgets, ticket closure, patch/data provenance, and clean worktree recovery.
+
+### Endurance evidence
+
+`scripts/run_endurance_v13_stress.py` physically launches eight detached Git worktrees that concurrently update one SQLite WAL ledger and one `ExperienceBank`. All 8 workers completed; the ledger has 8 tickets and 24 traces; the bank has 8 records; the database reports `integrity_check=ok`; `database is locked` remained zero; and no worktree, temporary path, or main-tree change remained.
+
+The same script launches the `aegis autopilot` CLI against a 12-work-order Python/JavaScript/HTML/build-tool project. The project includes a guarded Python order state machine, asynchronous replay-safe JavaScript events with bounded history, an HTML submission contract, and a Python build check. The tournament physically evaluated 47 candidates in isolated worktrees: 11 targeted repairs were accepted and 36 invalid or adversarial candidates were rejected. The planted faults included illegal state transitions, broken event signatures/replay behavior, test-cheating patches, a broken HTML contract, a missing build dependency, unbounded event history, an infinite timeout loop, and a token-budget overrun. Eleven work orders converged; the twelfth tripped `BUDGET_EXCEEDED_TOKENS` before starting candidates. All campaign worktrees were removed and the campaign repository ended clean.
+
+The 36 real chosen/rejected patch pairs have SHA-256 `8cf50f972735c08eae5e1d5831b3b20cec442615315ad294fc58e1ab8dbbe9a3`. Full receipts and exact stdout are saved at `artifacts/endurance_v13/report.json` and `artifacts/endurance_v13/stdout.txt`. `STATUS.json` holds the machine-readable metrics. The 656-test local regression passed on Python 3.12.14 with Node v24.22.1; Linux/Windows Python 3.11/3.12 Actions are recorded after the PR run completes.
+
+The cloud run had no commercial model API key, so candidate code was authored offline and evaluated through the production tournament gates. The Windows 11 RTX 5060 handoff remains intact; no GPU training claim is made for this Linux run.

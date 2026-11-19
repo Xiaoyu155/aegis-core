@@ -1,0 +1,38 @@
+Aegis Core Phase 13 — Physical Endurance Report
+Generated: 2026-11-19T00:42:25Z
+
+8-way SQLite WAL + isolated Git worktree race
+  workers: 8/8 completed
+  journal/integrity: wal / ok
+  database is locked: 0
+  ledger tickets/traces: 8 / 24
+  ExperienceBank records/version: 8 / 8
+  residual worktrees/temp paths: 0 / 0
+  main worktree clean: True
+  elapsed: 0.260s
+
+12-order Python + JavaScript + HTML + build-tool campaign
+ # | gate result | winner | attacks checked | replay learns | notes
+---|-------------|--------|----------------|---------------|------
+01 | succeeded | job01_correct | signature_break,cheat_patch | 0 | all_candidate_gates_passed
+02 | succeeded | job02_correct | signature_break,cheat_patch | 0 | all_candidate_gates_passed
+03 | succeeded | job03_correct | signature_break,cheat_patch,fsm_illegal_transition | 0 | all_candidate_gates_passed
+04 | succeeded | job04_correct | signature_break,cheat_patch,cross_file_js_replay | 0 | all_candidate_gates_passed
+05 | succeeded | job05_correct | signature_break,cheat_patch | 0 | all_candidate_gates_passed
+06 | succeeded | job06_correct | signature_break,cheat_patch | 0 | all_candidate_gates_passed
+07 | succeeded | job07_correct | signature_break,cheat_patch,html_contract | 0 | all_candidate_gates_passed
+08 | succeeded | job08_correct | signature_break,cheat_patch | 0 | all_candidate_gates_passed
+09 | succeeded | job09_correct | signature_break,cheat_patch,build_script | 0 | all_candidate_gates_passed
+10 | succeeded | job10_correct | signature_break,cheat_patch,unbounded_memory | 0 | all_candidate_gates_passed
+11 | succeeded | job11_correct | signature_break,cheat_patch,timeout_loop | 0 | all_candidate_gates_passed
+12 | failed | — | budget_overrun | 0 | BUDGET_EXCEEDED_TOKENS
+
+  repairs passed: 11/12
+  budget fuse: 1
+  all planted attacks blocked: True
+  campaign worktree clean: True
+  remaining campaign worktrees: 0
+  GRPO pairs: 36
+  GRPO pairs SHA-256: 8cf50f972735c08eae5e1d5831b3b20cec442615315ad294fc58e1ab8dbbe9a3
+  full JSON log: /workspace/aegis-core/artifacts/endurance_v13/report.json
+  complete stdout log: /workspace/aegis-core/artifacts/endurance_v13/stdout.txt

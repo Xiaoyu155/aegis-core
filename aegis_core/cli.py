@@ -635,6 +635,16 @@ def main(argv: list[str] | None = None) -> int:
     learn.add_argument("--limit", type=int, default=256)
     learn.add_argument("--epochs", type=int, default=4)
     learn.add_argument("--seed", type=int, default=20261118)
+    synth = commands.add_parser("synthesize-probe", help="compile and physically red-check a structured acceptance probe")
+    synth.add_argument("--spec", required=True, help="JSON structured-probe specification")
+    synth.add_argument("--repo", default=".")
+    synth.add_argument("--out", "--output", required=True)
+    synth.add_argument("--timeout", type=float, default=60)
+    autopilot = commands.add_parser("autopilot", help="run structured probe, tournament and diagnosis-driven repair rounds")
+    autopilot.add_argument("--config", required=True, help="JSON contract, probe and offline candidate-round plan")
+    autopilot.add_argument("--repo", default=".")
+    autopilot.add_argument("--db")
+    autopilot.add_argument("--out", "--output")
     attach = commands.add_parser("attach")
     attach.add_argument("--repo", required=True)
     attach.add_argument("--tool-source-glob", action="append", dest="tool_source_globs",
@@ -700,6 +710,55 @@ def main(argv: list[str] | None = None) -> int:
                                        artifact_dir=args.artifact_dir, limit=args.limit,
                                        epochs=args.epochs, seed=args.seed)
             code = 0
+        elif args.command == "synthesize-probe":
+            from .probe_synth import compile_structured_probe
+            root = _repo(args.repo)
+            result = compile_structured_probe(_load(args.spec), root, _git(root, "rev-parse", "HEAD"),
+                                              timeout=args.timeout)
+            result["repo_root"] = str(root)
+            result["base_commit"] = _git(root, "rev-parse", "HEAD")
+            _save(args.out, result)
+            code = 0
+        elif args.command == "autopilot":
+            root = _repo(args.repo)
+            config_path = Path(args.config).resolve()
+            config = _load(config_path)
+            if type(config) is not dict:
+                raise ValueError("autopilot config must be a JSON object")
+            rounds = config.get("candidate_rounds", config.get("rounds"))
+            if type(rounds) is not list:
+                raise ValueError("autopilot config requires candidate_rounds")
+            normalized_rounds = []
+            for round_items in rounds:
+                if type(round_items) is not list:
+                    raise ValueError("each candidate_rounds entry must be an array")
+                normalized = []
+                for item in round_items:
+                    if type(item) is not dict:
+                        raise ValueError("candidate entries must be JSON objects")
+                    candidate = dict(item)
+                    patch_file = candidate.pop("patch_file", None)
+                    if patch_file is not None:
+                        candidate["patch"] = (config_path.parent / patch_file).resolve().read_text(encoding="utf-8")
+                    normalized.append(candidate)
+                normalized_rounds.append(normalized)
+            from .self_heal_loop import run_autopilot
+            dataset_path = config.get("dataset_path")
+            result = run_autopilot(
+                root, contract=config.get("contract"), probe_spec=config.get("probe_spec"),
+                candidate_rounds=normalized_rounds, dynamic_commands=config.get("dynamic_commands"),
+                mutation_commands=config.get("mutation_commands"), static_commands=config.get("static_commands"),
+                max_rounds=config.get("max_rounds", 3), max_workers=config.get("max_workers", 4),
+                timeout_sec=config.get("timeout_sec", 60),
+                max_context_tokens=config.get("max_context_tokens", 4000),
+                max_total_tokens=config.get("max_total_tokens", 20000),
+                max_wall_clock_sec=config.get("max_wall_clock_sec", 600),
+                ticket_id=config.get("ticket_id"), answers=config.get("answers"),
+                database_path=args.db,
+                dataset_path=(root / dataset_path).resolve() if dataset_path else None)
+            if args.out:
+                _save(args.out, result)
+            code = 0 if result["status"] == "succeeded" else 1
         elif args.command == "attach":
             from .repo_adapter import attach_repository
             result = attach_repository(args.repo, tool_source_globs=args.tool_source_globs)
