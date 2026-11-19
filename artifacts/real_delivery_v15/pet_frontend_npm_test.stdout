@@ -1,0 +1,174 @@
+
+> uni-preset-vue@1.1.0 test
+> node --test "test/*.test.mjs"
+
+(node:124489) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///tmp/aegis-v15-business/pet-miniapp-frontend/src/utils/careRecords.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /tmp/aegis-v15-business/pet-miniapp-frontend/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ local care digest keeps the private diary useful when the digest API is unavailable (2.317427ms)
+✔ care digest keeps owner and vet views factual and private (0.445002ms)
+✔ local visit support escalates urgent observations but stays owner-facing (0.293884ms)
+✔ care query builder omits empty values and encodes filters (0.287153ms)
+✔ journal payload keeps only the server contract and normalizes weight (1.014742ms)
+✔ journal list and summary accept canonical response wrappers (0.319902ms)
+✔ episode normalizers preserve bundle details and list state (0.32463ms)
+✔ check-in response singular event and checkpoint remain available (0.222485ms)
+✔ complete consultation starts with an explicit emergency screen (1.178869ms)
+✔ consultation result is a reviewable care draft with actions before condition names (0.295436ms)
+✔ primary product surfaces stay focused on owner care workflows (0.29203ms)
+✔ empty home state offers value before asking for a pet profile (0.197909ms)
+✔ the first-run screen shows exactly one primary action (0.214323ms)
+✔ daily-care questions are a first-class entry, not only illness (0.447346ms)
+✔ the home first-run copy does not assume the pet is already sick (0.18548ms)
+✔ the assistant conversation is the default view, not a form wizard (0.418521ms)
+✔ the home screen leads with asking, not with the pet profile dashboard (0.416209ms)
+✔ the home hero illustration is not repeated by an empty state on the same screen (0.35774ms)
+(node:124503) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///tmp/aegis-v15-business/pet-miniapp-frontend/src/utils/dateOnly.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /tmp/aegis-v15-business/pet-miniapp-frontend/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ localDateOnly uses local calendar fields instead of UTC serialization (1.56382ms)
+✔ addDateOnlyDays crosses month and year boundaries (0.851966ms)
+✔ addDateOnlyDays rejects non date-only input (0.178931ms)
+✔ design tokens are declared on page, the only root that exists in both targets (1.174753ms)
+✔ shared controls expose keyboard and screen-reader state (0.217908ms)
+✔ diagnosis uses the shared action control (0.215525ms)
+✔ design tokens include an explicit focus treatment (0.162305ms)
+✔ no page or component hardcodes a retired colour (19.747194ms)
+✔ warm accent colours never paint a control (494.060924ms)
+(node:124521) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///tmp/aegis-v15-business/pet-miniapp-frontend/src/features/diagnosis/draft.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /tmp/aegis-v15-business/pet-miniapp-frontend/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ unfinished diagnosis drafts round-trip inside the current identity only (1.405422ms)
+✔ stale and malformed drafts are removed instead of being restored (0.196006ms)
+✔ drafts are sanitized and cannot resume beyond completed answers (0.770784ms)
+✔ empty forms are not persisted and summaries stay owner-readable (0.290729ms)
+✔ clearing a draft removes only the active identity draft (0.300464ms)
+✔ storage failures are contained instead of interrupting diagnosis input (0.257449ms)
+✔ draft manager waits for an explicit resume decision before replacing the form (2.077185ms)
+✔ draft manager debounces changes and flushes the old owner before an identity switch (0.95366ms)
+✔ draft manager supports retry and never rewrites a completed draft (0.865036ms)
+✔ starting fresh removes the candidate and resets it without an implicit resume (0.696831ms)
+✔ diagnosis workflow exposes explicit draft decisions and clears after success (0.514737ms)
+✔ every page with an empty state uses the shared EmptyState component (3.211347ms)
+✔ the shared empty state always offers an illustration, a title and an explanation (0.263868ms)
+✔ an empty state can offer a way out without demanding a commitment first (0.191228ms)
+✔ the demo entry is offered wherever a first-time user lands empty-handed (1.910684ms)
+(node:124535) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///tmp/aegis-v15-business/pet-miniapp-frontend/src/utils/healthReminders.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /tmp/aegis-v15-business/pet-miniapp-frontend/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ sync sends the stable client_request_id and removes a successful outbox item (3.213891ms)
+✔ concurrent sync calls share one in-flight operation (0.626756ms)
+✔ an in-flight sync drains reminders queued while its request is pending (7.841314ms)
+✔ failed sync remains queued and retries with the same idempotency key (0.873068ms)
+✔ merge prefers the remote reminder when an acknowledged outbox item is still local (1.243847ms)
+✔ an anonymous sync response cannot remove an outbox item migrated to wechat (0.508157ms)
+✔ identity epoch protects an outbox after switching away and back mid-request (0.472423ms)
+(node:124542) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///tmp/aegis-v15-business/pet-miniapp-frontend/src/utils/healthReminders.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /tmp/aegis-v15-business/pet-miniapp-frontend/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ local reminders preserve pet association and repeat interval (1.757833ms)
+✔ legacy snake-case reminders are migrated without losing pet id (0.198229ms)
+✔ legacy reminders persist one stable idempotency key across reads (0.273102ms)
+✔ enqueue returns the queued reminder without changing addHealthReminder compatibility (6.600331ms)
+✔ reminder storage persists owners and defaults to the current identity only (0.857985ms)
+✔ legacy ownerless reminders are claimed once and cannot be reclaimed after switching identity (0.388506ms)
+✔ anonymous to wechat migration transfers only that anonymous reminder owner (0.525363ms)
+✔ wechat refresh, account switch, and logout never transfer another reminder owner (0.403649ms)
+(node:124549) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///tmp/aegis-v15-business/pet-miniapp-frontend/src/features/journal/model.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /tmp/aegis-v15-business/pet-miniapp-frontend/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ journal form starts empty and validates owner input before sending it (0.821239ms)
+✔ editing a journal entry replaces all prior draft state (0.926348ms)
+✔ metric and warning labels stay owner-readable (0.311971ms)
+✔ date and weight summary formatting are deterministic (0.216166ms)
+✔ clipboard builders preserve factual visit details and safety text (0.407194ms)
+(node:124556) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///tmp/aegis-v15-business/pet-miniapp-frontend/src/features/journal/useJournalService.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /tmp/aegis-v15-business/pet-miniapp-frontend/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ journal service uses the local private digest when only digest loading fails (2.739675ms)
+✔ a queued refresh runs after an in-flight read and returns fresh journal data (0.465352ms)
+(node:124563) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///tmp/aegis-v15-business/pet-miniapp-frontend/src/store/knowledge.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /tmp/aegis-v15-business/pet-miniapp-frontend/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ scoped history count includes only the selected identity (4.130854ms)
+✔ histories are isolated when the local client identity changes (1.487345ms)
+✔ general and per-pet histories use independent scopes (1.410098ms)
+✔ the legacy unscoped history is claimed once by the current identity (0.614317ms)
+✔ an answer token cannot write after switching identity away and back (0.540065ms)
+✔ an answer token cannot write after switching away from a pet and back (0.419913ms)
+(node:124570) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///tmp/aegis-v15-business/pet-miniapp-frontend/src/utils/petProfile.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /tmp/aegis-v15-business/pet-miniapp-frontend/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ pet profile trims fields and preserves small valid weights (1.081372ms)
+✔ pet profile rejects blank names, future dates, and invalid weights (0.25166ms)
+(node:124577) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///tmp/aegis-v15-business/pet-miniapp-frontend/src/utils/clientIdentity.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /tmp/aegis-v15-business/pet-miniapp-frontend/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ wechat identity replaces anonymous credentials and id (1.059088ms)
+✔ concurrent requests share initial anonymous session issuance (2.567746ms)
+✔ wechat login obtains an anonymous bearer first (1.605363ms)
+✔ wechat login refreshes an existing anonymous bearer before migration (2.419962ms)
+✔ AUTH_TOKEN_REQUIRED rotates the anonymous session and retries once (1.628077ms)
+✔ concurrent AUTH_TOKEN_REQUIRED responses share one renewal (1.611532ms)
+✔ wechat AUTH_TOKEN_REQUIRED refreshes with a code and retries the original request once (1.776751ms)
+✔ concurrent wechat 401 responses share one login refresh (1.61648ms)
+✔ a late concurrent wechat 401 reuses the token refreshed by the first request (2.001481ms)
+✔ failed wechat refresh keeps the wechat identity and returns SESSION_REAUTH_REQUIRED (2.084356ms)
+✔ wechat refresh refuses a different account without mutating the stored identity (1.653866ms)
+✔ wechat refresh without uni.login fails clearly without creating an anonymous identity (1.539484ms)
+✔ wechat request is replayed only once when the refreshed token is also rejected (1.564751ms)
+✔ a renewed request is not renewed or retried again after another 401 (1.379863ms)
+✔ anonymous session endpoint does not recursively preflight itself (1.092809ms)
+✔ upload obtains an anonymous session and sends the unified headers and timeout (1.369607ms)
+✔ upload renews an anonymous session and replays once with the same request id (1.371901ms)
+✔ concurrent wechat uploads share one session refresh (1.466754ms)
+✔ upload rejects non-2xx, malformed and network responses consistently (1.667136ms)
+✔ upload never replays more than once after AUTH_TOKEN_REQUIRED (1.395145ms)
+(node:124584) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///tmp/aegis-v15-business/pet-miniapp-frontend/src/utils/resourceState.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /tmp/aegis-v15-business/pet-miniapp-frontend/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ an initial failure is not presented as an empty resource (0.779326ms)
+✔ a successful empty response is a real business empty state (0.176857ms)
+✔ refresh failure marks previously loaded data stale without losing its state (0.115475ms)
+✔ local fallback data makes a failed remote resource usable but stale (1.001381ms)
+✔ support ad entry is limited to WeChat and stays visible while configuration is pending (0.958627ms)
+✔ only a strict completed close callback is counted as product support (0.213722ms)
+✔ ad load and SDK failures never claim completion (0.222747ms)
+(node:124598) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///tmp/aegis-v15-business/pet-miniapp-frontend/src/utils/richText.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /tmp/aegis-v15-business/pet-miniapp-frontend/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ plain text renders as paragraphs and never throws (1.581187ms)
+✔ markdown subset parses into headings, bullets and ordered items (0.941821ms)
+✔ unclosed bold markers are dropped, not shown as raw asterisks (0.228635ms)
+✔ a paired marker still renders bold even when another marker is stray (0.202055ms)
+✔ stripRichMarkers produces clean text for clipboard and share (0.173071ms)
+✔ list markers inside a sentence are not misparsed as list items (0.126581ms)
+✔ no untranslated English eyebrow sits above a Chinese title (1.866778ms)
+✔ the pet archive shows a skeleton while it loads, not bare text (0.192009ms)
+✔ an empty pet archive uses the shared empty state (0.09898ms)
+✔ the home page uses a skeleton instead of an unavailable line (0.089685ms)
+✔ a skeleton means loading, never failed (0.146642ms)
+✔ a failed archive load offers a way back, not just a skeleton (0.108714ms)
+✔ a stat tile never shows an ellipsis as its value (0.168525ms)
+✔ the danger-signal screening keeps its inline offline notice (0.129285ms)
+✔ the medical disclaimer stays on the pages that give guidance (0.142775ms)
+ℹ tests 114
+ℹ suites 0
+ℹ pass 114
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1799.880998

@@ -1,6 +1,6 @@
-# Aegis Core Architecture Report — PR #10
+# Aegis Core Architecture Report — PR #15
 
-Updated 2026-11-18. This report summarizes implemented gates and measured runs; it does not claim production deployment or unrestricted model autonomy.
+Updated 2026-11-19. This report summarizes implemented gates and measured runs; it does not claim production deployment or unrestricted model autonomy.
 
 ## Delivery lineage
 
@@ -165,3 +165,39 @@ The business-source batch patches in this read-only campaign were temporary audi
 ### Verification and delivery
 
 The final Linux run is performed with local socket permission enabled because the inherited `test_real_socket` test binds loopback. The local 944-test result and duration, plus the 8/8 Linux/Windows × Python 3.11/3.12 push and pull_request Actions links, are recorded in `STATUS.json`. The official tokenizer and release bundle were CPU-validated; Windows GPU training was not run in this Linux environment.
+
+
+## PR #15 — runtime contracts, domain invariants, and real delivery
+
+PR #15 is based on PR #14 commit `1bb8f510ed8f0e226448d267b40f7e3af2b58a27` on `feat/world-model-v14`. It preserves the 944-test baseline, `training/`, and `scripts/bootstrap_local.ps1`; 198 additive tests bring the local suite to 1,142 passing tests.
+
+### Runtime profiling and dynamic contract overlays
+
+`aegis_core/runtime_profiler.py` runs the requested command in a child process. CPython 3.12 uses `sys.monitoring` with profile events; Python 3.11 falls back to `sys.settrace`. The profiler records bounded call edges, dynamic `getattr` targets, return shapes, exception locations, and hot functions. It does not retain argument values, environment contents, or exception messages. Runtime observations can be merged into `SemanticContractAnalyzer` and `ImpactAnalyzer`.
+
+The PR #14 static corpus recorded 90 resolved sites out of 780 (11.54%). Runtime evidence is narrower than the corpus: in a detached OKX worktree, the existing OKX exchange suite plus the v15 leverage tests passed 32 tests. The runtime profile observed and resolved 7 of 7 dynamic sites; the repository-wide overlay resolved 18 of 68 sites (26.47%), leaving 50 unresolved. The profile reached the 50,000-event cap. In a detached Pacer worktree, 38 checkpoint tests passed; 1 of 1 runtime-profiled dynamic sites was resolved, while the repository-wide overlay resolved 23 of 163 sites (14.11%). These sampled rates do not establish a 75% rate over the 780-site 21-repository corpus.
+
+### Domain invariant review
+
+`aegis_core/invariant_guard.py` adds differential L3 findings for finite positive financial values, transaction and state-machine boundaries, network timeouts and retry backoff, credential literals, and resource lifecycle leaks. Findings include file, line, rule code, severity, and evidence. The new invariant module has 102 cases, including positive controls to reduce false positives. The structured probe regression confirms that an unexpected exception type produces a true `ASSERTION_FAILED` red gate.
+
+The tournament now accepts JSON configuration changes only when an explicit `allowed_paths` list names the file. Allowlisted JSON goes through `json.tool` syntax validation and L3 parsing; other JSON changes and unsafe paths are rejected. This was exercised in a physical `aegis autopilot` run against the frontend repository.
+
+### Real repository delivery
+
+The campaign used candidate patches authored locally and evaluated in detached Git worktrees. Aegis autopilot, dynamic probes, mutation probes, and L3 audit all passed for the following pushed feature branches; no default-branch push was issued:
+
+| Repository | Delivery commit | Repair and measured verification |
+|---|---|---|
+| `okx-freqtrade-live` | `c2370e1deb3270703c640da8f78341f65b313658` | Reject invalid leverage/notional before calculating stake caps; 32 OKX tests passed. |
+| `pet-miniapp-backend` | `80a004a91722e8e96a741e6d652057f8df2f92dd` | Discard broken PostgreSQL clients and preserve the transaction error when rollback fails; 274 passed, 1 skipped, plus one real PostgreSQL fault-injection integration test passed. |
+| `pet-miniapp-frontend` | `16154611c316b2209dee36ae6991badad66b9af5` | Remove an obsolete Node 24 test-runner option and add a real backend E2E acceptance flow; `npm test` passed 114 tests and the HTTP/PostgreSQL E2E passed. |
+| `pacer-recovery` | `73f50a7ee09742d0b2ea0c62041acae31c8e1d25` | Reject unknown/completed checkpoint resume states; 38 checkpoint tests passed. |
+
+Full autopilot receipts, commands, gate output, profile metrics, PostgreSQL integration logs, and test output are in `artifacts/real_delivery_v15/`. The frontend E2E traversed anonymous auth, pet create/list, care journal write/read, reminder outbox sync, and remote reminder listing against the local PostgreSQL-backed API.
+
+### Distillation release and regression
+
+`datasets/release_v15_bundle_manifest.json` was produced with the official `Qwen/Qwen2.5-Coder-3B-Instruct` tokenizer and read back locally. It contains 1,462 SFT examples and 342 balanced preference pairs, with zero truncation; 10 bundle files verify. SFT SHA-256 is `8fb67693c7b693fa698dade551fe801f0e3e3e30b3f043a2c41384b60124dc4c`; preference SHA-256 is `b5cab843e47c6f4ce22ee3a28d6db93e3d6027a04c9a82581bcc77ac4b065899`; the bundle manifest SHA-256 is `a258cd031f13204eceeb0b40045c7878b3b5e72a855198cdb70cd0ed3901106a`. The Windows GPU training workload was not run in this Linux environment.
+
+The full local regression passed 1,142 tests in 225.26 seconds on Python 3.12.14, including the inherited loopback socket test. The 8-job Linux/Windows × Python 3.11/3.12 push and pull-request matrix is pending PR creation. `STATUS.json` records the exact measured limits instead of extrapolating sampled runtime coverage to the full 21-repository corpus.

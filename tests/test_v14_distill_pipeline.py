@@ -211,6 +211,17 @@ def test_real_wal_recovery_pair_becomes_one_balanced_grpo_sample(tmp_path):
     assert result["counts"]["chosen_positive"] == result["counts"]["rejected_negative"]
 
 
+def test_verified_wal_repair_attempt_becomes_sft_only_after_pass_after_gate(tmp_path):
+    database = tmp_path / "ledger.sqlite"
+    _record_real_recovery(database)
+    output, result = _build(tmp_path, ledger=[database])
+    rows = [json.loads(line) for line in (output / "datasets/sft_train.jsonl").read_text().splitlines()]
+    repairs = [row for row in rows if row["source"] == "sqlite_ledger"]
+    assert result["counts"]["ledger_verified_repair_examples"] == 1
+    assert len(repairs) == 1
+    assert json.loads(repairs[0]["messages"][-1]["content"])["patch"] == "diff --git good\n"
+
+
 def test_training_release_does_not_claim_official_tokenizer_for_byte_preflight(tmp_path):
     _, result = _build(tmp_path, sft=[_sft()], pairs=[_pair()])
     assert result["tokenizer"]["tokenizer_id"] == "utf8-byte-preflight"

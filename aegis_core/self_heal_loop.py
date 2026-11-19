@@ -31,7 +31,8 @@ class SelfHealLoop:
 
     def run(self, *, contract: str, probe_spec: dict, candidate_rounds=None,
             candidate_provider=None, dynamic_commands=None, mutation_commands=None,
-            static_commands=None, max_rounds: int = 3, max_workers: int = 4,
+            static_commands=None, runtime_profile_command=None, allowed_paths=None,
+            max_rounds: int = 3, max_workers: int = 4,
             timeout_sec: float = 60, max_context_tokens: int = 4000,
             max_total_tokens: int = 20000, max_wall_clock_sec: float = 600,
             ticket_id: str | None = None, answers: dict | None = None) -> dict:
@@ -88,7 +89,9 @@ class SelfHealLoop:
         tournament = CandidateTournament(self.root, dynamic_commands=dynamic,
                                          mutation_commands=mutations, static_commands=static_commands,
                                          timeout_sec=timeout_sec, max_workers=max_workers,
-                                         dataset_path=self.dataset_path, probe_patch=probe["patch"])
+                                         dataset_path=self.dataset_path, allowed_paths=allowed_paths,
+                                         probe_patch=probe["patch"],
+                                         runtime_profile_command=runtime_profile_command)
         ticket = ticket_id or "autopilot-" + uuid.uuid4().hex[:16]
         ledger.create_ticket(ticket, contract, expanded_document, "def repair() -> None:\n    ...")
         lease = ledger.acquire_lease(ticket, "aegis-autopilot", ttl=max(60.0, max_wall_clock_sec * 2))

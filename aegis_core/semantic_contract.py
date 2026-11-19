@@ -166,9 +166,12 @@ class _FunctionVisitor(ast.NodeVisitor):
         if name:
             self.calls.add(name)
         if isinstance(node.func, ast.Name) and node.func.id == "getattr" and len(node.args) > 1:
-            if isinstance(node.args[1], ast.Constant) and isinstance(node.args[1].value, str):
-                receiver = node.args[0].id if isinstance(node.args[0], ast.Name) else None
-                self.dynamic.add((node.args[1].value, receiver, node.lineno))
+            attr_node = node.args[1]
+            literal_name = (attr_node.value if isinstance(attr_node, ast.Constant)
+                            and isinstance(attr_node.value, str) else None)
+            receiver = node.args[0].id if isinstance(node.args[0], ast.Name) else None
+            self.dynamic.add((literal_name if literal_name is not None else "*", receiver, node.lineno,
+                              ast.unparse(attr_node), literal_name is None))
         if name and (name.lower().endswith((".register", ".add", ".connect", ".route", ".get", ".post",
                                            ".put", ".delete", ".add_url_rule", ".add_listener",
                                            ".addlistener", ".subscribe", ".on"))):
@@ -311,13 +314,15 @@ class SemanticContractAnalyzer:
                     for receiver in ("self", "cls"):
                         if receiver in parameter_types:
                             parameter_types[receiver] = owner_class.name
-                for dynamic, receiver, line in sorted(visitor.dynamic,
-                                                     key=lambda item: (item[0], item[1] or "", item[2])):
+                for dynamic, receiver, line, name_expression, dynamic_name in sorted(
+                        visitor.dynamic, key=lambda item: (item[0], item[1] or "", item[2], item[3])):
                     receiver_type = parameter_types.get(receiver) if receiver else None
                     self.dynamic_references.append({"file": filename, "symbol": qname, "name": dynamic,
                                                     "receiver": receiver, "receiver_type": receiver_type,
                                                     "module": module,
                                                     "source_calls": sorted(visitor.source_calls.get(receiver, ())) if receiver else [],
+                                                    "name_expression": name_expression,
+                                                    "dynamic_name": dynamic_name,
                                                     "resolved_to": [], "line": line,
                                                     "resolved": False})
                 data_roots = set(params) | set(visitor.source_calls) | set(local_dicts)
@@ -390,6 +395,8 @@ class SemanticContractAnalyzer:
         for key, record in self.producers.items():
             dynamic_names[record["name"]].add(key)
         for reference in self.dynamic_references:
+            if reference.get("dynamic_name"):
+                continue
             candidates = dynamic_names.get(reference["name"], set())
             receiver_type = reference.get("receiver_type")
             typed = {key for key in candidates if receiver_type and
@@ -482,32 +489,80 @@ class SemanticContractAnalyzer:
                                             "line": consumer["line"], "field": consumer["field"],
                                             "available_fields": record["fields"]})
 
-    def analyze(self) -> dict:
+    def analyze(self, runtime_profile: dict | None = None) -> dict:
         typed_schemas = [{"schema": name, "fields": [field.as_dict() for field in sorted(values, key=lambda f: (f.name, f.line))]}
                          for name, values in sorted(self.fields.items())]
         unresolved = sum(len(items) for items in self.impact.unresolved.values())
-        resolved_dynamic = sum(item["resolved"] for item in self.dynamic_references)
-        total_dynamic = len(self.dynamic_references)
+        dynamic_references = [dict(item) for item in self.dynamic_references]
+        static_resolved = sum(item["resolved"] for item in dynamic_references)
+        total_dynamic = len(dynamic_references)
+        runtime_overlay = {"observed_call_edges": 0, "resolved_dynamic_sites": [], "dynamic_sites_resolved": 0,
+                           "runtime_profiled_dynamic_sites": 0,
+                           "runtime_profiled_dynamic_sites_resolved": 0,
+                           "runtime_profiled_dynamic_resolution_rate": None}
+        if runtime_profile is not None:
+            from .runtime_profiler import merge_into_semantic
+            runtime_overlay = merge_into_semantic(self, runtime_profile)
+            by_site = {(item["file"], item["line"], item["symbol"], item["name"]): item
+                       for item in runtime_overlay["resolved_dynamic_sites"]}
+            for item in dynamic_references:
+                observed = by_site.get((item["file"], item["line"], item["symbol"], item["name"]))
+                if observed:
+                    targets = observed.get("resolved_to", [])
+                    if isinstance(targets, str): targets = [targets]
+                    item.update({"resolved": True, "resolved_to": targets,
+                                 "runtime_observed_name": observed.get("observed_name", []),
+                                 "runtime_result_schemas": observed.get("result_schemas", []),
+                                 "resolution_kind": "runtime_observed"})
+        resolved_dynamic = sum(item["resolved"] for item in dynamic_references)
         unresolved_dynamic = total_dynamic - resolved_dynamic
         resolution_kinds = defaultdict(int)
-        for item in self.dynamic_references:
+        for item in dynamic_references:
             if item["resolved"]:
                 resolution_kinds[item["resolution_kind"]] += 1
-        return {"schema_version": "aegis.semantic_contract.v1", "schemas": typed_schemas,
+        result = {"schema_version": "aegis.semantic_contract.v1", "schemas": typed_schemas,
                 "producers": dict(sorted(self.producers.items())), "consumers": self.consumers,
                 "flows": self.flows, "mismatches": self.mismatches,
                 "decorators": self.decorators, "callbacks": self.callbacks,
-                "dynamic_references": self.dynamic_references,
+                "dynamic_references": dynamic_references,
                 "metrics": {"schema_count": len(typed_schemas), "fields": sum(len(row["fields"]) for row in typed_schemas),
                             "flows": len(self.flows), "contract_mismatches": len(self.mismatches),
                             "dynamic_sites": total_dynamic, "resolved_dynamic_sites": resolved_dynamic,
                             "unresolved_dynamic_sites": unresolved_dynamic,
                             "legacy_dynamic_unresolved_sites": total_dynamic,
-                            "dynamic_unresolved_reduction_rate": resolved_dynamic / total_dynamic if total_dynamic else 1.0,
+                            "dynamic_unresolved_reduction_rate": static_resolved / total_dynamic if total_dynamic else 1.0,
                             "legacy_unresolved_references": unresolved,
-                            "dynamic_resolution_rate": resolved_dynamic / total_dynamic if total_dynamic else 1.0,
+                            "dynamic_resolution_rate": static_resolved / total_dynamic if total_dynamic else 1.0,
                             "dynamic_resolution_kinds": dict(sorted(resolution_kinds.items())),
                             "decorators_recognized": len(self.decorators), "callbacks_recognized": len(self.callbacks)}}
+        if runtime_profile is not None:
+            result["runtime_overlay"] = runtime_overlay
+            runtime_schemas = []
+            for reference in dynamic_references:
+                if not reference.get("runtime_result_schemas"):
+                    continue
+                shapes = []
+                for encoded in reference["runtime_result_schemas"]:
+                    try:
+                        shapes.append(json.loads(encoded))
+                    except (TypeError, ValueError):
+                        continue
+                if shapes:
+                    runtime_schemas.append({"file": reference["file"], "symbol": reference["symbol"],
+                        "line": reference["line"], "attribute": reference.get("runtime_observed_name", []),
+                        "observed_shapes": shapes, "source": "runtime_profile"})
+            result["runtime_schemas"] = runtime_schemas
+            result["metrics"].update({
+                "runtime_observed_call_edges": runtime_overlay["observed_call_edges"],
+                "runtime_resolved_dynamic_sites": runtime_overlay["dynamic_sites_resolved"],
+                "runtime_profiled_dynamic_sites": runtime_overlay["runtime_profiled_dynamic_sites"],
+                "runtime_profiled_dynamic_sites_resolved": runtime_overlay["runtime_profiled_dynamic_sites_resolved"],
+                "runtime_profiled_dynamic_resolution_rate": runtime_overlay["runtime_profiled_dynamic_resolution_rate"],
+                "runtime_augmented_dynamic_resolution_rate": resolved_dynamic / total_dynamic if total_dynamic else 1.0,
+                "runtime_augmented_unresolved_reduction_rate": resolved_dynamic / total_dynamic if total_dynamic else 1.0,
+            })
+            result["impact_graph_metrics"] = self.impact.graph_metrics
+        return result
 
     def compare(self, baseline: "SemanticContractAnalyzer | dict") -> dict:
         """Compare current inferred schemas to a baseline and report field/type drift."""

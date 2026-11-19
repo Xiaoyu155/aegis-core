@@ -658,15 +658,27 @@ def main(argv: list[str] | None = None) -> int:
     blame.add_argument("--command-json", required=True, help="JSON array of the real probe command")
     blame.add_argument("--timeout", type=float, default=60)
     blame.add_argument("--out", "--output")
+    profile = commands.add_parser("profile", help="run a Python command and record bounded runtime schemas/call edges")
+    profile.add_argument("--repo", default=".")
+    profile.add_argument("--command-json", required=True, help="JSON argument array for the real test command")
+    profile.add_argument("--timeout", type=float, default=120)
+    profile.add_argument("--max-events", type=int, default=50000)
+    profile.add_argument("--out", "--output")
     distill = commands.add_parser("distill", help="build and verify a balanced local training release bundle")
     distill.add_argument("--repo", default=".")
     distill.add_argument("--db")
     distill.add_argument("--experience-db")
+    distill.add_argument("--extra-ledger-db", action="append", default=[],
+                         help="Additional immutable SQLite evidence ledger; repeat as needed")
+    distill.add_argument("--extra-experience-db", action="append", default=[],
+                         help="Additional ExperienceBank SQLite database; repeat as needed")
     distill.add_argument("--sft", action="append", dest="sft_paths")
     distill.add_argument("--tournament-pairs", action="append", dest="tournament_paths")
-    distill.add_argument("--out", default="datasets/release_v14")
+    distill.add_argument("--out", help="Bundle directory (default: datasets/release_v<release-version>)")
+    distill.add_argument("--release-version", type=int, choices=(14, 15), default=14)
     distill.add_argument("--model", default="Qwen/Qwen2.5-Coder-3B-Instruct")
     distill.add_argument("--tokenizer-dir", help="Use an already downloaded official tokenizer snapshot")
+    distill.add_argument("--tokenizer-id", help="Record the tokenizer model ID when loading a local snapshot")
     distill.add_argument("--max-tokens", type=int, default=4096)
     distill.add_argument("--min-quality", type=float, default=.35)
     attach = commands.add_parser("attach")
@@ -772,6 +784,8 @@ def main(argv: list[str] | None = None) -> int:
                 root, contract=config.get("contract"), probe_spec=config.get("probe_spec"),
                 candidate_rounds=normalized_rounds, dynamic_commands=config.get("dynamic_commands"),
                 mutation_commands=config.get("mutation_commands"), static_commands=config.get("static_commands"),
+                runtime_profile_command=config.get("runtime_profile_command"),
+                allowed_paths=config.get("allowed_paths"),
                 max_rounds=config.get("max_rounds", 3), max_workers=config.get("max_workers", 4),
                 timeout_sec=config.get("timeout_sec", 60),
                 max_context_tokens=config.get("max_context_tokens", 4000),
@@ -799,20 +813,45 @@ def main(argv: list[str] | None = None) -> int:
             if args.out:
                 _save(args.out, result)
             code = 0 if result["status"] == "attributed" else 1
+        elif args.command == "profile":
+            root = _repo(args.repo)
+            if not (root / ".git").is_file():
+                raise ValueError("aegis profile requires an isolated linked git worktree")
+            command = json.loads(args.command_json)
+            if type(command) is not list or any(type(item) is not str or not item for item in command):
+                raise ValueError("--command-json must be an array of nonempty strings")
+            from .runtime_profiler import RuntimeProfiler
+            profile_result = RuntimeProfiler(root, timeout_sec=args.timeout,
+                                             max_events=args.max_events).run(command)
+            from .impact_analyzer import ImpactAnalyzer
+            from .semantic_contract import SemanticContractAnalyzer
+            impact = ImpactAnalyzer(root)
+            profile_result["impact_merge"] = impact.merge_runtime(profile_result)
+            profile_result["impact_graph_metrics"] = impact.graph_metrics
+            profile_result["semantic_contract"] = SemanticContractAnalyzer(root).analyze(profile_result)
+            result = profile_result
+            if args.out:
+                _save(args.out, result)
+            code = 0 if result["completed"] else 1
         elif args.command == "distill":
             from .distill_pipeline import DistillPipeline
             root = _repo(args.repo)
             ledger_path = Path(args.db).resolve() if args.db else _ledger_path(root, None)
             experience_path = Path(args.experience_db).resolve() if args.experience_db else ledger_path
-            pipeline = DistillPipeline(root, model_id=args.model, tokenizer_path=args.tokenizer_dir)
-            result = pipeline.build_bundle(args.out,
+            pipeline = DistillPipeline(root, model_id=args.model, tokenizer_id=args.tokenizer_id,
+                                       tokenizer_path=args.tokenizer_dir)
+            output_dir = args.out or (root / "datasets" / f"release_v{args.release_version}")
+            result = pipeline.build_bundle(output_dir,
                 sft_paths=[(root / item).resolve() if not Path(item).is_absolute() else item
                            for item in (args.sft_paths or [])],
                 tournament_paths=[(root / item).resolve() if not Path(item).is_absolute() else item
                                   for item in (args.tournament_paths or [])],
-                ledger_paths=[ledger_path] if ledger_path.is_file() else [],
-                experience_paths=[experience_path] if experience_path.is_file() else [],
-                max_tokens=args.max_tokens, min_quality=args.min_quality)
+                ledger_paths=([ledger_path] if ledger_path.is_file() else []) +
+                             [Path(item).resolve() for item in args.extra_ledger_db if Path(item).is_file()],
+                experience_paths=([experience_path] if experience_path.is_file() else []) +
+                                 [Path(item).resolve() for item in args.extra_experience_db if Path(item).is_file()],
+                max_tokens=args.max_tokens, min_quality=args.min_quality,
+                release_version=args.release_version)
             code = 0 if result["status"] == "verified" else 1
         elif args.command == "attach":
             from .repo_adapter import attach_repository

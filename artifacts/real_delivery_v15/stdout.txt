@@ -1,0 +1,322 @@
+Phase 15 real business delivery campaign — captured physical gate outputs
+
+[OKX] succeeded / all_candidate_gates_passed; ticket=phase15-okx-leverage-guard-v4; base=b0554afb279118c48e77120982fb2ea324910a7b
+phases=contract -> expand -> synth_probe -> tournament -> mutation_probe -> l3_audit -> failure_diagnosis -> multi_round_self_heal -> online_replay_learn
+candidate=guard-invalid-leverage; accepted=True; changed=['freqtrade/exchange/okx.py']
+static: exit=0 passed=True command=["git", "diff", "--check"]
+static: exit=0 passed=True command=["/tmp/aegis-v15-okx-env/bin/python", "-B", "-m", "py_compile", "freqtrade/exchange/okx.py"]
+dynamic: exit=0 passed=True command=["/tmp/aegis-v15-okx-env/bin/python", "-B", "-m", "pytest", "--noconftest", "-o", "addopts=", "-p", "no:cacheprovider", "-q", "tests/test_aegis_probe.py"]
+stdout:
+........                                                                 [100%]
+=============================== warnings summary ===============================
+../../../../../aegis-v15-okx-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636
+  /tmp/aegis-v15-okx-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636: PytestConfigWarning: Unknown config option: asyncio_default_fixture_loop_scope
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+../../../../../aegis-v15-okx-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636
+  /tmp/aegis-v15-okx-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636: PytestConfigWarning: Unknown config option: asyncio_mode
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+8 passed, 2 warnings in 5.11s
+dynamic: exit=0 passed=True command=["/tmp/aegis-v15-okx-env/bin/python", "-m", "pytest", "--noconftest", "-q", "tests/test_okx_leverage_guard_v15.py"]
+stdout:
+..........                                                               [100%]
+=============================== warnings summary ===============================
+../../../../../aegis-v15-okx-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636
+  /tmp/aegis-v15-okx-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636: PytestConfigWarning: Unknown config option: asyncio_default_fixture_loop_scope
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+../../../../../aegis-v15-okx-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636
+  /tmp/aegis-v15-okx-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636: PytestConfigWarning: Unknown config option: asyncio_mode
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+10 passed, 2 warnings in 4.91s
+dynamic: exit=0 passed=True command=["/tmp/aegis-v15-okx-env/bin/python", "tests/test_okx_leverage_guard_v15.py"]
+mutation: exit=0 passed=True command=["/tmp/aegis-v15-okx-env/bin/python", "-B", "-m", "pytest", "--noconftest", "-o", "addopts=", "-p", "no:cacheprovider", "-q", "tests/test_aegis_probe.py", "-k", "randomized"]
+stdout:
+.....                                                                    [100%]
+=============================== warnings summary ===============================
+../../../../../aegis-v15-okx-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636
+  /tmp/aegis-v15-okx-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636: PytestConfigWarning: Unknown config option: asyncio_default_fixture_loop_scope
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+../../../../../aegis-v15-okx-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636
+  /tmp/aegis-v15-okx-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636: PytestConfigWarning: Unknown config option: asyncio_mode
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+5 passed, 3 deselected, 2 warnings in 5.10s
+L3 audit: passed=True; files=['freqtrade/exchange/okx.py']; findings=[]
+runtime profile gate: backend=sys.monitoring+profile; exit=0; events=6313; functions=187
+
+[Pet backend] succeeded / all_candidate_gates_passed; ticket=phase15-backend-rollback-v2; base=77fcef841516d8cb3e8cca3f9716e87144d7d02f
+phases=contract -> expand -> synth_probe -> tournament -> mutation_probe -> l3_audit -> failure_diagnosis -> multi_round_self_heal -> online_replay_learn
+candidate=preserve-primary-postgres-error; accepted=True; changed=['src/services/db.js']
+static: exit=0 passed=True command=["git", "diff", "--check"]
+dynamic: exit=0 passed=True command=["/tmp/aegis-v15-env/bin/python", "-B", "-m", "pytest", "--noconftest", "-o", "addopts=", "-p", "no:cacheprovider", "-q", "tests/test_aegis_probe.py"]
+stdout:
+.......                                                                  [100%]
+7 passed in 1.92s
+dynamic: exit=0 passed=True command=["node", "--test", "test/dbTransactionPostgres.integration.test.js"]
+stdout:
+2026-11-19T06:01:05.596Z [32m[INFO][0m PostgreSQL 数据库已初始化 {"schemaMode":"migrate","schemaVersion":8,"ssl":false}
+✔ transaction preserves the primary PostgreSQL failure when rollback also fails (23.76638ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 111.978646
+dynamic: exit=0 passed=True command=["/tmp/aegis-v15-env/bin/python", "scripts/aegis_db_probe.py"]
+mutation: exit=0 passed=True command=["/tmp/aegis-v15-env/bin/python", "-B", "-m", "pytest", "--noconftest", "-o", "addopts=", "-p", "no:cacheprovider", "-q", "tests/test_aegis_probe.py", "-k", "randomized"]
+stdout:
+.....                                                                    [100%]
+5 passed, 2 deselected in 1.79s
+L3 audit: passed=True; files=['src/services/db.js']; findings=[]
+runtime profile gate: backend=sys.monitoring+profile; exit=0; events=20; functions=2
+
+[Pet frontend E2E] succeeded / all_candidate_gates_passed; ticket=phase15-pet-frontend-e2e; base=b59b66a6ed1adbcf38eff32c8840ce7fea63e6fc
+phases=contract -> expand -> synth_probe -> tournament -> mutation_probe -> l3_audit -> failure_diagnosis -> multi_round_self_heal -> online_replay_learn
+candidate=aegis-real-frontend-e2e; accepted=True; changed=['scripts/aegis_frontend_probe.py']
+static: exit=0 passed=True command=["git", "diff", "--check"]
+static: exit=0 passed=True command=["/tmp/aegis-v15-env/bin/python", "-B", "-m", "py_compile", "scripts/aegis_frontend_probe.py"]
+dynamic: exit=0 passed=True command=["/tmp/aegis-v15-env/bin/python", "-B", "-m", "pytest", "--noconftest", "-o", "addopts=", "-p", "no:cacheprovider", "-q", "tests/test_aegis_probe.py"]
+stdout:
+.......                                                                  [100%]
+7 passed in 0.59s
+dynamic: exit=0 passed=True command=["node", "scripts/e2e/realBackendPostgres.mjs"]
+stdout:
+Pet miniapp frontend-to-PostgreSQL E2E: PASS
+frontend auto-auth -> pet create/list -> journal write/read -> reminder outbox sync -> remote list
+pet_id=54; journal_id=48; remote_reminder_id=50; synced=1; pending=0
+dynamic: exit=0 passed=True command=["/tmp/aegis-v15-env/bin/python", "scripts/aegis_frontend_probe.py"]
+mutation: exit=0 passed=True command=["/tmp/aegis-v15-env/bin/python", "-B", "-m", "pytest", "--noconftest", "-o", "addopts=", "-p", "no:cacheprovider", "-q", "tests/test_aegis_probe.py", "-k", "randomized"]
+stdout:
+.....                                                                    [100%]
+5 passed, 2 deselected in 0.56s
+L3 audit: passed=True; files=['scripts/aegis_frontend_probe.py']; findings=[]
+runtime profile gate: backend=sys.monitoring+profile; exit=0; events=13; functions=1
+
+[Pet frontend npm test command] succeeded / all_candidate_gates_passed; ticket=phase15-pet-npm-test-runner; base=37051237e216348a35b5ccedb673217876d15da9
+phases=contract -> expand -> synth_probe -> tournament -> mutation_probe -> l3_audit -> failure_diagnosis -> multi_round_self_heal -> online_replay_learn
+candidate=node24-frontend-test-command; accepted=True; changed=['package.json']
+static: exit=0 passed=True command=["git", "diff", "--check"]
+static: exit=0 passed=True command=["/tmp/aegis-v15-env/bin/python", "-B", "-m", "json.tool", "package.json"]
+stdout:
+/walk-forms.cjs",
+        "ux:care": "node scripts/uxwalk/walk-care.cjs",
+        "ux:journal": "node scripts/uxwalk/walk-journal.cjs",
+        "icons": "node scripts/generate-icons.cjs",
+        "dev:custom": "uni -p",
+        "dev:h5": "uni",
+        "dev:h5:ssr": "uni --ssr",
+        "dev:mp-alipay": "uni -p mp-alipay",
+        "dev:mp-baidu": "uni -p mp-baidu",
+        "dev:mp-jd": "uni -p mp-jd",
+        "dev:mp-kuaishou": "uni -p mp-kuaishou",
+        "dev:mp-lark": "uni -p mp-lark",
+        "dev:mp-qq": "uni -p mp-qq",
+        "dev:mp-toutiao": "uni -p mp-toutiao",
+        "dev:mp-harmony": "uni -p mp-harmony",
+        "dev:mp-weixin": "uni -p mp-weixin",
+        "dev:mp-xhs": "uni -p mp-xhs",
+        "dev:quickapp-webview": "uni -p quickapp-webview",
+        "dev:quickapp-webview-huawei": "uni -p quickapp-webview-huawei",
+        "dev:quickapp-webview-union": "uni -p quickapp-webview-union",
+        "build": "node scripts/checkStaticAssets.js && uni build",
+        "build:custom": "uni build -p",
+        "check:assets": "node scripts/checkStaticAssets.js",
+        "build:h5": "node scripts/checkStaticAssets.js && uni build",
+        "build:h5:ssr": "uni build --ssr",
+        "build:mp-alipay": "uni build -p mp-alipay",
+        "build:mp-baidu": "uni build -p mp-baidu",
+        "build:mp-jd": "uni build -p mp-jd",
+        "build:mp-kuaishou": "uni build -p mp-kuaishou",
+        "build:mp-lark": "uni build -p mp-lark",
+        "build:mp-qq": "uni build -p mp-qq",
+        "build:mp-toutiao": "uni build -p mp-toutiao",
+        "build:mp-harmony": "uni build -p mp-harmony",
+        "build:mp-weixin": "node scripts/checkStaticAssets.js && node scripts/checkProductionEnv.mjs && uni build -p mp-weixin && node scripts/fixMpWeixinProjectConfig.js && node scripts/checkMpWeixinDist.js",
+        "build:mp-xhs": "uni build -p mp-xhs",
+        "build:quickapp-webview": "uni build -p quickapp-webview",
+        "build:quickapp-webview-huawei": "uni build -p quickapp-webview-huawei",
+        "build:quickapp-webview-union": "uni build -p quickapp-webview-union",
+        "e2e:real-backend": "node scripts/e2e/realBackendPostgres.mjs"
+    },
+    "dependencies": {
+        "@dcloudio/uni-app": "3.0.0-5000720260410001",
+        "@dcloudio/uni-app-harmony": "3.0.0-5000720260410001",
+        "@dcloudio/uni-app-plus": "3.0.0-5000720260410001",
+        "@dcloudio/uni-components": "3.0.0-5000720260410001",
+        "@dcloudio/uni-h5": "3.0.0-5000720260410001",
+        "@dcloudio/uni-mp-alipay": "3.0.0-5000720260410001",
+        "@dcloudio/uni-mp-baidu": "3.0.0-5000720260410001",
+        "@dcloudio/uni-mp-harmony": "3.0.0-5000720260410001",
+        "@dcloudio/uni-mp-jd": "3.0.0-5000720260410001",
+        "@dcloudio/uni-mp-kuaishou": "3.0.0-5000720260410001",
+        "@dcloudio/uni-mp-lark": "3.0.0-5000720260410001",
+        "@dcloudio/uni-mp-qq": "3.0.0-5000720260410001",
+        "@dcloudio/uni-mp-toutiao": "3.0.0-5000720260410001",
+        "@dcloudio/uni-mp-weixin": "3.0.0-5000720260410001",
+        "@dcloudio/uni-mp-xhs": "3.0.0-5000720260410001",
+        "@dcloudio/uni-quickapp-webview": "3.0.0-5000720260410001",
+        "pinia": "2.2.4",
+        "vue": "3.4.21"
+    },
+    "devDependencies": {
+        "@dcloudio/types": "^3.4.8",
+        "@dcloudio/uni-cli-shared": "3.0.0-5000720260410001",
+        "@dcloudio/uni-stacktracey": "3.0.0-5000720260410001",
+        "@dcloudio/vite-plugin-uni": "3.0.0-5000720260410001",
+        "@vue/runtime-core": "3.4.21",
+        "puppeteer-core": "^25.8.0",
+        "vite": "5.2.8"
+    },
+    "overrides": {
+        "@dcloudio/uni-cli-shared": {
+            "@intlify/core-base": "9.14.5",
+            "@intlify/vue-devtools": "9.14.1"
+        },
+        "@babel/core": "7.29.7",
+        "@intlify/shared": "9.14.5",
+        "esbuild": "0.25.12",
+        "jpeg-js": "0.4.4",
+        "express": "4.22.2",
+        "path-to-regexp": "0.1.13",
+        "phin": "3.7.1",
+        "postcss": "8.5.19",
+        "ws": "8.21.0"
+    }
+}
+dynamic: exit=0 passed=True command=["/tmp/aegis-v15-env/bin/python", "-B", "-m", "pytest", "--noconftest", "-o", "addopts=", "-p", "no:cacheprovider", "-q", "tests/test_aegis_probe.py"]
+stdout:
+.......                                                                  [100%]
+7 passed in 1.58s
+dynamic: exit=0 passed=True command=["npm", "test"]
+stdout:
+efreshed by the first request (2.561046ms)
+✔ failed wechat refresh keeps the wechat identity and returns SESSION_REAUTH_REQUIRED (2.454675ms)
+✔ wechat refresh refuses a different account without mutating the stored identity (1.882662ms)
+✔ wechat refresh without uni.login fails clearly without creating an anonymous identity (1.727157ms)
+✔ wechat request is replayed only once when the refreshed token is also rejected (1.619514ms)
+✔ a renewed request is not renewed or retried again after another 401 (1.508036ms)
+✔ anonymous session endpoint does not recursively preflight itself (1.772285ms)
+✔ upload obtains an anonymous session and sends the unified headers and timeout (1.375255ms)
+✔ upload renews an anonymous session and replays once with the same request id (1.525763ms)
+✔ concurrent wechat uploads share one session refresh (1.592233ms)
+✔ upload rejects non-2xx, malformed and network responses consistently (2.012157ms)
+✔ upload never replays more than once after AUTH_TOKEN_REQUIRED (1.482809ms)
+(node:124129) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///tmp/aegis-v15-business/pet-miniapp-frontend/.worktrees/tournament-gznmvo26/node24-frontend-test-command-138feb74/src/utils/resourceState.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /tmp/aegis-v15-business/pet-miniapp-frontend/.worktrees/tournament-gznmvo26/node24-frontend-test-command-138feb74/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ an initial failure is not presented as an empty resource (0.770884ms)
+✔ a successful empty response is a real business empty state (0.137658ms)
+✔ refresh failure marks previously loaded data stale without losing its state (0.120882ms)
+✔ local fallback data makes a failed remote resource usable but stale (0.208265ms)
+✔ support ad entry is limited to WeChat and stays visible while configuration is pending (1.029073ms)
+✔ only a strict completed close callback is counted as product support (0.260293ms)
+✔ ad load and SDK failures never claim completion (0.174844ms)
+(node:124143) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///tmp/aegis-v15-business/pet-miniapp-frontend/.worktrees/tournament-gznmvo26/node24-frontend-test-command-138feb74/src/utils/richText.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /tmp/aegis-v15-business/pet-miniapp-frontend/.worktrees/tournament-gznmvo26/node24-frontend-test-command-138feb74/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ plain text renders as paragraphs and never throws (1.569049ms)
+✔ markdown subset parses into headings, bullets and ordered items (1.038427ms)
+✔ unclosed bold markers are dropped, not shown as raw asterisks (0.180432ms)
+✔ a paired marker still renders bold even when another marker is stray (0.192441ms)
+✔ stripRichMarkers produces clean text for clipboard and share (0.197889ms)
+✔ list markers inside a sentence are not misparsed as list items (0.128484ms)
+✔ no untranslated English eyebrow sits above a Chinese title (0.885987ms)
+✔ the pet archive shows a skeleton while it loads, not bare text (0.870154ms)
+✔ an empty pet archive uses the shared empty state (0.158859ms)
+✔ the home page uses a skeleton instead of an unavailable line (0.095344ms)
+✔ a skeleton means loading, never failed (0.121904ms)
+✔ a failed archive load offers a way back, not just a skeleton (0.101133ms)
+✔ a stat tile never shows an ellipsis as its value (0.222316ms)
+✔ the danger-signal screening keeps its inline offline notice (0.128975ms)
+✔ the medical disclaimer stays on the pages that give guidance (0.145911ms)
+ℹ tests 114
+ℹ suites 0
+ℹ pass 114
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1164.927743
+dynamic: exit=0 passed=True command=["node", "scripts/e2e/realBackendPostgres.mjs"]
+stdout:
+Pet miniapp frontend-to-PostgreSQL E2E: PASS
+frontend auto-auth -> pet create/list -> journal write/read -> reminder outbox sync -> remote list
+pet_id=56; journal_id=50; remote_reminder_id=52; synced=1; pending=0
+dynamic: exit=0 passed=True command=["/tmp/aegis-v15-env/bin/python", "-c", "from scripts.aegis_frontend_probe import frontend_test_suite; assert frontend_test_suite({'mode':'run'})['tests_passed']"]
+mutation: exit=0 passed=True command=["/tmp/aegis-v15-env/bin/python", "-B", "-m", "pytest", "--noconftest", "-o", "addopts=", "-p", "no:cacheprovider", "-q", "tests/test_aegis_probe.py", "-k", "randomized"]
+stdout:
+.....                                                                    [100%]
+5 passed, 2 deselected in 1.41s
+L3 audit: passed=True; files=['package.json']; findings=[]
+runtime profile gate: backend=sys.monitoring+profile; exit=0; events=28; functions=3
+
+[Pacer] succeeded / all_candidate_gates_passed; ticket=phase15-pacer-checkpoint-v2; base=3968968da6961847fe419e3592ef1e11c5a90b40
+phases=contract -> expand -> synth_probe -> tournament -> mutation_probe -> l3_audit -> failure_diagnosis -> multi_round_self_heal -> online_replay_learn
+candidate=validate-checkpoint-state; accepted=True; changed=['src/visual_agent/managed_checkpoint.py']
+static: exit=0 passed=True command=["git", "diff", "--check"]
+static: exit=0 passed=True command=["/tmp/aegis-v15-pacer-env/bin/python", "-B", "-m", "py_compile", "src/visual_agent/managed_checkpoint.py"]
+dynamic: exit=0 passed=True command=["/tmp/aegis-v15-pacer-env/bin/python", "-B", "-m", "pytest", "--noconftest", "-o", "addopts=", "-p", "no:cacheprovider", "-q", "tests/test_aegis_probe.py"]
+stdout:
+............                                                             [100%]
+=============================== warnings summary ===============================
+../../../../../aegis-v15-pacer-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636
+  /tmp/aegis-v15-pacer-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636: PytestConfigWarning: Unknown config option: cache_dir
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+12 passed, 1 warning in 0.04s
+dynamic: exit=0 passed=True command=["/tmp/aegis-v15-pacer-env/bin/python", "-m", "pytest", "--noconftest", "-q", "tests/test_phase15_checkpoint_transition.py"]
+stdout:
+.........                                                                [100%]
+9 passed in 0.02s
+dynamic: exit=0 passed=True command=["/tmp/aegis-v15-pacer-env/bin/python", "tests/test_phase15_checkpoint_transition.py"]
+mutation: exit=0 passed=True command=["/tmp/aegis-v15-pacer-env/bin/python", "-B", "-m", "pytest", "--noconftest", "-o", "addopts=", "-p", "no:cacheprovider", "-q", "tests/test_aegis_probe.py", "-k", "randomized"]
+stdout:
+.....                                                                    [100%]
+=============================== warnings summary ===============================
+../../../../../aegis-v15-pacer-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636
+  /tmp/aegis-v15-pacer-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636: PytestConfigWarning: Unknown config option: cache_dir
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+5 passed, 7 deselected, 1 warning in 0.02s
+L3 audit: passed=True; files=['src/visual_agent/managed_checkpoint.py']; findings=[]
+runtime profile gate: backend=sys.monitoring+profile; exit=0; events=138; functions=7
+
+[Core full regression]
+........................................................................ [  6%]
+........................................................................ [ 12%]
+........................................................................ [ 18%]
+........................................................................ [ 25%]
+........................................................................ [ 31%]
+........................................................................ [ 37%]
+........................................................................ [ 44%]
+........................................................................ [ 50%]
+........................................................................ [ 56%]
+........................................................................ [ 63%]
+........................................................................ [ 69%]
+........................................................................ [ 75%]
+........................................................................ [ 81%]
+........................................................................ [ 88%]
+........................................................................ [ 94%]
+..............................................................           [100%]
+1142 passed in 225.26s (0:03:45)

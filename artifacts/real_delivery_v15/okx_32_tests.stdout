@@ -1,0 +1,6 @@
+................................                                         [100%]
+=============================== warnings summary ===============================
+../../aegis-v15-okx-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636
+  /tmp/aegis-v15-okx-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636: PytestConfigWarning: Unknown config option: asyncio_default_fixture_loop_scope
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: 

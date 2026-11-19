@@ -64,7 +64,8 @@ class CandidateTournament:
     def __init__(self, repo_root: str | Path, *, dynamic_commands,
                  mutation_commands, static_commands=None, timeout_sec: float = 60,
                  max_workers: int = 4, dataset_path: str | Path | None = None,
-                 allowed_paths: Iterable[str] | None = None, probe_patch: str = ""):
+                 allowed_paths: Iterable[str] | None = None, probe_patch: str = "",
+                 runtime_profile_command=None):
         self.root = Path(repo_root).resolve()
         top = run_git(self.root, "rev-parse", "--show-toplevel").stdout.decode().strip()
         if Path(top).resolve() != self.root:
@@ -85,9 +86,21 @@ class CandidateTournament:
         self.dynamic_commands = _commands(dynamic_commands, "dynamic_commands", required=True)
         self.mutation_commands = _commands(mutation_commands, "mutation_commands", required=True)
         self.static_commands = _commands(static_commands, "static_commands", required=False)
+        self.runtime_profile_command = (_commands([runtime_profile_command], "runtime_profile_command", required=True)[0]
+                                        if runtime_profile_command is not None else None)
         self.timeout_sec = float(timeout_sec)
         self.max_workers = max_workers
-        self.allowed_paths = None if allowed_paths is None else {Path(item).as_posix() for item in allowed_paths}
+        if allowed_paths is None:
+            self.allowed_paths = None
+        else:
+            if isinstance(allowed_paths, (str, bytes)):
+                raise ValueError("allowed_paths must be a sequence of repository-relative paths")
+            normalized = set()
+            for item in allowed_paths:
+                if type(item) is not str or not item or Path(item).is_absolute() or ".." in Path(item).parts:
+                    raise ValueError("allowed_paths must contain safe repository-relative paths")
+                normalized.add(Path(item).as_posix())
+            self.allowed_paths = normalized
         if type(probe_patch) is not str:
             raise ValueError("probe_patch must be text")
         self.probe_patch = probe_patch
@@ -192,6 +205,31 @@ class CandidateTournament:
             static = self._static_gates(worktree, changed)
             dynamic = self._run_commands(worktree, self.dynamic_commands)
             mutations = self._run_commands(worktree, self.mutation_commands)
+            runtime_summary = None
+            if self.runtime_profile_command:
+                from .runtime_profiler import RuntimeProfiler
+                profile = RuntimeProfiler(worktree, timeout_sec=self.timeout_sec, max_events=10000).run(
+                    self.runtime_profile_command)
+                from .impact_analyzer import ImpactAnalyzer
+                from .semantic_contract import SemanticContractAnalyzer
+                impact = ImpactAnalyzer(worktree)
+                impact_merge = impact.merge_runtime(profile)
+                semantic = SemanticContractAnalyzer(worktree).analyze(profile)
+                receipt = {"command": self.runtime_profile_command,
+                           "exit_code": profile["exit_code"], "passed": profile["completed"],
+                           "timed_out": profile["timed_out"], "elapsed_sec": 0.0,
+                           "runtime_profile": True}
+                dynamic.append(receipt)
+                runtime_summary = {
+                    "backend": profile["backend"], "profile_exit_code": profile["exit_code"],
+                    "event_count": profile["event_count"], "event_limit_reached": profile["event_limit_reached"],
+                    "functions_observed": len(profile["functions"]),
+                    "call_edges_observed": len(profile["call_edges"]),
+                    "exceptions_observed": len(profile["exceptions"]),
+                    "impact_merge": impact_merge, "impact_graph_metrics": impact.graph_metrics,
+                    "semantic_runtime_overlay": semantic.get("runtime_overlay"),
+                    "semantic_metrics": semantic.get("metrics"),
+                }
             audit = audit_candidate(worktree, self.base, changed)
             complexity_delta = _complexity_delta(self.root, worktree, self.base, changed)
             elapsed = time.monotonic() - started
@@ -217,7 +255,8 @@ class CandidateTournament:
                     "complexity_delta": complexity_delta, "token_cost": token_cost,
                     "elapsed_sec": round(elapsed, 6), "objectives": objectives,
                     "patch_sha256": hashlib.sha256(candidate.patch.encode()).hexdigest(),
-                    "metadata": candidate.metadata or {}}
+                    "metadata": candidate.metadata or {},
+                    **({"runtime_profile": runtime_summary} if runtime_summary is not None else {})}
         finally:
             if registered:
                 run_git(self.root, "worktree", "remove", "--force", str(worktree), check=False)
@@ -232,8 +271,10 @@ class CandidateTournament:
         violations = []
         for name in changed:
             suffix = Path(name).suffix.lower()
-            if (is_protected_test_path(name) or suffix not in _SOURCE_SUFFIXES
-                    or (self.allowed_paths is not None and name not in self.allowed_paths)):
+            declared = self.allowed_paths is not None and name in self.allowed_paths
+            source_file = suffix in _SOURCE_SUFFIXES or (declared and suffix == ".json")
+            if (is_protected_test_path(name) or not source_file
+                    or (self.allowed_paths is not None and not declared)):
                 violations.append(name)
         return violations
 
@@ -242,6 +283,8 @@ class CandidateTournament:
         python_files = [name for name in changed if name.endswith(".py")]
         if python_files:
             commands.append([sys.executable, "-B", "-m", "py_compile", *python_files])
+        json_files = [name for name in changed if name.endswith(".json")]
+        commands.extend([[sys.executable, "-B", "-m", "json.tool", name] for name in json_files])
         commands.extend(self.static_commands)
         return self._run_commands(worktree, commands)
 

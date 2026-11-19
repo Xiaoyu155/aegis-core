@@ -1,0 +1,448 @@
+{
+  "schema_version": "aegis.autopilot.v1",
+  "status": "succeeded",
+  "reason": "all_candidate_gates_passed",
+  "ticket_id": "phase15-backend-rollback-v2",
+  "base_commit": "77fcef841516d8cb3e8cca3f9716e87144d7d02f",
+  "phases": [
+    "contract",
+    "expand",
+    "synth_probe",
+    "tournament",
+    "mutation_probe",
+    "l3_audit",
+    "failure_diagnosis",
+    "multi_round_self_heal",
+    "online_replay_learn"
+  ],
+  "expanded_spec": {
+    "kind": "ExpandedSpec",
+    "status": "READY",
+    "intent": "On a real PostgreSQL connection reset during a transaction, retain the original failure and separately report rollback failure.",
+    "acceptance_criteria": [
+      {
+        "kind": "normal",
+        "expected": "At src/services/db.js::transaction, demonstrate the requested result for a representative valid input (On a real PostgreSQL connection reset during a transaction, retain the original failure and separately report rollback failure.)."
+      },
+      {
+        "kind": "boundary",
+        "expected": "At src/services/db.js::transaction, verify empty/minimum input and exercise both sides of each stated or existing limit."
+      },
+      {
+        "kind": "fallback",
+        "expected": "At src/services/db.js::transaction, verify malformed input or a failed dependency produces the expected error or safe recovery."
+      }
+    ],
+    "edge_cases": [
+      "Empty or minimum valid input",
+      "Invalid or malformed input",
+      "Repeated operation following a failed attempt"
+    ],
+    "engineering_invariants": [
+      "Preserve existing callable signatures and data shapes unless the requirement changes them.",
+      "Validate input before persisting a change and keep state consistent after a failed operation."
+    ],
+    "context": {
+      "target": "src/services/db.js:transaction",
+      "items": [
+        {
+          "symbol": "src/services/db.js:transaction",
+          "file": "src/services/db.js",
+          "start_line": 88,
+          "end_line": 100,
+          "relation": "target",
+          "distance": 0,
+          "source": "export async function transaction(fn) {\n  return withDbClient(async (tx) => {\n    try {\n      await tx.query('BEGIN');\n      const result = await fn(tx);\n      await tx.query('COMMIT');\n      return result;\n    } catch (err) {\n      await tx.query('ROLLBACK');\n      throw err;\n    }\n  });\n}"
+        }
+      ],
+      "truncated": false,
+      "diagnostics": [],
+      "budget_unit": "utf8_bytes_upper_bound",
+      "token_upper_bound": 632,
+      "structured_probe": {
+        "kind": "contract_schema",
+        "path": "scripts/aegis_db_probe.py",
+        "symbol": "database_recovery_contract",
+        "seed": 15,
+        "input_schema": {
+          "type": "object",
+          "required": [
+            "mode"
+          ],
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [
+                "run"
+              ]
+            }
+          }
+        },
+        "return_schema": {
+          "type": "object",
+          "required": [
+            "primary_preserved"
+          ],
+          "properties": {
+            "primary_preserved": {
+              "type": "boolean",
+              "enum": [
+                true
+              ]
+            }
+          }
+        },
+        "valid_args": [
+          [
+            {
+              "mode": "run"
+            }
+          ]
+        ],
+        "invalid_args": [
+          [
+            {
+              "mode": "invalid"
+            }
+          ]
+        ],
+        "invalid_exception": "ValueError"
+      },
+      "impact_summary": {
+        "changed_files": [
+          "scripts/aegis_db_probe.py"
+        ],
+        "token_count": 214,
+        "compression_ratio": 0.998663,
+        "critical_symbol_recall": 1.0,
+        "graph_metrics": {
+          "symbols": 515,
+          "call_edges": 309,
+          "reference_edges": 321,
+          "unresolved_references": 343,
+          "files": 83
+        }
+      }
+    },
+    "experience": [],
+    "business_parameters": {},
+    "questions": []
+  },
+  "impact_context": {
+    "context": "[full_source scripts/aegis_db_probe.py:<file> scripts/aegis_db_probe.py distance=0 target]\n\"\"\"Adapter that drives the real Node PostgreSQL rollback-fault regression.\"\"\"\nfrom __future__ import annotations\n\nimport os\nimport subprocess\n\n\ndef database_recovery_contract(payload: dict) -> dict:\n    if payload.get(\"mode\") != \"run\":\n        raise ValueError(\"unsupported database probe mode\")\n    env = os.environ.copy()\n    env[\"AEGIS_PG_INTEGRATION\"] = \"1\"\n    result = subprocess.run(\n        [\"node\", \"--test\", \"test/dbTransactionPostgres.integration.test.js\"],\n        cwd=os.getcwd(), env=env, capture_output=True, text=True, timeout=30, check=False,\n    )\n    return {\"primary_preserved\": result.returncode == 0}\n\n\nif __name__ == \"__main__\":\n    result = database_recovery_contract({\"mode\": \"run\"})\n    if result.get(\"primary_preserved\") is not True:\n        raise SystemExit(1)\n",
+    "items": [
+      {
+        "symbol": "scripts/aegis_db_probe.py:<file>",
+        "file": "scripts/aegis_db_probe.py",
+        "distance": 0,
+        "direction": "target",
+        "representation": "full_source",
+        "text": "\"\"\"Adapter that drives the real Node PostgreSQL rollback-fault regression.\"\"\"\nfrom __future__ import annotations\n\nimport os\nimport subprocess\n\n\ndef database_recovery_contract(payload: dict) -> dict:\n    if payload.get(\"mode\") != \"run\":\n        raise ValueError(\"unsupported database probe mode\")\n    env = os.environ.copy()\n    env[\"AEGIS_PG_INTEGRATION\"] = \"1\"\n    result = subprocess.run(\n        [\"node\", \"--test\", \"test/dbTransactionPostgres.integration.test.js\"],\n        cwd=os.getcwd(), env=env, capture_output=True, text=True, timeout=30, check=False,\n    )\n    return {\"primary_preserved\": result.returncode == 0}\n\n\nif __name__ == \"__main__\":\n    result = database_recovery_contract({\"mode\": \"run\"})\n    if result.get(\"primary_preserved\") is not True:\n        raise SystemExit(1)\n"
+      }
+    ],
+    "changed_files": [
+      "scripts/aegis_db_probe.py"
+    ],
+    "token_count": 214,
+    "max_context_tokens": 4000,
+    "naive_token_count": 160053,
+    "compression_ratio": 0.998663,
+    "critical_symbol_recall": 1.0,
+    "critical_symbol_count": 1,
+    "recalled_symbol_count": 1,
+    "omitted_symbols": [],
+    "graph_metrics": {
+      "symbols": 515,
+      "call_edges": 309,
+      "reference_edges": 321,
+      "unresolved_references": 343,
+      "files": 83
+    },
+    "budget_unit": "lexical_tokens_v1"
+  },
+  "synthesized_probe": {
+    "case_count": 7,
+    "case_categories": {
+      "positive": 1,
+      "negative": 1,
+      "randomized": 5
+    },
+    "baseline_true_red": "ASSERTION_FAILED"
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "candidate_count": 1,
+      "winner": "preserve-primary-postgres-error",
+      "accepted_count": 1,
+      "pareto_front": [
+        "preserve-primary-postgres-error"
+      ],
+      "token_spend": 407,
+      "elapsed_sec": 11.244885,
+      "tournament": {
+        "schema_version": "aegis.tournament.v1",
+        "base_commit": "77fcef841516d8cb3e8cca3f9716e87144d7d02f",
+        "candidate_count": 1,
+        "accepted_count": 1,
+        "winner": "preserve-primary-postgres-error",
+        "pareto_front": [
+          "preserve-primary-postgres-error"
+        ],
+        "evaluations": [
+          {
+            "candidate_id": "preserve-primary-postgres-error",
+            "strategy": "preserve original query error if rollback also fails and evict damaged client",
+            "accepted": true,
+            "score": 0.98563687,
+            "changed_files": [
+              "src/services/db.js"
+            ],
+            "static": [
+              {
+                "command": [
+                  "git",
+                  "diff",
+                  "--check"
+                ],
+                "exit_code": 0,
+                "passed": true,
+                "timed_out": false,
+                "stdout": "",
+                "stderr": "",
+                "elapsed_sec": 0.026006
+              }
+            ],
+            "dynamic": [
+              {
+                "command": [
+                  "/tmp/aegis-v15-env/bin/python",
+                  "-B",
+                  "-m",
+                  "pytest",
+                  "--noconftest",
+                  "-o",
+                  "addopts=",
+                  "-p",
+                  "no:cacheprovider",
+                  "-q",
+                  "tests/test_aegis_probe.py"
+                ],
+                "exit_code": 0,
+                "passed": true,
+                "timed_out": false,
+                "stdout": ".......                                                                  [100%]\n7 passed in 1.92s\n",
+                "stderr": "",
+                "elapsed_sec": 2.64473
+              },
+              {
+                "command": [
+                  "node",
+                  "--test",
+                  "test/dbTransactionPostgres.integration.test.js"
+                ],
+                "exit_code": 0,
+                "passed": true,
+                "timed_out": false,
+                "stdout": "2026-11-19T06:01:05.596Z \u001b[32m[INFO]\u001b[0m PostgreSQL 数据库已初始化 {\"schemaMode\":\"migrate\",\"schemaVersion\":8,\"ssl\":false}\n✔ transaction preserves the primary PostgreSQL failure when rollback also fails (23.76638ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 111.978646\n",
+                "stderr": "",
+                "elapsed_sec": 0.147472
+              },
+              {
+                "command": [
+                  "/tmp/aegis-v15-env/bin/python",
+                  "scripts/aegis_db_probe.py"
+                ],
+                "exit_code": 0,
+                "passed": true,
+                "timed_out": false,
+                "elapsed_sec": 0.0,
+                "runtime_profile": true
+              }
+            ],
+            "mutation": [
+              {
+                "command": [
+                  "/tmp/aegis-v15-env/bin/python",
+                  "-B",
+                  "-m",
+                  "pytest",
+                  "--noconftest",
+                  "-o",
+                  "addopts=",
+                  "-p",
+                  "no:cacheprovider",
+                  "-q",
+                  "tests/test_aegis_probe.py",
+                  "-k",
+                  "randomized"
+                ],
+                "exit_code": 0,
+                "passed": true,
+                "timed_out": false,
+                "stdout": ".....                                                                    [100%]\n5 passed, 2 deselected in 1.79s\n",
+                "stderr": "",
+                "elapsed_sec": 2.462085
+              }
+            ],
+            "audit": {
+              "reviewer": "independent_static_semantic",
+              "passed": true,
+              "audited_files": [
+                "src/services/db.js"
+              ],
+              "findings": [],
+              "invariant_guard": {
+                "passed": true,
+                "scanned_files": [],
+                "findings": []
+              }
+            },
+            "static_pass_rate": 1.0,
+            "dynamic_pass_rate": 1.0,
+            "mutation_probe_survival_rate": 1.0,
+            "audit_passed": true,
+            "complexity_delta": 6,
+            "token_cost": 407,
+            "elapsed_sec": 7.434189,
+            "objectives": {
+              "static": 1.0,
+              "dynamic": 1.0,
+              "mutation": 1.0,
+              "audit": 1.0,
+              "complexity": 0.625,
+              "cost": 0.8443435020980063
+            },
+            "patch_sha256": "b9d5757b8fe211ad789e9793cf855c852c36f5166d79c0de65a3f463907204c8",
+            "metadata": {},
+            "runtime_profile": {
+              "backend": "sys.monitoring+profile",
+              "profile_exit_code": 0,
+              "event_count": 20,
+              "event_limit_reached": false,
+              "functions_observed": 2,
+              "call_edges_observed": 1,
+              "exceptions_observed": 0,
+              "impact_merge": {
+                "observed_edges": 1,
+                "merged_edges": 0,
+                "new_edges": 0
+              },
+              "impact_graph_metrics": {
+                "symbols": 519,
+                "call_edges": 311,
+                "reference_edges": 323,
+                "unresolved_references": 344,
+                "files": 84,
+                "runtime_observed_edges": 1,
+                "runtime_merged_edges": 0,
+                "runtime_new_edges": 0
+              },
+              "semantic_runtime_overlay": {
+                "observed_call_edges": 1,
+                "resolved_dynamic_sites": [],
+                "dynamic_sites_resolved": 0
+              },
+              "semantic_metrics": {
+                "schema_count": 80,
+                "fields": 442,
+                "flows": 198,
+                "contract_mismatches": 14,
+                "dynamic_sites": 0,
+                "resolved_dynamic_sites": 0,
+                "unresolved_dynamic_sites": 0,
+                "legacy_dynamic_unresolved_sites": 0,
+                "dynamic_unresolved_reduction_rate": 1.0,
+                "legacy_unresolved_references": 344,
+                "dynamic_resolution_rate": 1.0,
+                "dynamic_resolution_kinds": {},
+                "decorators_recognized": 0,
+                "callbacks_recognized": 4,
+                "runtime_observed_call_edges": 1,
+                "runtime_resolved_dynamic_sites": 0,
+                "runtime_augmented_dynamic_resolution_rate": 1.0,
+                "runtime_augmented_unresolved_reduction_rate": 1.0
+              }
+            },
+            "pareto_optimal": true
+          }
+        ],
+        "grpo_pairs_exported": 0,
+        "grpo_dataset": null,
+        "isolation": {
+          "git_worktree_per_candidate": true,
+          "max_parallel": 1,
+          "main_worktree_changed": false
+        }
+      },
+      "experience_hints": []
+    }
+  ],
+  "rounds_attempted": 1,
+  "converged_round": 1,
+  "winner": {
+    "candidate_id": "preserve-primary-postgres-error",
+    "strategy": "preserve original query error if rollback also fails and evict damaged client",
+    "patch": "diff --git a/src/services/db.js b/src/services/db.js\nindex ed4b279..b906af8 100644\n--- a/src/services/db.js\n+++ b/src/services/db.js\n@@ -78,10 +78,19 @@ function createExecutor(client) {\n export async function withDbClient(fn) {\n   if (!pool) throw new Error('数据库未初始化');\n   const client = await pool.connect();\n+  let connectionError = null;\n+  const rememberConnectionError = (error) => {\n+    connectionError ||= error;\n+  };\n+  // A checked-out pg Client can emit a socket error in addition to rejecting\n+  // the active query. Keep the event observed until release so a network reset\n+  // cannot become an unhandled EventEmitter error or return a broken client.\n+  client.on('error', rememberConnectionError);\n   try {\n     return await fn(createExecutor(client));\n   } finally {\n-    client.release();\n+    client.removeListener('error', rememberConnectionError);\n+    client.release(connectionError || undefined);\n   }\n }\n \n@@ -93,7 +102,20 @@ export async function transaction(fn) {\n       await tx.query('COMMIT');\n       return result;\n     } catch (err) {\n-      await tx.query('ROLLBACK');\n+      try {\n+        await tx.query('ROLLBACK');\n+      } catch (rollbackError) {\n+        if (err && typeof err === 'object' && Object.isExtensible(err)) {\n+          Object.defineProperty(err, 'rollbackError', {\n+            value: rollbackError,\n+            configurable: true,\n+            enumerable: false,\n+          });\n+        } else {\n+          throw new AggregateError([err, rollbackError],\n+            'Database transaction failed and rollback also failed', { cause: err });\n+        }\n+      }\n       throw err;\n     }\n   });\n",
+    "patch_sha256": "b9d5757b8fe211ad789e9793cf855c852c36f5166d79c0de65a3f463907204c8"
+  },
+  "diagnosis": null,
+  "experience_hints": [],
+  "time_travel_snapshot": {
+    "ticket_id": "phase15-backend-rollback-v2",
+    "commit_oid": "77fcef841516d8cb3e8cca3f9716e87144d7d02f",
+    "archive_sha256": "b9167c550a62584be570a4cca3a8c7b624ac6f8e59ddd29426761371a3ad0ca9",
+    "probe_sha256": "51ddb53aa0e1ea7a11820e6dbbdf4abe4e866ebe1fda7e86b59631643e775ddd",
+    "candidate_patch_sha256": "b9d5757b8fe211ad789e9793cf855c852c36f5166d79c0de65a3f463907204c8",
+    "mutation_seeds": [
+      15
+    ]
+  },
+  "learning": {
+    "verified_recoveries": 0,
+    "selected_model_traces": 0,
+    "selection_counts": {
+      "predictions_made": 0,
+      "no_prediction_count": 1,
+      "below_threshold_count": 0,
+      "unscored_count": 0,
+      "excluded_count": 0,
+      "above_threshold_count": 0,
+      "repair_attempt_count": 1,
+      "selection_limited_count": 0
+    },
+    "experience_ingest": {
+      "added": 0,
+      "experience_count": 0,
+      "version": 0,
+      "version_sha256": null
+    },
+    "experience_bank": {
+      "experience_count": 0,
+      "version": 0,
+      "version_sha256": null
+    },
+    "replayed_hints": [],
+    "grpo_dataset_sha256": null
+  },
+  "budget": {
+    "max_rounds": 1,
+    "max_total_tokens": 5000,
+    "tokens_used": 407,
+    "max_wall_clock_sec": 360,
+    "elapsed_sec": 11.337007
+  },
+  "ledger": {
+    "tickets": 1,
+    "statuses": {
+      "succeeded": 1
+    },
+    "traces": 3,
+    "terminal_tickets": 1,
+    "success_rate": 1.0,
+    "repair_attempts": 1,
+    "cheat_interceptions": 0,
+    "replay_interceptions": 0,
+    "mean_reward": 1.0
+  }
+}

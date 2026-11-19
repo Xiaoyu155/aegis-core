@@ -4,6 +4,7 @@ from __future__ import annotations
 import ast
 from collections import Counter
 from dataclasses import asdict, dataclass, replace
+import json
 from pathlib import Path
 import re
 
@@ -54,6 +55,8 @@ def _nonzero_test(test):
             if isinstance(test.ops[0], (ast.NotEq, ast.Gt, ast.Lt)):
                 return ast.unparse(left), True
             if isinstance(test.ops[0], ast.Eq):
+                return ast.unparse(left), False
+            if isinstance(test.ops[0], ast.LtE):
                 return ast.unparse(left), False
     if isinstance(test, (ast.Name, ast.Attribute, ast.Call)):
         return ast.unparse(test), True
@@ -300,6 +303,12 @@ def _scan_css(source, path):
     return _unsafe_references(css_references(source), path), {}
 
 
+def _scan_json(source, path):
+    """Review structured configuration by requiring strict JSON decoding."""
+    json.loads(source)
+    return [], {}
+
+
 def _scan_html(source, path):
     blocks, references = parse_html(source)
     findings = _unsafe_references(references, path)
@@ -314,6 +323,10 @@ def audit_candidate(root: Path, baseline: str, changed_files):
     """Review candidate files with baseline source only. Never consume author rationale or execute the patch."""
     findings = []
     audited = []
+    from .invariant_guard import scan_changed_files
+    invariant_report = scan_changed_files(root, changed_files, baseline=baseline)
+    for item in invariant_report["findings"]:
+        findings.append(Finding(item["code"], item["path"], item["symbol"], item["line"], item["detail"]))
     for relative in sorted(set(changed_files)):
         path = root / relative
         suffix = path.suffix.lower()
@@ -322,7 +335,7 @@ def audit_candidate(root: Path, baseline: str, changed_files):
         elif suffix in HTML_SUFFIXES:
             scanner = _scan_html
         else:
-            scanner = {".py": _scan_python, ".css": _scan_css}.get(suffix)
+            scanner = {".py": _scan_python, ".css": _scan_css, ".json": _scan_json}.get(suffix)
         if scanner is None:
             findings.append(Finding("AUDIT_UNSUPPORTED_LANGUAGE", relative, "<module>", 1,
                                     "No independent static reviewer is configured for this file type"))
@@ -355,4 +368,5 @@ def audit_candidate(root: Path, baseline: str, changed_files):
                                         "All conditional checks disappeared from a policy-related function"))
     ordered = sorted(findings, key=lambda finding: (finding.path, finding.line, finding.code))
     return {"reviewer": "independent_static_semantic", "passed": not ordered,
-            "audited_files": audited, "findings": [asdict(item) for item in ordered]}
+            "audited_files": audited, "findings": [asdict(item) for item in ordered],
+            "invariant_guard": invariant_report}

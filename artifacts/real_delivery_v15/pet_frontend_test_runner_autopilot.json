@@ -1,0 +1,487 @@
+{
+  "schema_version": "aegis.autopilot.v1",
+  "status": "succeeded",
+  "reason": "all_candidate_gates_passed",
+  "ticket_id": "phase15-pet-npm-test-runner",
+  "base_commit": "37051237e216348a35b5ccedb673217876d15da9",
+  "phases": [
+    "contract",
+    "expand",
+    "synth_probe",
+    "tournament",
+    "mutation_probe",
+    "l3_audit",
+    "failure_diagnosis",
+    "multi_round_self_heal",
+    "online_replay_learn"
+  ],
+  "expanded_spec": {
+    "kind": "ExpandedSpec",
+    "status": "READY",
+    "intent": "Make the frontend repository test entry point pass on its declared Node 24 runtime without changing test selection.",
+    "acceptance_criteria": [
+      {
+        "kind": "normal",
+        "expected": "At src/utils/request.js::run, demonstrate the requested result for a representative valid input (Make the frontend repository test entry point pass on its declared Node 24 runtime without changing test selection.)."
+      },
+      {
+        "kind": "boundary",
+        "expected": "At src/utils/request.js::run, verify empty/minimum input and exercise both sides of each stated or existing limit."
+      },
+      {
+        "kind": "fallback",
+        "expected": "At src/utils/request.js::run, verify malformed input or a failed dependency produces the expected error or safe recovery."
+      }
+    ],
+    "edge_cases": [
+      "Empty or minimum valid input",
+      "Invalid or malformed input",
+      "Repeated operation following a failed attempt"
+    ],
+    "engineering_invariants": [
+      "Preserve existing callable signatures and data shapes unless the requirement changes them.",
+      "Validate input before persisting a change and keep state consistent after a failed operation."
+    ],
+    "context": {
+      "target": "src/utils/request.js:run",
+      "items": [
+        {
+          "symbol": "src/utils/request.js:run",
+          "file": "src/utils/request.js",
+          "start_line": 277,
+          "end_line": 337,
+          "relation": "target",
+          "distance": 0,
+          "source": "    const run = (attempt, authRetried = false) => {\n      const authHeaders = getRequestAuthHeaders();\n      const sentAuthToken = String(authHeaders.Authorization || '').replace(/^Bearer\\s+/i, '');\n      return uni.request({\n        url: BASE_URL + url,\n        method: normalizedMethod,\n        data,\n        header: {\n          'Content-Type': 'application/json',\n          ...authHeaders,\n          'X-Request-Id': requestId,\n        },\n        timeout: options.timeout || 60000,\n        success: (res) => {\n          const responseRequestId = getResponseRequestId(res, res.data, requestId);\n          if (res.statusCode >= 500 && attempt < maxAttempts) {\n            setTimeout(() => run(attempt + 1, authRetried), 400);\n            return;\n          }\n          if (res.statusCode === 429) {\n            const error = makeHttpResponseError(res.statusCode, res.data, responseRequestId);\n            showHttpResponseError(res.statusCode, error, responseRequestId, options);\n            return reject(error);\n          }\n          if (res.statusCode >= 500) {\n            const error = makeHttpResponseError(res.statusCode, res.data, responseRequestId);\n            showHttpResponseError(res.statusCode, error, responseRequestId, options);\n            return reject(error);\n          }\n          if (res.statusCode >= 400) {\n            const msg = res.data?.error || `请求失败 (${res.statusCode})`;\n            const tokenRequired = res.statusCode === 401 && res.data?.code === 'AUTH_TOKEN_REQUIRED';\n            if (tokenRequired) {\n              refreshSessionForReplay({\n                authRetried,\n                sentAuthToken,\n                responseRequestId,\n                responseData: res.data,\n                options,\n              }).then((renewed) => {\n                if (renewed) run(maxAttempts, true);\n                else reject(makeError(msg, responseRequestId, res.data, res.statusCode));\n              }).catch(reject);\n              return;\n            }\n            return reject(makeError(msg, responseRequestId, res.data, res.statusCode));\n          }\n          resolve(res.data);\n        },\n        fail: (err) => {\n          if (attempt < maxAttempts) {\n            setTimeout(() => run(attempt + 1, authRetried), 400);\n            return;\n          }\n          const isTimeout = err.errMsg?.includes('timeout');\n          const msg = isTimeout ? 'AI 分析超时，请重试' : '网络连接失败，请检查网络';\n          showError(msg, options);\n          reject(makeError(msg, requestId));\n        },\n      });\n    };"
+        }
+      ],
+      "truncated": false,
+      "diagnostics": [],
+      "budget_unit": "utf8_bytes_upper_bound",
+      "token_upper_bound": 2947,
+      "structured_probe": {
+        "kind": "contract_schema",
+        "path": "scripts/aegis_frontend_probe.py",
+        "symbol": "frontend_test_suite",
+        "seed": 15,
+        "input_schema": {
+          "type": "object",
+          "required": [
+            "mode"
+          ],
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [
+                "run"
+              ]
+            }
+          }
+        },
+        "return_schema": {
+          "type": "object",
+          "required": [
+            "tests_passed"
+          ],
+          "properties": {
+            "tests_passed": {
+              "type": "boolean",
+              "enum": [
+                true
+              ]
+            }
+          }
+        },
+        "valid_args": [
+          [
+            {
+              "mode": "run"
+            }
+          ]
+        ],
+        "invalid_args": [
+          [
+            {
+              "mode": "invalid"
+            }
+          ]
+        ],
+        "invalid_exception": "ValueError"
+      },
+      "impact_summary": {
+        "changed_files": [
+          "scripts/aegis_frontend_probe.py"
+        ],
+        "token_count": 381,
+        "compression_ratio": 0.99462,
+        "critical_symbol_recall": 1.0,
+        "graph_metrics": {
+          "symbols": 274,
+          "call_edges": 223,
+          "reference_edges": 223,
+          "unresolved_references": 141,
+          "files": 46
+        }
+      }
+    },
+    "experience": [],
+    "business_parameters": {},
+    "questions": []
+  },
+  "impact_context": {
+    "context": "[full_source scripts/aegis_frontend_probe.py:<file> scripts/aegis_frontend_probe.py distance=0 target]\n\"\"\"Aegis acceptance adapter for the frontend-to-PostgreSQL E2E flow.\"\"\"\nfrom __future__ import annotations\n\nimport os\nfrom pathlib import Path\nimport subprocess\nfrom functools import lru_cache\n\n\n@lru_cache(maxsize=1)\ndef _run_real_e2e(mode: str) -> bool:\n    \"\"\"Run one real database flow per probe process and replay its measured result.\"\"\"\n    if mode != \"run\":\n        raise ValueError(\"unsupported frontend probe mode\")\n    script = Path(\"scripts/e2e/realBackendPostgres.mjs\")\n    if not script.is_file():\n        return False\n    result = subprocess.run([\"node\", str(script)], cwd=Path.cwd(), env=os.environ.copy(),\n                            capture_output=True, text=True, timeout=90, check=False)\n    return result.returncode == 0\n\n\ndef frontend_real_flow(payload: dict) -> dict:\n    if payload.get(\"mode\") != \"run\":\n        raise ValueError(\"unsupported frontend probe mode\")\n    return {\"flow_passed\": _run_real_e2e(\"run\")}\n\n\n@lru_cache(maxsize=1)\ndef _run_frontend_tests() -> bool:\n    \"\"\"Run the installed frontend test suite once and cache its actual exit result.\"\"\"\n    result = subprocess.run([\"npm\", \"test\"], cwd=Path.cwd(), env=os.environ.copy(),\n                            capture_output=True, text=True, timeout=120, check=False)\n    return result.returncode == 0\n\ndef frontend_test_suite(payload: dict) -> dict:\n    if payload.get(\"mode\") != \"run\":\n        raise ValueError(\"unsupported frontend test mode\")\n    return {\"tests_passed\": _run_frontend_tests()}\n",
+    "items": [
+      {
+        "symbol": "scripts/aegis_frontend_probe.py:<file>",
+        "file": "scripts/aegis_frontend_probe.py",
+        "distance": 0,
+        "direction": "target",
+        "representation": "full_source",
+        "text": "\"\"\"Aegis acceptance adapter for the frontend-to-PostgreSQL E2E flow.\"\"\"\nfrom __future__ import annotations\n\nimport os\nfrom pathlib import Path\nimport subprocess\nfrom functools import lru_cache\n\n\n@lru_cache(maxsize=1)\ndef _run_real_e2e(mode: str) -> bool:\n    \"\"\"Run one real database flow per probe process and replay its measured result.\"\"\"\n    if mode != \"run\":\n        raise ValueError(\"unsupported frontend probe mode\")\n    script = Path(\"scripts/e2e/realBackendPostgres.mjs\")\n    if not script.is_file():\n        return False\n    result = subprocess.run([\"node\", str(script)], cwd=Path.cwd(), env=os.environ.copy(),\n                            capture_output=True, text=True, timeout=90, check=False)\n    return result.returncode == 0\n\n\ndef frontend_real_flow(payload: dict) -> dict:\n    if payload.get(\"mode\") != \"run\":\n        raise ValueError(\"unsupported frontend probe mode\")\n    return {\"flow_passed\": _run_real_e2e(\"run\")}\n\n\n@lru_cache(maxsize=1)\ndef _run_frontend_tests() -> bool:\n    \"\"\"Run the installed frontend test suite once and cache its actual exit result.\"\"\"\n    result = subprocess.run([\"npm\", \"test\"], cwd=Path.cwd(), env=os.environ.copy(),\n                            capture_output=True, text=True, timeout=120, check=False)\n    return result.returncode == 0\n\ndef frontend_test_suite(payload: dict) -> dict:\n    if payload.get(\"mode\") != \"run\":\n        raise ValueError(\"unsupported frontend test mode\")\n    return {\"tests_passed\": _run_frontend_tests()}\n"
+      }
+    ],
+    "changed_files": [
+      "scripts/aegis_frontend_probe.py"
+    ],
+    "token_count": 381,
+    "max_context_tokens": 4000,
+    "naive_token_count": 70819,
+    "compression_ratio": 0.99462,
+    "critical_symbol_recall": 1.0,
+    "critical_symbol_count": 2,
+    "recalled_symbol_count": 2,
+    "omitted_symbols": [],
+    "graph_metrics": {
+      "symbols": 274,
+      "call_edges": 223,
+      "reference_edges": 223,
+      "unresolved_references": 141,
+      "files": 46
+    },
+    "budget_unit": "lexical_tokens_v1"
+  },
+  "synthesized_probe": {
+    "case_count": 7,
+    "case_categories": {
+      "positive": 1,
+      "negative": 1,
+      "randomized": 5
+    },
+    "baseline_true_red": "ASSERTION_FAILED"
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "candidate_count": 1,
+      "winner": "node24-frontend-test-command",
+      "accepted_count": 1,
+      "pareto_front": [
+        "node24-frontend-test-command"
+      ],
+      "token_spend": 176,
+      "elapsed_sec": 10.025532,
+      "tournament": {
+        "schema_version": "aegis.tournament.v1",
+        "base_commit": "37051237e216348a35b5ccedb673217876d15da9",
+        "candidate_count": 1,
+        "accepted_count": 1,
+        "winner": "node24-frontend-test-command",
+        "pareto_front": [
+          "node24-frontend-test-command"
+        ],
+        "evaluations": [
+          {
+            "candidate_id": "node24-frontend-test-command",
+            "strategy": "remove the obsolete default-type option while preserving Node's test glob",
+            "accepted": true,
+            "score": 0.9981846,
+            "changed_files": [
+              "package.json"
+            ],
+            "static": [
+              {
+                "command": [
+                  "git",
+                  "diff",
+                  "--check"
+                ],
+                "exit_code": 0,
+                "passed": true,
+                "timed_out": false,
+                "stdout": "",
+                "stderr": "",
+                "elapsed_sec": 0.023914
+              },
+              {
+                "command": [
+                  "/tmp/aegis-v15-env/bin/python",
+                  "-B",
+                  "-m",
+                  "json.tool",
+                  "package.json"
+                ],
+                "exit_code": 0,
+                "passed": true,
+                "timed_out": false,
+                "stdout": "/walk-forms.cjs\",\n        \"ux:care\": \"node scripts/uxwalk/walk-care.cjs\",\n        \"ux:journal\": \"node scripts/uxwalk/walk-journal.cjs\",\n        \"icons\": \"node scripts/generate-icons.cjs\",\n        \"dev:custom\": \"uni -p\",\n        \"dev:h5\": \"uni\",\n        \"dev:h5:ssr\": \"uni --ssr\",\n        \"dev:mp-alipay\": \"uni -p mp-alipay\",\n        \"dev:mp-baidu\": \"uni -p mp-baidu\",\n        \"dev:mp-jd\": \"uni -p mp-jd\",\n        \"dev:mp-kuaishou\": \"uni -p mp-kuaishou\",\n        \"dev:mp-lark\": \"uni -p mp-lark\",\n        \"dev:mp-qq\": \"uni -p mp-qq\",\n        \"dev:mp-toutiao\": \"uni -p mp-toutiao\",\n        \"dev:mp-harmony\": \"uni -p mp-harmony\",\n        \"dev:mp-weixin\": \"uni -p mp-weixin\",\n        \"dev:mp-xhs\": \"uni -p mp-xhs\",\n        \"dev:quickapp-webview\": \"uni -p quickapp-webview\",\n        \"dev:quickapp-webview-huawei\": \"uni -p quickapp-webview-huawei\",\n        \"dev:quickapp-webview-union\": \"uni -p quickapp-webview-union\",\n        \"build\": \"node scripts/checkStaticAssets.js && uni build\",\n        \"build:custom\": \"uni build -p\",\n        \"check:assets\": \"node scripts/checkStaticAssets.js\",\n        \"build:h5\": \"node scripts/checkStaticAssets.js && uni build\",\n        \"build:h5:ssr\": \"uni build --ssr\",\n        \"build:mp-alipay\": \"uni build -p mp-alipay\",\n        \"build:mp-baidu\": \"uni build -p mp-baidu\",\n        \"build:mp-jd\": \"uni build -p mp-jd\",\n        \"build:mp-kuaishou\": \"uni build -p mp-kuaishou\",\n        \"build:mp-lark\": \"uni build -p mp-lark\",\n        \"build:mp-qq\": \"uni build -p mp-qq\",\n        \"build:mp-toutiao\": \"uni build -p mp-toutiao\",\n        \"build:mp-harmony\": \"uni build -p mp-harmony\",\n        \"build:mp-weixin\": \"node scripts/checkStaticAssets.js && node scripts/checkProductionEnv.mjs && uni build -p mp-weixin && node scripts/fixMpWeixinProjectConfig.js && node scripts/checkMpWeixinDist.js\",\n        \"build:mp-xhs\": \"uni build -p mp-xhs\",\n        \"build:quickapp-webview\": \"uni build -p quickapp-webview\",\n        \"build:quickapp-webview-huawei\": \"uni build -p quickapp-webview-huawei\",\n        \"build:quickapp-webview-union\": \"uni build -p quickapp-webview-union\",\n        \"e2e:real-backend\": \"node scripts/e2e/realBackendPostgres.mjs\"\n    },\n    \"dependencies\": {\n        \"@dcloudio/uni-app\": \"3.0.0-5000720260410001\",\n        \"@dcloudio/uni-app-harmony\": \"3.0.0-5000720260410001\",\n        \"@dcloudio/uni-app-plus\": \"3.0.0-5000720260410001\",\n        \"@dcloudio/uni-components\": \"3.0.0-5000720260410001\",\n        \"@dcloudio/uni-h5\": \"3.0.0-5000720260410001\",\n        \"@dcloudio/uni-mp-alipay\": \"3.0.0-5000720260410001\",\n        \"@dcloudio/uni-mp-baidu\": \"3.0.0-5000720260410001\",\n        \"@dcloudio/uni-mp-harmony\": \"3.0.0-5000720260410001\",\n        \"@dcloudio/uni-mp-jd\": \"3.0.0-5000720260410001\",\n        \"@dcloudio/uni-mp-kuaishou\": \"3.0.0-5000720260410001\",\n        \"@dcloudio/uni-mp-lark\": \"3.0.0-5000720260410001\",\n        \"@dcloudio/uni-mp-qq\": \"3.0.0-5000720260410001\",\n        \"@dcloudio/uni-mp-toutiao\": \"3.0.0-5000720260410001\",\n        \"@dcloudio/uni-mp-weixin\": \"3.0.0-5000720260410001\",\n        \"@dcloudio/uni-mp-xhs\": \"3.0.0-5000720260410001\",\n        \"@dcloudio/uni-quickapp-webview\": \"3.0.0-5000720260410001\",\n        \"pinia\": \"2.2.4\",\n        \"vue\": \"3.4.21\"\n    },\n    \"devDependencies\": {\n        \"@dcloudio/types\": \"^3.4.8\",\n        \"@dcloudio/uni-cli-shared\": \"3.0.0-5000720260410001\",\n        \"@dcloudio/uni-stacktracey\": \"3.0.0-5000720260410001\",\n        \"@dcloudio/vite-plugin-uni\": \"3.0.0-5000720260410001\",\n        \"@vue/runtime-core\": \"3.4.21\",\n        \"puppeteer-core\": \"^25.8.0\",\n        \"vite\": \"5.2.8\"\n    },\n    \"overrides\": {\n        \"@dcloudio/uni-cli-shared\": {\n            \"@intlify/core-base\": \"9.14.5\",\n            \"@intlify/vue-devtools\": \"9.14.1\"\n        },\n        \"@babel/core\": \"7.29.7\",\n        \"@intlify/shared\": \"9.14.5\",\n        \"esbuild\": \"0.25.12\",\n        \"jpeg-js\": \"0.4.4\",\n        \"express\": \"4.22.2\",\n        \"path-to-regexp\": \"0.1.13\",\n        \"phin\": \"3.7.1\",\n        \"postcss\": \"8.5.19\",\n        \"ws\": \"8.21.0\"\n    }\n}\n",
+                "stderr": "",
+                "elapsed_sec": 0.112125
+              }
+            ],
+            "dynamic": [
+              {
+                "command": [
+                  "/tmp/aegis-v15-env/bin/python",
+                  "-B",
+                  "-m",
+                  "pytest",
+                  "--noconftest",
+                  "-o",
+                  "addopts=",
+                  "-p",
+                  "no:cacheprovider",
+                  "-q",
+                  "tests/test_aegis_probe.py"
+                ],
+                "exit_code": 0,
+                "passed": true,
+                "timed_out": false,
+                "stdout": ".......                                                                  [100%]\n7 passed in 1.58s\n",
+                "stderr": "",
+                "elapsed_sec": 2.22546
+              },
+              {
+                "command": [
+                  "npm",
+                  "test"
+                ],
+                "exit_code": 0,
+                "passed": true,
+                "timed_out": false,
+                "stdout": "efreshed by the first request (2.561046ms)\n✔ failed wechat refresh keeps the wechat identity and returns SESSION_REAUTH_REQUIRED (2.454675ms)\n✔ wechat refresh refuses a different account without mutating the stored identity (1.882662ms)\n✔ wechat refresh without uni.login fails clearly without creating an anonymous identity (1.727157ms)\n✔ wechat request is replayed only once when the refreshed token is also rejected (1.619514ms)\n✔ a renewed request is not renewed or retried again after another 401 (1.508036ms)\n✔ anonymous session endpoint does not recursively preflight itself (1.772285ms)\n✔ upload obtains an anonymous session and sends the unified headers and timeout (1.375255ms)\n✔ upload renews an anonymous session and replays once with the same request id (1.525763ms)\n✔ concurrent wechat uploads share one session refresh (1.592233ms)\n✔ upload rejects non-2xx, malformed and network responses consistently (2.012157ms)\n✔ upload never replays more than once after AUTH_TOKEN_REQUIRED (1.482809ms)\n(node:124129) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///tmp/aegis-v15-business/pet-miniapp-frontend/.worktrees/tournament-gznmvo26/node24-frontend-test-command-138feb74/src/utils/resourceState.js is not specified and it doesn't parse as CommonJS.\nReparsing as ES module because module syntax was detected. This incurs a performance overhead.\nTo eliminate this warning, add \"type\": \"module\" to /tmp/aegis-v15-business/pet-miniapp-frontend/.worktrees/tournament-gznmvo26/node24-frontend-test-command-138feb74/package.json.\n(Use `node --trace-warnings ...` to show where the warning was created)\n✔ an initial failure is not presented as an empty resource (0.770884ms)\n✔ a successful empty response is a real business empty state (0.137658ms)\n✔ refresh failure marks previously loaded data stale without losing its state (0.120882ms)\n✔ local fallback data makes a failed remote resource usable but stale (0.208265ms)\n✔ support ad entry is limited to WeChat and stays visible while configuration is pending (1.029073ms)\n✔ only a strict completed close callback is counted as product support (0.260293ms)\n✔ ad load and SDK failures never claim completion (0.174844ms)\n(node:124143) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///tmp/aegis-v15-business/pet-miniapp-frontend/.worktrees/tournament-gznmvo26/node24-frontend-test-command-138feb74/src/utils/richText.js is not specified and it doesn't parse as CommonJS.\nReparsing as ES module because module syntax was detected. This incurs a performance overhead.\nTo eliminate this warning, add \"type\": \"module\" to /tmp/aegis-v15-business/pet-miniapp-frontend/.worktrees/tournament-gznmvo26/node24-frontend-test-command-138feb74/package.json.\n(Use `node --trace-warnings ...` to show where the warning was created)\n✔ plain text renders as paragraphs and never throws (1.569049ms)\n✔ markdown subset parses into headings, bullets and ordered items (1.038427ms)\n✔ unclosed bold markers are dropped, not shown as raw asterisks (0.180432ms)\n✔ a paired marker still renders bold even when another marker is stray (0.192441ms)\n✔ stripRichMarkers produces clean text for clipboard and share (0.197889ms)\n✔ list markers inside a sentence are not misparsed as list items (0.128484ms)\n✔ no untranslated English eyebrow sits above a Chinese title (0.885987ms)\n✔ the pet archive shows a skeleton while it loads, not bare text (0.870154ms)\n✔ an empty pet archive uses the shared empty state (0.158859ms)\n✔ the home page uses a skeleton instead of an unavailable line (0.095344ms)\n✔ a skeleton means loading, never failed (0.121904ms)\n✔ a failed archive load offers a way back, not just a skeleton (0.101133ms)\n✔ a stat tile never shows an ellipsis as its value (0.222316ms)\n✔ the danger-signal screening keeps its inline offline notice (0.128975ms)\n✔ the medical disclaimer stays on the pages that give guidance (0.145911ms)\nℹ tests 114\nℹ suites 0\nℹ pass 114\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 1164.927743\n",
+                "stderr": "",
+                "elapsed_sec": 1.307783
+              },
+              {
+                "command": [
+                  "node",
+                  "scripts/e2e/realBackendPostgres.mjs"
+                ],
+                "exit_code": 0,
+                "passed": true,
+                "timed_out": false,
+                "stdout": "Pet miniapp frontend-to-PostgreSQL E2E: PASS\nfrontend auto-auth -> pet create/list -> journal write/read -> reminder outbox sync -> remote list\npet_id=56; journal_id=50; remote_reminder_id=52; synced=1; pending=0\n",
+                "stderr": "",
+                "elapsed_sec": 0.335434
+              },
+              {
+                "command": [
+                  "/tmp/aegis-v15-env/bin/python",
+                  "-c",
+                  "from scripts.aegis_frontend_probe import frontend_test_suite; assert frontend_test_suite({'mode':'run'})['tests_passed']"
+                ],
+                "exit_code": 0,
+                "passed": true,
+                "timed_out": false,
+                "elapsed_sec": 0.0,
+                "runtime_profile": true
+              }
+            ],
+            "mutation": [
+              {
+                "command": [
+                  "/tmp/aegis-v15-env/bin/python",
+                  "-B",
+                  "-m",
+                  "pytest",
+                  "--noconftest",
+                  "-o",
+                  "addopts=",
+                  "-p",
+                  "no:cacheprovider",
+                  "-q",
+                  "tests/test_aegis_probe.py",
+                  "-k",
+                  "randomized"
+                ],
+                "exit_code": 0,
+                "passed": true,
+                "timed_out": false,
+                "stdout": ".....                                                                    [100%]\n5 passed, 2 deselected in 1.41s\n",
+                "stderr": "",
+                "elapsed_sec": 2.057185
+              }
+            ],
+            "audit": {
+              "reviewer": "independent_static_semantic",
+              "passed": true,
+              "audited_files": [
+                "package.json"
+              ],
+              "findings": [],
+              "invariant_guard": {
+                "passed": true,
+                "scanned_files": [],
+                "findings": []
+              }
+            },
+            "static_pass_rate": 1.0,
+            "dynamic_pass_rate": 1.0,
+            "mutation_probe_survival_rate": 1.0,
+            "audit_passed": true,
+            "complexity_delta": 0,
+            "token_cost": 176,
+            "elapsed_sec": 8.374762,
+            "objectives": {
+              "static": 1.0,
+              "dynamic": 1.0,
+              "mutation": 1.0,
+              "audit": 1.0,
+              "complexity": 1.0,
+              "cost": 0.9092299852125177
+            },
+            "patch_sha256": "0d44031deda70ebeeddcbbacbbf7f031645fd4b15711a6a3eb69b8cc3aa330bb",
+            "metadata": {},
+            "runtime_profile": {
+              "backend": "sys.monitoring+profile",
+              "profile_exit_code": 0,
+              "event_count": 28,
+              "event_limit_reached": false,
+              "functions_observed": 3,
+              "call_edges_observed": 1,
+              "exceptions_observed": 0,
+              "impact_merge": {
+                "observed_edges": 1,
+                "merged_edges": 1,
+                "new_edges": 0,
+                "observed_dynamic_attributes": 0,
+                "merged_dynamic_references": 0,
+                "new_dynamic_references": 0
+              },
+              "impact_graph_metrics": {
+                "symbols": 277,
+                "call_edges": 225,
+                "reference_edges": 225,
+                "unresolved_references": 142,
+                "files": 47,
+                "runtime_observed_edges": 1,
+                "runtime_merged_edges": 1,
+                "runtime_new_edges": 0,
+                "runtime_observed_dynamic_attributes": 0,
+                "runtime_merged_dynamic_references": 0,
+                "runtime_new_dynamic_references": 0
+              },
+              "semantic_runtime_overlay": {
+                "observed_call_edges": 1,
+                "resolved_dynamic_sites": [],
+                "dynamic_sites_resolved": 0,
+                "runtime_profiled_dynamic_sites": 0,
+                "runtime_profiled_dynamic_sites_resolved": 0,
+                "runtime_profiled_dynamic_resolution_rate": null
+              },
+              "semantic_metrics": {
+                "schema_count": 32,
+                "fields": 97,
+                "flows": 227,
+                "contract_mismatches": 0,
+                "dynamic_sites": 1,
+                "resolved_dynamic_sites": 0,
+                "unresolved_dynamic_sites": 1,
+                "legacy_dynamic_unresolved_sites": 1,
+                "dynamic_unresolved_reduction_rate": 0.0,
+                "legacy_unresolved_references": 142,
+                "dynamic_resolution_rate": 0.0,
+                "dynamic_resolution_kinds": {},
+                "decorators_recognized": 0,
+                "callbacks_recognized": 0,
+                "runtime_observed_call_edges": 1,
+                "runtime_resolved_dynamic_sites": 0,
+                "runtime_profiled_dynamic_sites": 0,
+                "runtime_profiled_dynamic_sites_resolved": 0,
+                "runtime_profiled_dynamic_resolution_rate": null,
+                "runtime_augmented_dynamic_resolution_rate": 0.0,
+                "runtime_augmented_unresolved_reduction_rate": 0.0
+              }
+            },
+            "pareto_optimal": true
+          }
+        ],
+        "grpo_pairs_exported": 0,
+        "grpo_dataset": null,
+        "isolation": {
+          "git_worktree_per_candidate": true,
+          "max_parallel": 1,
+          "main_worktree_changed": false
+        }
+      },
+      "experience_hints": []
+    }
+  ],
+  "rounds_attempted": 1,
+  "converged_round": 1,
+  "winner": {
+    "candidate_id": "node24-frontend-test-command",
+    "strategy": "remove the obsolete default-type option while preserving Node's test glob",
+    "patch": "diff --git a/package.json b/package.json\nindex fe86bc6..d726ba9 100644\n--- a/package.json\n+++ b/package.json\n@@ -6,7 +6,7 @@\n     \"npm\": \">=10\"\n   },\n   \"scripts\": {\n-    \"test\": \"node --experimental-default-type=module --test \\\"test/*.test.mjs\\\"\",\n+    \"test\": \"node --test \\\"test/*.test.mjs\\\"\",\n     \"ux:diagnosis\": \"node scripts/uxwalk/walk-diagnosis.cjs\",\n     \"ux:consult\": \"node scripts/uxwalk/walk-consult.cjs\",\n     \"ux:forms\": \"node scripts/uxwalk/walk-forms.cjs\",\n",
+    "patch_sha256": "0d44031deda70ebeeddcbbacbbf7f031645fd4b15711a6a3eb69b8cc3aa330bb"
+  },
+  "diagnosis": null,
+  "experience_hints": [],
+  "time_travel_snapshot": {
+    "ticket_id": "phase15-pet-npm-test-runner",
+    "commit_oid": "37051237e216348a35b5ccedb673217876d15da9",
+    "archive_sha256": "c8ea97c24d55d26fb886378d5a8b0a7430001c7636b85e5e50e1ead4cedeefc1",
+    "probe_sha256": "94236fc60253bb1b83fa19853bafc165ab1b5ae885f73504e1605582bb958bae",
+    "candidate_patch_sha256": "0d44031deda70ebeeddcbbacbbf7f031645fd4b15711a6a3eb69b8cc3aa330bb",
+    "mutation_seeds": [
+      15
+    ]
+  },
+  "learning": {
+    "verified_recoveries": 0,
+    "selected_model_traces": 0,
+    "selection_counts": {
+      "predictions_made": 0,
+      "no_prediction_count": 1,
+      "below_threshold_count": 0,
+      "unscored_count": 0,
+      "excluded_count": 0,
+      "above_threshold_count": 0,
+      "repair_attempt_count": 1,
+      "selection_limited_count": 0
+    },
+    "experience_ingest": {
+      "added": 0,
+      "experience_count": 0,
+      "version": 0,
+      "version_sha256": null
+    },
+    "experience_bank": {
+      "experience_count": 0,
+      "version": 0,
+      "version_sha256": null
+    },
+    "replayed_hints": [],
+    "grpo_dataset_sha256": null
+  },
+  "budget": {
+    "max_rounds": 1,
+    "max_total_tokens": 5000,
+    "tokens_used": 176,
+    "max_wall_clock_sec": 600,
+    "elapsed_sec": 10.104359
+  },
+  "ledger": {
+    "tickets": 1,
+    "statuses": {
+      "succeeded": 1
+    },
+    "traces": 3,
+    "terminal_tickets": 1,
+    "success_rate": 1.0,
+    "repair_attempts": 1,
+    "cheat_interceptions": 0,
+    "replay_interceptions": 0,
+    "mean_reward": 1.0
+  }
+}

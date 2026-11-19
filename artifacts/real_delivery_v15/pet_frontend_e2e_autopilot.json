@@ -1,0 +1,476 @@
+{
+  "schema_version": "aegis.autopilot.v1",
+  "status": "succeeded",
+  "reason": "all_candidate_gates_passed",
+  "ticket_id": "phase15-pet-frontend-e2e",
+  "base_commit": "b59b66a6ed1adbcf38eff32c8840ce7fea63e6fc",
+  "phases": [
+    "contract",
+    "expand",
+    "synth_probe",
+    "tournament",
+    "mutation_probe",
+    "l3_audit",
+    "failure_diagnosis",
+    "multi_round_self_heal",
+    "online_replay_learn"
+  ],
+  "expanded_spec": {
+    "kind": "ExpandedSpec",
+    "status": "READY",
+    "intent": "Make the existing real frontend-to-PostgreSQL flow runnable as an Aegis acceptance gate for anonymous login, pet create/list, care journal write/read, and reminder outbox sync/list.",
+    "acceptance_criteria": [
+      {
+        "kind": "normal",
+        "expected": "At src/utils/healthReminderSync.js::sync, demonstrate the requested result for a representative valid input (Make the existing real frontend-to-PostgreSQL flow runnable as an Aegis acceptance gate for anonymous login, pet create/list, care journal write/read, and reminder outbox sync/list.)."
+      },
+      {
+        "kind": "boundary",
+        "expected": "At src/utils/healthReminderSync.js::sync, verify empty/minimum input and exercise both sides of each stated or existing limit."
+      },
+      {
+        "kind": "fallback",
+        "expected": "At src/utils/healthReminderSync.js::sync, verify malformed input or a failed dependency produces the expected error or safe recovery."
+      }
+    ],
+    "edge_cases": [
+      "Empty or minimum valid input",
+      "Invalid or malformed input",
+      "Repeated operation following a failed attempt"
+    ],
+    "engineering_invariants": [
+      "Preserve existing callable signatures and data shapes unless the requirement changes them.",
+      "Validate input before persisting a change and keep state consistent after a failed operation."
+    ],
+    "context": {
+      "target": "src/utils/healthReminderSync.js:sync",
+      "items": [
+        {
+          "symbol": "src/utils/healthReminderSync.js:sync",
+          "file": "src/utils/healthReminderSync.js",
+          "start_line": 160,
+          "end_line": 178,
+          "relation": "target",
+          "distance": 0,
+          "source": "  function sync() {\n    const scope = captureScope();\n    if (!scope.ownerClientId) return Promise.resolve({\n      attempted: 0,\n      synced: 0,\n      failed: 0,\n      stale: 0,\n      remoteIds: [],\n      pending: 0,\n    });\n    const key = scopeKey(scope);\n    const existing = inFlightByScope.get(key);\n    if (existing) return existing;\n    const inFlight = runSync(scope).finally(() => {\n      if (inFlightByScope.get(key) === inFlight) inFlightByScope.delete(key);\n    });\n    inFlightByScope.set(key, inFlight);\n    return inFlight;\n  }"
+        }
+      ],
+      "truncated": false,
+      "diagnostics": [],
+      "budget_unit": "utf8_bytes_upper_bound",
+      "token_upper_bound": 916,
+      "structured_probe": {
+        "kind": "contract_schema",
+        "path": "scripts/aegis_frontend_probe.py",
+        "symbol": "frontend_real_flow",
+        "seed": 15,
+        "input_schema": {
+          "type": "object",
+          "required": [
+            "mode"
+          ],
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [
+                "run"
+              ]
+            }
+          }
+        },
+        "return_schema": {
+          "type": "object",
+          "required": [
+            "flow_passed"
+          ],
+          "properties": {
+            "flow_passed": {
+              "type": "boolean",
+              "enum": [
+                true
+              ]
+            }
+          }
+        },
+        "valid_args": [
+          [
+            {
+              "mode": "run"
+            }
+          ]
+        ],
+        "invalid_args": [
+          [
+            {
+              "mode": "invalid"
+            }
+          ]
+        ],
+        "invalid_exception": "ValueError"
+      },
+      "impact_summary": {
+        "changed_files": [
+          "scripts/aegis_frontend_probe.py"
+        ],
+        "token_count": 84,
+        "compression_ratio": 0.998809,
+        "critical_symbol_recall": 1.0,
+        "graph_metrics": {
+          "symbols": 271,
+          "call_edges": 221,
+          "reference_edges": 221,
+          "unresolved_references": 141,
+          "files": 46
+        }
+      }
+    },
+    "experience": [],
+    "business_parameters": {},
+    "questions": []
+  },
+  "impact_context": {
+    "context": "[full_source scripts/aegis_frontend_probe.py:<file> scripts/aegis_frontend_probe.py distance=0 target]\n\"\"\"Aegis acceptance adapter for the frontend-to-PostgreSQL E2E flow.\"\"\"\n\ndef frontend_real_flow(payload: dict) -> dict:\n    if payload.get(\"mode\") != \"run\":\n        raise ValueError(\"unsupported frontend probe mode\")\n    return {\"flow_passed\": False}\n",
+    "items": [
+      {
+        "symbol": "scripts/aegis_frontend_probe.py:<file>",
+        "file": "scripts/aegis_frontend_probe.py",
+        "distance": 0,
+        "direction": "target",
+        "representation": "full_source",
+        "text": "\"\"\"Aegis acceptance adapter for the frontend-to-PostgreSQL E2E flow.\"\"\"\n\ndef frontend_real_flow(payload: dict) -> dict:\n    if payload.get(\"mode\") != \"run\":\n        raise ValueError(\"unsupported frontend probe mode\")\n    return {\"flow_passed\": False}\n"
+      }
+    ],
+    "changed_files": [
+      "scripts/aegis_frontend_probe.py"
+    ],
+    "token_count": 84,
+    "max_context_tokens": 4000,
+    "naive_token_count": 70522,
+    "compression_ratio": 0.998809,
+    "critical_symbol_recall": 1.0,
+    "critical_symbol_count": 1,
+    "recalled_symbol_count": 1,
+    "omitted_symbols": [],
+    "graph_metrics": {
+      "symbols": 271,
+      "call_edges": 221,
+      "reference_edges": 221,
+      "unresolved_references": 141,
+      "files": 46
+    },
+    "budget_unit": "lexical_tokens_v1"
+  },
+  "synthesized_probe": {
+    "case_count": 7,
+    "case_categories": {
+      "positive": 1,
+      "negative": 1,
+      "randomized": 5
+    },
+    "baseline_true_red": "ASSERTION_FAILED"
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "candidate_count": 1,
+      "winner": "aegis-real-frontend-e2e",
+      "accepted_count": 1,
+      "pareto_front": [
+        "aegis-real-frontend-e2e"
+      ],
+      "token_spend": 308,
+      "elapsed_sec": 5.214568,
+      "tournament": {
+        "schema_version": "aegis.tournament.v1",
+        "base_commit": "b59b66a6ed1adbcf38eff32c8840ce7fea63e6fc",
+        "candidate_count": 1,
+        "accepted_count": 1,
+        "winner": "aegis-real-frontend-e2e",
+        "pareto_front": [
+          "aegis-real-frontend-e2e"
+        ],
+        "evaluations": [
+          {
+            "candidate_id": "aegis-real-frontend-e2e",
+            "strategy": "execute the real Node HTTP flow and return its measured result",
+            "accepted": true,
+            "score": 0.99302864,
+            "changed_files": [
+              "scripts/aegis_frontend_probe.py"
+            ],
+            "static": [
+              {
+                "command": [
+                  "git",
+                  "diff",
+                  "--check"
+                ],
+                "exit_code": 0,
+                "passed": true,
+                "timed_out": false,
+                "stdout": "",
+                "stderr": "",
+                "elapsed_sec": 0.027149
+              },
+              {
+                "command": [
+                  "/tmp/aegis-v15-env/bin/python",
+                  "-B",
+                  "-m",
+                  "py_compile",
+                  "scripts/aegis_frontend_probe.py"
+                ],
+                "exit_code": 0,
+                "passed": true,
+                "timed_out": false,
+                "stdout": "",
+                "stderr": "",
+                "elapsed_sec": 0.122412
+              }
+            ],
+            "dynamic": [
+              {
+                "command": [
+                  "/tmp/aegis-v15-env/bin/python",
+                  "-B",
+                  "-m",
+                  "pytest",
+                  "--noconftest",
+                  "-o",
+                  "addopts=",
+                  "-p",
+                  "no:cacheprovider",
+                  "-q",
+                  "tests/test_aegis_probe.py"
+                ],
+                "exit_code": 0,
+                "passed": true,
+                "timed_out": false,
+                "stdout": ".......                                                                  [100%]\n7 passed in 0.59s\n",
+                "stderr": "",
+                "elapsed_sec": 1.232462
+              },
+              {
+                "command": [
+                  "node",
+                  "scripts/e2e/realBackendPostgres.mjs"
+                ],
+                "exit_code": 0,
+                "passed": true,
+                "timed_out": false,
+                "stdout": "Pet miniapp frontend-to-PostgreSQL E2E: PASS\nfrontend auto-auth -> pet create/list -> journal write/read -> reminder outbox sync -> remote list\npet_id=54; journal_id=48; remote_reminder_id=50; synced=1; pending=0\n",
+                "stderr": "",
+                "elapsed_sec": 0.281179
+              },
+              {
+                "command": [
+                  "/tmp/aegis-v15-env/bin/python",
+                  "scripts/aegis_frontend_probe.py"
+                ],
+                "exit_code": 0,
+                "passed": true,
+                "timed_out": false,
+                "elapsed_sec": 0.0,
+                "runtime_profile": true
+              }
+            ],
+            "mutation": [
+              {
+                "command": [
+                  "/tmp/aegis-v15-env/bin/python",
+                  "-B",
+                  "-m",
+                  "pytest",
+                  "--noconftest",
+                  "-o",
+                  "addopts=",
+                  "-p",
+                  "no:cacheprovider",
+                  "-q",
+                  "tests/test_aegis_probe.py",
+                  "-k",
+                  "randomized"
+                ],
+                "exit_code": 0,
+                "passed": true,
+                "timed_out": false,
+                "stdout": ".....                                                                    [100%]\n5 passed, 2 deselected in 0.56s\n",
+                "stderr": "",
+                "elapsed_sec": 1.303629
+              }
+            ],
+            "audit": {
+              "reviewer": "independent_static_semantic",
+              "passed": true,
+              "audited_files": [
+                "scripts/aegis_frontend_probe.py"
+              ],
+              "findings": [],
+              "invariant_guard": {
+                "passed": true,
+                "scanned_files": [
+                  "scripts/aegis_frontend_probe.py"
+                ],
+                "findings": []
+              }
+            },
+            "static_pass_rate": 1.0,
+            "dynamic_pass_rate": 1.0,
+            "mutation_probe_survival_rate": 1.0,
+            "audit_passed": true,
+            "complexity_delta": 2,
+            "token_cost": 308,
+            "elapsed_sec": 3.881501,
+            "objectives": {
+              "static": 1.0,
+              "dynamic": 1.0,
+              "mutation": 1.0,
+              "audit": 1.0,
+              "complexity": 0.8333333333333334,
+              "cost": 0.901432145453361
+            },
+            "patch_sha256": "993e140ae1423e5acb08a33533ecad4ecf3791d0b6ccfc73d06bbfc22bb833c3",
+            "metadata": {},
+            "runtime_profile": {
+              "backend": "sys.monitoring+profile",
+              "profile_exit_code": 0,
+              "event_count": 13,
+              "event_limit_reached": false,
+              "functions_observed": 1,
+              "call_edges_observed": 0,
+              "exceptions_observed": 0,
+              "impact_merge": {
+                "observed_edges": 0,
+                "merged_edges": 0,
+                "new_edges": 0,
+                "observed_dynamic_attributes": 0,
+                "merged_dynamic_references": 0,
+                "new_dynamic_references": 0
+              },
+              "impact_graph_metrics": {
+                "symbols": 275,
+                "call_edges": 224,
+                "reference_edges": 224,
+                "unresolved_references": 142,
+                "files": 47,
+                "runtime_observed_edges": 0,
+                "runtime_merged_edges": 0,
+                "runtime_new_edges": 0,
+                "runtime_observed_dynamic_attributes": 0,
+                "runtime_merged_dynamic_references": 0,
+                "runtime_new_dynamic_references": 0
+              },
+              "semantic_runtime_overlay": {
+                "observed_call_edges": 0,
+                "resolved_dynamic_sites": [],
+                "dynamic_sites_resolved": 0,
+                "runtime_profiled_dynamic_sites": 0,
+                "runtime_profiled_dynamic_sites_resolved": 0,
+                "runtime_profiled_dynamic_resolution_rate": null
+              },
+              "semantic_metrics": {
+                "schema_count": 30,
+                "fields": 96,
+                "flows": 227,
+                "contract_mismatches": 0,
+                "dynamic_sites": 1,
+                "resolved_dynamic_sites": 0,
+                "unresolved_dynamic_sites": 1,
+                "legacy_dynamic_unresolved_sites": 1,
+                "dynamic_unresolved_reduction_rate": 0.0,
+                "legacy_unresolved_references": 142,
+                "dynamic_resolution_rate": 0.0,
+                "dynamic_resolution_kinds": {},
+                "decorators_recognized": 0,
+                "callbacks_recognized": 0,
+                "runtime_observed_call_edges": 0,
+                "runtime_resolved_dynamic_sites": 0,
+                "runtime_profiled_dynamic_sites": 0,
+                "runtime_profiled_dynamic_sites_resolved": 0,
+                "runtime_profiled_dynamic_resolution_rate": null,
+                "runtime_augmented_dynamic_resolution_rate": 0.0,
+                "runtime_augmented_unresolved_reduction_rate": 0.0
+              }
+            },
+            "pareto_optimal": true
+          }
+        ],
+        "grpo_pairs_exported": 0,
+        "grpo_dataset": null,
+        "isolation": {
+          "git_worktree_per_candidate": true,
+          "max_parallel": 1,
+          "main_worktree_changed": false
+        }
+      },
+      "experience_hints": []
+    }
+  ],
+  "rounds_attempted": 1,
+  "converged_round": 1,
+  "winner": {
+    "candidate_id": "aegis-real-frontend-e2e",
+    "strategy": "execute the real Node HTTP flow and return its measured result",
+    "patch": "diff --git a/scripts/aegis_frontend_probe.py b/scripts/aegis_frontend_probe.py\nindex c11c717..a16edb7 100644\n--- a/scripts/aegis_frontend_probe.py\n+++ b/scripts/aegis_frontend_probe.py\n@@ -1,6 +1,26 @@\n \"\"\"Aegis acceptance adapter for the frontend-to-PostgreSQL E2E flow.\"\"\"\n+from __future__ import annotations\n+\n+import os\n+from pathlib import Path\n+import subprocess\n+from functools import lru_cache\n+\n+\n+@lru_cache(maxsize=1)\n+def _run_real_e2e(mode: str) -> bool:\n+    \"\"\"Run one real database flow per probe process and replay its measured result.\"\"\"\n+    if mode != \"run\":\n+        raise ValueError(\"unsupported frontend probe mode\")\n+    script = Path(\"scripts/e2e/realBackendPostgres.mjs\")\n+    if not script.is_file():\n+        return False\n+    result = subprocess.run([\"node\", str(script)], cwd=Path.cwd(), env=os.environ.copy(),\n+                            capture_output=True, text=True, timeout=90, check=False)\n+    return result.returncode == 0\n+\n \n def frontend_real_flow(payload: dict) -> dict:\n     if payload.get(\"mode\") != \"run\":\n         raise ValueError(\"unsupported frontend probe mode\")\n-    return {\"flow_passed\": False}\n+    return {\"flow_passed\": _run_real_e2e(\"run\")}\n",
+    "patch_sha256": "993e140ae1423e5acb08a33533ecad4ecf3791d0b6ccfc73d06bbfc22bb833c3"
+  },
+  "diagnosis": null,
+  "experience_hints": [],
+  "time_travel_snapshot": {
+    "ticket_id": "phase15-pet-frontend-e2e",
+    "commit_oid": "b59b66a6ed1adbcf38eff32c8840ce7fea63e6fc",
+    "archive_sha256": "61ca3e2bf593bb3a53444b84c1c7892152439dd6355042760296316bafb4711f",
+    "probe_sha256": "ae50a0d4f180e7aef9c8125d92596f9abc8aea58ab2b204415e370ecbf680b1f",
+    "candidate_patch_sha256": "993e140ae1423e5acb08a33533ecad4ecf3791d0b6ccfc73d06bbfc22bb833c3",
+    "mutation_seeds": [
+      15
+    ]
+  },
+  "learning": {
+    "verified_recoveries": 0,
+    "selected_model_traces": 0,
+    "selection_counts": {
+      "predictions_made": 0,
+      "no_prediction_count": 1,
+      "below_threshold_count": 0,
+      "unscored_count": 0,
+      "excluded_count": 0,
+      "above_threshold_count": 0,
+      "repair_attempt_count": 1,
+      "selection_limited_count": 0
+    },
+    "experience_ingest": {
+      "added": 0,
+      "experience_count": 0,
+      "version": 0,
+      "version_sha256": null
+    },
+    "experience_bank": {
+      "experience_count": 0,
+      "version": 0,
+      "version_sha256": null
+    },
+    "replayed_hints": [],
+    "grpo_dataset_sha256": null
+  },
+  "budget": {
+    "max_rounds": 1,
+    "max_total_tokens": 5000,
+    "tokens_used": 308,
+    "max_wall_clock_sec": 300,
+    "elapsed_sec": 5.314553
+  },
+  "ledger": {
+    "tickets": 1,
+    "statuses": {
+      "succeeded": 1
+    },
+    "traces": 3,
+    "terminal_tickets": 1,
+    "success_rate": 1.0,
+    "repair_attempts": 1,
+    "cheat_interceptions": 0,
+    "replay_interceptions": 0,
+    "mean_reward": 1.0
+  }
+}

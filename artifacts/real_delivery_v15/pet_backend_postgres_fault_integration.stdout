@@ -1,0 +1,10 @@
+2026-11-19T06:26:08.782Z [32m[INFO][0m PostgreSQL 数据库已初始化 {"schemaMode":"migrate","schemaVersion":8,"ssl":false}
+✔ transaction preserves the primary PostgreSQL failure when rollback also fails (32.474812ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 157.63384

@@ -52,7 +52,9 @@ class DistillPipeline:
 
     def build_bundle(self, output_dir: str | Path, *, sft_paths=(), tournament_paths=(),
                      ledger_paths=(), experience_paths=(), max_tokens: int = 4096,
-                     min_quality: float = .35) -> dict:
+                     min_quality: float = .35, release_version: int = 14) -> dict:
+        if type(release_version) is not int or release_version not in {14, 15}:
+            raise ValueError("release_version must be a supported integer release (14 or 15)")
         if type(max_tokens) is not int or not 128 <= max_tokens <= 4096:
             raise ValueError("max_tokens must be in [128, 4096] for the 8GB local training profile")
         if type(min_quality) not in (int, float) or not math.isfinite(min_quality) or not 0 <= min_quality <= 1:
@@ -94,11 +96,41 @@ class DistillPipeline:
                     token_lengths_sft.append(length)
         for source in tournament_sources:
             if source.is_file():
-                for line_number, pair in _jsonl(source):
+                rows = list(_jsonl(source))
+                labeled_groups = defaultdict_list()
+                for line_number, pair in rows:
+                    if _is_labeled_rollout(pair):
+                        prompt = _prompt_text(pair.get("prompt"))
+                        group_id = pair.get("group_id")
+                        if prompt and type(group_id) is str and group_id:
+                            labeled_groups[(group_id, prompt)].append(pair)
+                        counters["labeled_rollout_rows_seen"] += 1
+                        continue
                     counters["tournament_pairs_seen"] += 1
                     normalized = self._normalize_pair(pair, source)
                     if normalized is None:
                         counters["invalid_tournament_pairs"] += 1; continue
+                    fingerprint = _digest(_canonical({key: normalized[key] for key in
+                        ("prompt", "chosen_patch", "rejected_patch")}).encode("utf-8"))
+                    if fingerprint in preference_by_fingerprint:
+                        counters["duplicate_tournament_pairs"] += 1; continue
+                    length = self._pair_length(normalized)
+                    score = _pair_quality(normalized)
+                    if length > max_tokens:
+                        counters["overlength_tournament_pairs"] += 1; continue
+                    if score < min_quality:
+                        counters["low_quality_tournament_pairs"] += 1; continue
+                    normalized.update({"token_count": length, "quality_score": round(score, 6),
+                                       "fingerprint": fingerprint, "source_file": source.name})
+                    preference_by_fingerprint[fingerprint] = normalized
+                    token_lengths_preference.append(length)
+                for (group_id, _), candidates in sorted(labeled_groups.items()):
+                    normalized = _preference_from_labeled_group(candidates, source.name)
+                    if normalized is None:
+                        counters["unpaired_labeled_rollout_groups"] += 1
+                        continue
+                    counters["tournament_pairs_seen"] += 1
+                    counters["labeled_rollout_groups_paired"] += 1
                     fingerprint = _digest(_canonical({key: normalized[key] for key in
                         ("prompt", "chosen_patch", "rejected_patch")}).encode("utf-8"))
                     if fingerprint in preference_by_fingerprint:
@@ -166,14 +198,14 @@ class DistillPipeline:
         scripts_dir = output / "scripts"; scripts_dir.mkdir(parents=True, exist_ok=True)
         bootstrap = self.root / "scripts" / "bootstrap_local.ps1"
         if bootstrap.is_file(): shutil.copy2(bootstrap, scripts_dir / bootstrap.name)
-        runbook = ("# Aegis v14 local training bundle\n\n"
+        runbook = (f"# Aegis v{release_version} local training bundle\n\n"
                    "Windows 11 + RTX 5060 8GB: run `scripts\\bootstrap_local.ps1` from the repository root.\n"
                    f"SFT dataset: `datasets\\sft_train.jsonl`; GRPO preferences: `datasets\\grpo_preference_pairs.jsonl`.\n"
                    f"Base model and tokenizer: `{self.model_id}`. The release uses the tokenizer recorded in the manifest.\n")
         _atomic_write(output / "RUN_LOCAL_WINDOWS.md", runbook.encode("utf-8"))
         file_entries = []
         for path in sorted(output.rglob("*")):
-            if path.is_file() and path.name not in {"manifest.json", "release_v14_bundle_manifest.json"}:
+            if path.is_file() and path.name not in {"manifest.json", f"release_v{release_version}_bundle_manifest.json"}:
                 file_entries.append({"path": path.relative_to(output).as_posix(),
                                      "bytes": path.stat().st_size, "sha256": _digest(path.read_bytes())})
         tokenizer_info = {"model_id": self.model_id, "tokenizer_id": self.tokenizer_id,
@@ -185,7 +217,7 @@ class DistillPipeline:
             except ValueError:
                 return item.name
 
-        manifest = {"schema_version": "aegis.training.release.v14", "base_model": self.model_id,
+        manifest = {"schema_version": f"aegis.training.release.v{release_version}", "base_model": self.model_id,
                     "tokenizer": tokenizer_info, "created_from": {"ledger_files": [source_label(item) for item in ledger_sources],
                        "experience_files": [source_label(item) for item in experience_sources],
                        "tournament_files": [source_label(item) for item in tournament_sources],
@@ -204,7 +236,7 @@ class DistillPipeline:
                                          "precision": "4-bit NF4 QLoRA", "device_map": "cuda:0"}}
         manifest_path = output / "manifest.json"
         _atomic_write(manifest_path, (_canonical(manifest) + "\n").encode())
-        sibling_manifest = output.parent / "release_v14_bundle_manifest.json"
+        sibling_manifest = output.parent / f"release_v{release_version}_bundle_manifest.json"
         _atomic_write(sibling_manifest, (_canonical(manifest) + "\n").encode())
         verification = self.verify_bundle(manifest_path)
         return {"status": "verified" if verification["valid"] else "invalid",
@@ -218,9 +250,11 @@ class DistillPipeline:
     def verify_bundle(manifest_path: str | Path) -> dict:
         path = Path(manifest_path).resolve()
         manifest = json.loads(path.read_text(encoding="utf-8"))
-        if manifest.get("schema_version") != "aegis.training.release.v14":
+        schema_version = manifest.get("schema_version", "")
+        if schema_version not in {"aegis.training.release.v14", "aegis.training.release.v15"}:
             raise ValueError("unsupported release bundle manifest")
-        root = path.parent if path.name == "manifest.json" else path.parent / "release_v14"
+        release_version = schema_version.rsplit("v", 1)[1]
+        root = path.parent if path.name == "manifest.json" else path.parent / f"release_v{release_version}"
         verified = []
         for entry in manifest.get("files", ()):
             relative = PurePosixPath(entry.get("path", ""))
@@ -297,6 +331,59 @@ def _jsonl(path):
             yield line_number, value
 
 
+def _is_labeled_rollout(row) -> bool:
+    return (type(row) is dict and type(row.get("positive")) is bool
+            and type(row.get("completion")) is str and "group_id" in row)
+
+
+def _prompt_text(prompt):
+    if type(prompt) is str:
+        return prompt.strip() if prompt.strip() else None
+    if type(prompt) is list and prompt:
+        parts = []
+        for message in prompt:
+            if type(message) is not dict or type(message.get("role")) is not str \
+                    or type(message.get("content")) is not str:
+                return None
+            parts.append(f"{message['role']}: {message['content']}")
+        return "\n".join(parts).strip()
+    return None
+
+
+def _preference_from_labeled_group(rows, source_name):
+    """Pair the strongest positive and weakest negative verified completion."""
+    positives, negatives = [], []
+    for row in rows:
+        try:
+            content = json.loads(row["completion"])
+        except (ValueError, TypeError):
+            continue
+        patch = content.get("patch") if type(content) is dict else row["completion"]
+        digest = row.get("patch_sha256")
+        reward = row.get("reward")
+        prompt = _prompt_text(row.get("prompt"))
+        if type(patch) is not str or not patch.strip() or type(digest) is not str:
+            continue
+        if not prompt:
+            continue
+        if _digest(patch.encode("utf-8")) != digest:
+            continue
+        if type(reward) not in (int, float) or not math.isfinite(reward):
+            continue
+        target = positives if row["positive"] else negatives
+        target.append((float(reward), digest, patch, prompt))
+    if not positives or not negatives:
+        return None
+    chosen = min(positives, key=lambda item: (-item[0], item[1]))
+    rejected = min(negatives, key=lambda item: (item[0], item[1]))
+    if chosen[0] <= rejected[0] or chosen[3] != rejected[3]:
+        return None
+    return {"prompt": chosen[3], "chosen_patch": chosen[2], "rejected_patch": rejected[2],
+            "chosen_score": chosen[0], "rejected_score": rejected[0],
+            "chosen_sha256": chosen[1], "rejected_sha256": rejected[1],
+            "source": f"verified_labeled_rollout:{source_name}"}
+
+
 def _jsonl_bytes(rows):
     return ("".join(_canonical(row) + "\n" for row in rows)).encode("utf-8")
 
@@ -365,6 +452,21 @@ def _ledger_examples(path):
                     "rejected_score": float(bad.get("tournament_score", 0.0)),
                     "chosen_sha256": good.get("patch_sha256"), "rejected_sha256": bad.get("patch_sha256"),
                     "source": "ledger_verified_recovery"})
+        for passed in successes:
+            action = passed["action_a0"]
+            patch = action.get("patch")
+            contract = action.get("contract")
+            if type(patch) is not str or not patch.strip() or type(contract) is not str or not contract.strip():
+                continue
+            expected_hash = action.get("patch_sha256")
+            if expected_hash and expected_hash != _digest(patch.encode("utf-8")):
+                continue
+            sft.append({"messages": [
+                {"role": "system", "content": "Return a JSON object containing the verified repair patch."},
+                {"role": "user", "content": contract.strip()},
+                {"role": "assistant", "content": _canonical({"patch": patch})},
+            ]})
+            counts["ledger_verified_repair_examples"] += 1
     return sft, preferences, counts
 
 

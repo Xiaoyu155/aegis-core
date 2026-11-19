@@ -1,0 +1,552 @@
+{
+  "schema_version": "aegis.autopilot.v1",
+  "status": "succeeded",
+  "reason": "all_candidate_gates_passed",
+  "ticket_id": "phase15-pacer-checkpoint-v2",
+  "base_commit": "3968968da6961847fe419e3592ef1e11c5a90b40",
+  "phases": [
+    "contract",
+    "expand",
+    "synth_probe",
+    "tournament",
+    "mutation_probe",
+    "l3_audit",
+    "failure_diagnosis",
+    "multi_round_self_heal",
+    "online_replay_learn"
+  ],
+  "expanded_spec": {
+    "kind": "ExpandedSpec",
+    "status": "READY",
+    "intent": "Reject corrupted managed checkpoint statuses during resume while preserving in-progress, failed, and completed states.",
+    "acceptance_criteria": [
+      {
+        "kind": "normal",
+        "expected": "At src/visual_agent/managed_checkpoint.py::_checkpoint_resume_transition, demonstrate the requested result for a representative valid input (Reject corrupted managed checkpoint statuses during resume while preserving in-progress, failed, and completed states.)."
+      },
+      {
+        "kind": "boundary",
+        "expected": "At src/visual_agent/managed_checkpoint.py::_checkpoint_resume_transition, verify empty/minimum input and exercise both sides of each stated or existing limit."
+      },
+      {
+        "kind": "fallback",
+        "expected": "At src/visual_agent/managed_checkpoint.py::_checkpoint_resume_transition, verify malformed input or a failed dependency produces the expected error or safe recovery."
+      }
+    ],
+    "edge_cases": [
+      "Empty or minimum valid input",
+      "Invalid or malformed input",
+      "Repeated operation following a failed attempt"
+    ],
+    "engineering_invariants": [
+      "Preserve existing callable signatures and data shapes unless the requirement changes them.",
+      "Validate input before persisting a change and keep state consistent after a failed operation."
+    ],
+    "context": {
+      "target": "src.visual_agent.managed_checkpoint:_checkpoint_resume_transition",
+      "items": [
+        {
+          "symbol": "src.visual_agent.managed_checkpoint:_checkpoint_resume_transition",
+          "file": "src/visual_agent/managed_checkpoint.py",
+          "start_line": 175,
+          "end_line": 181,
+          "relation": "target",
+          "distance": 0,
+          "source": "def _checkpoint_resume_transition(status: str, action: str) -> str | None:\n    \"\"\"Describe whether a persisted checkpoint status can enter resume.\"\"\"\n    if action == \"resume\" and status != \"completed\":\n        return \"resumable\"\n    if status == \"completed\" and action == \"resume\":\n        return \"closed\"\n    return None"
+        },
+        {
+          "symbol": "src.visual_agent.managed_checkpoint:is_checkpoint_resumable",
+          "file": "src/visual_agent/managed_checkpoint.py",
+          "start_line": 184,
+          "end_line": 188,
+          "relation": "caller",
+          "distance": 1,
+          "source": "def is_checkpoint_resumable(checkpoint: ManagedCheckpoint | None) -> bool:\n    \"\"\"Return True if checkpoint has pending or failed tasks that can be resumed.\"\"\"\n    ..."
+        },
+        {
+          "symbol": "tests.test_phase15_checkpoint_transition:test_checkpoint_transition_only_accepts_declared_states",
+          "file": "tests/test_phase15_checkpoint_transition.py",
+          "start_line": 14,
+          "end_line": 22,
+          "relation": "caller",
+          "distance": 1,
+          "source": "def test_checkpoint_transition_only_accepts_declared_states(status, action, expected):\n    ..."
+        },
+        {
+          "symbol": "src.visual_agent.subagent_orchestrator:SubagentOrchestrator._run",
+          "file": "src/visual_agent/subagent_orchestrator.py",
+          "start_line": 2105,
+          "end_line": 2563,
+          "relation": "caller",
+          "distance": 2,
+          "source": "def _run(self) -> dict[str, Any]:\n    \"\"\"Execute all tasks in topological waves using the Stateless Canvas + SEARCH/REPLACE loop.\"\"\"\n    ..."
+        },
+        {
+          "symbol": "src.visual_agent.wish_intake:resolve_wish",
+          "file": "src/visual_agent/wish_intake.py",
+          "start_line": 183,
+          "end_line": 266,
+          "relation": "caller",
+          "distance": 2,
+          "source": "def resolve_wish(goal: str, workspace: str | Path) -> WishDecision:\n    \"\"\"Read the portrait and the latest sentence. Do not read a chat transcript.\"\"\"\n    ..."
+        },
+        {
+          "symbol": "tests.test_phase15_checkpoint_transition:test_unknown_or_closed_checkpoint_state_cannot_resume",
+          "file": "tests/test_phase15_checkpoint_transition.py",
+          "start_line": 25,
+          "end_line": 31,
+          "relation": "caller",
+          "distance": 2,
+          "source": "def test_unknown_or_closed_checkpoint_state_cannot_resume(status):\n    ..."
+        },
+        {
+          "symbol": "src.visual_agent.managed_checkpoint:ManagedCheckpoint",
+          "file": "src/visual_agent/managed_checkpoint.py",
+          "start_line": 26,
+          "end_line": 61,
+          "relation": "type",
+          "distance": 2,
+          "source": "class ManagedCheckpoint:\n\n    def to_dict(self) -> dict[str, Any]:\n        ...\n\n    def from_dict(cls, data: dict[str, Any]) -> ManagedCheckpoint:\n        ...\n    ..."
+        },
+        {
+          "symbol": "src.visual_agent.dag_scheduler:topological_waves",
+          "file": "src/visual_agent/dag_scheduler.py",
+          "start_line": 104,
+          "end_line": 157,
+          "relation": "callee",
+          "distance": 3,
+          "source": "def topological_waves(tasks: list[Any]) -> list[list[Any]]:\n    \"\"\"\n    Kahn's Topological Wave Partitioning Algorithm (Edge Case 2).\n    Partitions tasks into waves where tasks within each wave have no\n    unresolved dependencies and can be executed concurrently in parallel.\n    Supports both DAGSubTask and SubagentTask instances.\n    Raises ValueError if duplicate IDs, missing dependencies, or cyclic dependencies are detected.\n    \"\"\"\n    ..."
+        },
+        {
+          "symbol": "src.visual_agent.subagent_orchestrator:SubagentOrchestrator._notify",
+          "file": "src/visual_agent/subagent_orchestrator.py",
+          "start_line": 1927,
+          "end_line": 1931,
+          "relation": "callee",
+          "distance": 3,
+          "source": "def _notify(self, task: SubagentTask, message: str) -> None:\n    ..."
+        }
+      ],
+      "truncated": true,
+      "diagnostics": [],
+      "budget_unit": "utf8_bytes_upper_bound",
+      "token_upper_bound": 3875,
+      "structured_probe": {
+        "kind": "state_machine",
+        "path": "src/visual_agent/managed_checkpoint.py",
+        "symbol": "_checkpoint_resume_transition",
+        "seed": 15,
+        "transitions": {
+          "in_progress": {
+            "resume": "resumable"
+          },
+          "failed": {
+            "resume": "resumable"
+          },
+          "completed": {
+            "resume": "closed"
+          }
+        },
+        "invalid_result": null
+      },
+      "impact_summary": {
+        "changed_files": [
+          "src/visual_agent/managed_checkpoint.py"
+        ],
+        "token_count": 1571,
+        "compression_ratio": 0.997575,
+        "critical_symbol_recall": 1.0,
+        "graph_metrics": {
+          "symbols": 3282,
+          "call_edges": 2726,
+          "reference_edges": 3031,
+          "unresolved_references": 166,
+          "files": 219
+        }
+      }
+    },
+    "experience": [],
+    "business_parameters": {},
+    "questions": []
+  },
+  "impact_context": {
+    "context": "[full_source src/visual_agent/managed_checkpoint.py:<file> src/visual_agent/managed_checkpoint.py distance=0 target]\n\"\"\"Pacer Managed Checkpoint & Stateful Resumption Engine.\n\nProvides persistent state tracking, crash-resilience, and zero-loss\nresumption for long-running autonomous multi-wave DAG executions:\n- Persists to `.pacer/managed_checkpoint.json`\n- Supports task-level and wave-level resumption via `--resume`\n- Validates workspace root, goal consistency, and AST integrity\n\"\"\"\n\nfrom __future__ import annotations\n\nimport datetime\nimport json\nimport logging\nimport os\nfrom dataclasses import asdict, dataclass, field\nfrom pathlib import Path\nfrom typing import Any\n\nlogger = logging.getLogger(__name__)\n\nCHECKPOINT_FILENAME = \"managed_checkpoint.json\"\nCHECKPOINT_SCHEMA_VERSION = 4\n\n\n@dataclass\nclass ManagedCheckpoint:\n    checkpoint_id: str\n    goal: str\n    workspace_root: str\n    status: str = \"in_progress\"  # \"in_progress\", \"completed\", \"failed\"\n    interruption_reason: str = \"\"\n    created_at: str = field(\n        default_factory=lambda: datetime.datetime.now(datetime.timezone.utc).isoformat()\n    )\n    updated_at: str = field(\n        default_factory=lambda: datetime.datetime.now(datetime.timezone.utc).isoformat()\n    )\n    current_wave_index: int = 0\n    total_waves: int = 1\n    completed_task_ids: list[str] = field(default_factory=list)\n    failed_task_ids: list[str] = field(default_factory=list)\n    pending_task_ids: list[str] = field(default_factory=list)\n    patched_files: list[str] = field(default_factory=list)\n    task_states: dict[str, Any] = field(default_factory=dict)\n    schema_version: int = CHECKPOINT_SCHEMA_VERSION\n    dogfood_evidence: dict[str, Any] = field(default_factory=dict)\n    plan_goal_hash: str = \"\"  # SHA-256 of the original plan goal for identity binding\n    plan_task_count: int = 0  # Number of tasks in the original plan\n\n    def to_dict(self) -> dict[str, Any]:\n        return asdict(self)\n\n    @classmethod\n    def from_dict(cls, data: dict[str, Any]) -> ManagedCheckpoint:\n        fields = {\n            k: v\n            for k, v in data.items()\n            if k in cls.__dataclass_fields__\n        }\n        return cls(**fields)\n\n\ndef get_checkpoint_path(workspace_root: str | Path) -> Path:\n    \"\"\"Return the absolute path to the workspace's managed checkpoint file.\"\"\"\n    root = Path(workspace_root).resolve()\n    pacer_dir = root / \".pacer\"\n    pacer_dir.mkdir(parents=True, exist_ok=True)\n    return pacer_dir / CHECKPOINT_FILENAME\n\n\ndef save_managed_checkpoint(\n    workspace_root: str | Path,\n    checkpoint: ManagedCheckpoint | dict[str, Any],\n) -> Path:\n    \"\"\"Atomically save checkpoint to `.pacer/managed_checkpoint.json`.\"\"\"\n    path = get_checkpoint_path(workspace_root)\n    if isinstance(checkpoint, ManagedCheckpoint):\n        checkpoint.updated_at = datetime.datetime.now(datetime.timezone.utc).isoformat()\n        payload = checkpoint.to_dict()\n    else:\n        payload = dict(checkpoint)\n        payload[\"updated_at\"] = datetime.datetime.now(datetime.timezone.utc).isoformat()\n\n    temp_path = path.with_suffix(\".tmp\")\n    try:\n        with open(temp_path, \"w\", encoding=\"utf-8\") as f:\n            json.dump(payload, f, ensure_ascii=False, indent=2)\n        temp_path.replace(path)\n        logger.debug(f\"[ManagedCheckpoint] Saved checkpoint to {path}\")\n    except Exception as exc:\n        logger.warning(f\"[ManagedCheckpoint] Failed to write checkpoint: {exc}\")\n        if temp_path.exists():\n            try:\n                temp_path.unlink()\n            except Exception:\n                pass\n    return path\n\n\ndef load_managed_checkpoint(\n    workspace_root: str | Path,\n    expected_goal: str = \"\",\n) -> ManagedCheckpoint | None:\n    \"\"\"Load and validate the managed checkpoint if present.\n\n    Strict identity binding:\n    - Workspace root must match exactly (not just a warning).\n    - Goal must match (via hash comparison when available, else substring).\n    A mismatch returns None — different workspace or different goal means\n    the checkpoint belongs to a different task and must not be resumed.\n    \"\"\"\n    path = get_checkpoint_path(workspace_root)\n    if not path.is_file():\n        return None\n\n    try:\n        with open(path, \"r\", encoding=\"utf-8\") as f:\n            data = json.load(f)\n        if not isinstance(data, dict):\n            return None\n\n        chk = ManagedCheckpoint.from_dict(data)\n\n        # Strict workspace check — mismatch means different project\n        chk_root = Path(chk.workspace_root).resolve()\n        curr_root = Path(workspace_root).resolve()\n        if chk_root != curr_root:\n            logger.warning(\n                f\"[ManagedCheckpoint] Workspace mismatch: {chk_root} vs {curr_root}. \"\n                \"Refusing to resume — checkpoint belongs to a different workspace.\"\n            )\n            return None\n\n        # Strict goal check — mismatch means different task\n        if expected_goal:\n            # Use hash comparison when available (more reliable)\n            import hashlib\n            expected_hash = hashlib.sha256(expected_goal.encode(\"utf-8\")).hexdigest()\n            if chk.plan_goal_hash and chk.plan_goal_hash != expected_hash:\n                logger.warning(\n                    f\"[ManagedCheckpoint] Goal hash mismatch. \"\n                    \"Refusing to resume — checkpoint belongs to a different goal.\"\n                )\n                return None\n            # Fallback: substring matching for older checkpoints without hash\n            if not chk.plan_goal_hash:\n                s1 = expected_goal.strip().lower()\n                s2 = chk.goal.strip().lower()\n                if s1 not in s2 and s2 not in s1:\n                    logger.warning(\n                        f\"[ManagedCheckpoint] Goal differs: '{chk.goal}' vs '{expected_goal}'. \"\n                        \"Refusing to resume — checkpoint belongs to a different goal.\"\n                    )\n                    return None\n\n        return chk\n    except Exception as exc:\n        logger.warning(f\"[ManagedCheckpoint] Error reading checkpoint: {exc}\")\n        return None\n\n\ndef clear_managed_checkpoint(workspace_root: str | Path) -> bool:\n    \"\"\"Remove the active checkpoint file after successful plan completion.\"\"\"\n    path = get_checkpoint_path(workspace_root)\n    if path.is_file():\n        try:\n            path.unlink()\n            return True\n        except Exception as exc:\n            logger.warning(f\"[ManagedCheckpoint] Could not delete checkpoint {path}: {exc}\")\n    return False\n\n\ndef _checkpoint_resume_transition(status: str, action: str) -> str | None:\n    \"\"\"Describe whether a persisted checkpoint status can enter resume.\"\"\"\n    if action == \"resume\" and status != \"completed\":\n        return \"resumable\"\n    if status == \"completed\" and action == \"resume\":\n        return \"closed\"\n    return None\n\n\ndef is_checkpoint_resumable(checkpoint: ManagedCheckpoint | None) -> bool:\n    \"\"\"Return True if checkpoint has pending or failed tasks that can be resumed.\"\"\"\n    if not checkpoint or _checkpoint_resume_transition(checkpoint.status, \"resume\") != \"resumable\":\n        return False\n    return bool(checkpoint.pending_task_ids or checkpoint.failed_task_ids)\n\n\n[signature tests.test_phase15_checkpoint_transition:test_checkpoint_transition_only_accepts_declared_states tests/test_phase15_checkpoint_transition.py distance=1 upstream]\ndef test_checkpoint_transition_only_accepts_declared_states(status, action, expected):\n    ...\n\n[abstract_summary src.visual_agent.subagent_orchestrator:SubagentOrchestrator._run src/visual_agent/subagent_orchestrator.py distance=2 upstream]\n_run: Execute all tasks in topological waves using the Stateless Canvas + SEARCH/REPLACE loop.\n\n[abstract_summary src.visual_agent.wish_intake:resolve_wish src/visual_agent/wish_intake.py distance=2 upstream]\nresolve_wish: Read the portrait and the latest sentence. Do not read a chat transcript.\n\n[abstract_summary tests.test_phase15_checkpoint_transition:test_unknown_or_closed_checkpoint_state_cannot_resume tests/test_phase15_checkpoint_transition.py distance=2 upstream]\ntest_unknown_or_closed_checkpoint_state_cannot_resume: Callable with 1 positional parameters; unspecified return.\n\n[abstract_summary src.visual_agent.subagent_orchestrator:SubagentOrchestrator.run src/visual_agent/subagent_orchestrator.py distance=3 upstream]\nrun: Callable with 1 positional parameters; dict[str, Any].",
+    "items": [
+      {
+        "symbol": "src/visual_agent/managed_checkpoint.py:<file>",
+        "file": "src/visual_agent/managed_checkpoint.py",
+        "distance": 0,
+        "direction": "target",
+        "representation": "full_source",
+        "text": "\"\"\"Pacer Managed Checkpoint & Stateful Resumption Engine.\n\nProvides persistent state tracking, crash-resilience, and zero-loss\nresumption for long-running autonomous multi-wave DAG executions:\n- Persists to `.pacer/managed_checkpoint.json`\n- Supports task-level and wave-level resumption via `--resume`\n- Validates workspace root, goal consistency, and AST integrity\n\"\"\"\n\nfrom __future__ import annotations\n\nimport datetime\nimport json\nimport logging\nimport os\nfrom dataclasses import asdict, dataclass, field\nfrom pathlib import Path\nfrom typing import Any\n\nlogger = logging.getLogger(__name__)\n\nCHECKPOINT_FILENAME = \"managed_checkpoint.json\"\nCHECKPOINT_SCHEMA_VERSION = 4\n\n\n@dataclass\nclass ManagedCheckpoint:\n    checkpoint_id: str\n    goal: str\n    workspace_root: str\n    status: str = \"in_progress\"  # \"in_progress\", \"completed\", \"failed\"\n    interruption_reason: str = \"\"\n    created_at: str = field(\n        default_factory=lambda: datetime.datetime.now(datetime.timezone.utc).isoformat()\n    )\n    updated_at: str = field(\n        default_factory=lambda: datetime.datetime.now(datetime.timezone.utc).isoformat()\n    )\n    current_wave_index: int = 0\n    total_waves: int = 1\n    completed_task_ids: list[str] = field(default_factory=list)\n    failed_task_ids: list[str] = field(default_factory=list)\n    pending_task_ids: list[str] = field(default_factory=list)\n    patched_files: list[str] = field(default_factory=list)\n    task_states: dict[str, Any] = field(default_factory=dict)\n    schema_version: int = CHECKPOINT_SCHEMA_VERSION\n    dogfood_evidence: dict[str, Any] = field(default_factory=dict)\n    plan_goal_hash: str = \"\"  # SHA-256 of the original plan goal for identity binding\n    plan_task_count: int = 0  # Number of tasks in the original plan\n\n    def to_dict(self) -> dict[str, Any]:\n        return asdict(self)\n\n    @classmethod\n    def from_dict(cls, data: dict[str, Any]) -> ManagedCheckpoint:\n        fields = {\n            k: v\n            for k, v in data.items()\n            if k in cls.__dataclass_fields__\n        }\n        return cls(**fields)\n\n\ndef get_checkpoint_path(workspace_root: str | Path) -> Path:\n    \"\"\"Return the absolute path to the workspace's managed checkpoint file.\"\"\"\n    root = Path(workspace_root).resolve()\n    pacer_dir = root / \".pacer\"\n    pacer_dir.mkdir(parents=True, exist_ok=True)\n    return pacer_dir / CHECKPOINT_FILENAME\n\n\ndef save_managed_checkpoint(\n    workspace_root: str | Path,\n    checkpoint: ManagedCheckpoint | dict[str, Any],\n) -> Path:\n    \"\"\"Atomically save checkpoint to `.pacer/managed_checkpoint.json`.\"\"\"\n    path = get_checkpoint_path(workspace_root)\n    if isinstance(checkpoint, ManagedCheckpoint):\n        checkpoint.updated_at = datetime.datetime.now(datetime.timezone.utc).isoformat()\n        payload = checkpoint.to_dict()\n    else:\n        payload = dict(checkpoint)\n        payload[\"updated_at\"] = datetime.datetime.now(datetime.timezone.utc).isoformat()\n\n    temp_path = path.with_suffix(\".tmp\")\n    try:\n        with open(temp_path, \"w\", encoding=\"utf-8\") as f:\n            json.dump(payload, f, ensure_ascii=False, indent=2)\n        temp_path.replace(path)\n        logger.debug(f\"[ManagedCheckpoint] Saved checkpoint to {path}\")\n    except Exception as exc:\n        logger.warning(f\"[ManagedCheckpoint] Failed to write checkpoint: {exc}\")\n        if temp_path.exists():\n            try:\n                temp_path.unlink()\n            except Exception:\n                pass\n    return path\n\n\ndef load_managed_checkpoint(\n    workspace_root: str | Path,\n    expected_goal: str = \"\",\n) -> ManagedCheckpoint | None:\n    \"\"\"Load and validate the managed checkpoint if present.\n\n    Strict identity binding:\n    - Workspace root must match exactly (not just a warning).\n    - Goal must match (via hash comparison when available, else substring).\n    A mismatch returns None — different workspace or different goal means\n    the checkpoint belongs to a different task and must not be resumed.\n    \"\"\"\n    path = get_checkpoint_path(workspace_root)\n    if not path.is_file():\n        return None\n\n    try:\n        with open(path, \"r\", encoding=\"utf-8\") as f:\n            data = json.load(f)\n        if not isinstance(data, dict):\n            return None\n\n        chk = ManagedCheckpoint.from_dict(data)\n\n        # Strict workspace check — mismatch means different project\n        chk_root = Path(chk.workspace_root).resolve()\n        curr_root = Path(workspace_root).resolve()\n        if chk_root != curr_root:\n            logger.warning(\n                f\"[ManagedCheckpoint] Workspace mismatch: {chk_root} vs {curr_root}. \"\n                \"Refusing to resume — checkpoint belongs to a different workspace.\"\n            )\n            return None\n\n        # Strict goal check — mismatch means different task\n        if expected_goal:\n            # Use hash comparison when available (more reliable)\n            import hashlib\n            expected_hash = hashlib.sha256(expected_goal.encode(\"utf-8\")).hexdigest()\n            if chk.plan_goal_hash and chk.plan_goal_hash != expected_hash:\n                logger.warning(\n                    f\"[ManagedCheckpoint] Goal hash mismatch. \"\n                    \"Refusing to resume — checkpoint belongs to a different goal.\"\n                )\n                return None\n            # Fallback: substring matching for older checkpoints without hash\n            if not chk.plan_goal_hash:\n                s1 = expected_goal.strip().lower()\n                s2 = chk.goal.strip().lower()\n                if s1 not in s2 and s2 not in s1:\n                    logger.warning(\n                        f\"[ManagedCheckpoint] Goal differs: '{chk.goal}' vs '{expected_goal}'. \"\n                        \"Refusing to resume — checkpoint belongs to a different goal.\"\n                    )\n                    return None\n\n        return chk\n    except Exception as exc:\n        logger.warning(f\"[ManagedCheckpoint] Error reading checkpoint: {exc}\")\n        return None\n\n\ndef clear_managed_checkpoint(workspace_root: str | Path) -> bool:\n    \"\"\"Remove the active checkpoint file after successful plan completion.\"\"\"\n    path = get_checkpoint_path(workspace_root)\n    if path.is_file():\n        try:\n            path.unlink()\n            return True\n        except Exception as exc:\n            logger.warning(f\"[ManagedCheckpoint] Could not delete checkpoint {path}: {exc}\")\n    return False\n\n\ndef _checkpoint_resume_transition(status: str, action: str) -> str | None:\n    \"\"\"Describe whether a persisted checkpoint status can enter resume.\"\"\"\n    if action == \"resume\" and status != \"completed\":\n        return \"resumable\"\n    if status == \"completed\" and action == \"resume\":\n        return \"closed\"\n    return None\n\n\ndef is_checkpoint_resumable(checkpoint: ManagedCheckpoint | None) -> bool:\n    \"\"\"Return True if checkpoint has pending or failed tasks that can be resumed.\"\"\"\n    if not checkpoint or _checkpoint_resume_transition(checkpoint.status, \"resume\") != \"resumable\":\n        return False\n    return bool(checkpoint.pending_task_ids or checkpoint.failed_task_ids)\n"
+      },
+      {
+        "symbol": "tests.test_phase15_checkpoint_transition:test_checkpoint_transition_only_accepts_declared_states",
+        "file": "tests/test_phase15_checkpoint_transition.py",
+        "distance": 1,
+        "direction": "upstream",
+        "representation": "signature",
+        "text": "def test_checkpoint_transition_only_accepts_declared_states(status, action, expected):\n    ..."
+      },
+      {
+        "symbol": "src.visual_agent.subagent_orchestrator:SubagentOrchestrator._run",
+        "file": "src/visual_agent/subagent_orchestrator.py",
+        "distance": 2,
+        "direction": "upstream",
+        "representation": "abstract_summary",
+        "text": "_run: Execute all tasks in topological waves using the Stateless Canvas + SEARCH/REPLACE loop."
+      },
+      {
+        "symbol": "src.visual_agent.wish_intake:resolve_wish",
+        "file": "src/visual_agent/wish_intake.py",
+        "distance": 2,
+        "direction": "upstream",
+        "representation": "abstract_summary",
+        "text": "resolve_wish: Read the portrait and the latest sentence. Do not read a chat transcript."
+      },
+      {
+        "symbol": "tests.test_phase15_checkpoint_transition:test_unknown_or_closed_checkpoint_state_cannot_resume",
+        "file": "tests/test_phase15_checkpoint_transition.py",
+        "distance": 2,
+        "direction": "upstream",
+        "representation": "abstract_summary",
+        "text": "test_unknown_or_closed_checkpoint_state_cannot_resume: Callable with 1 positional parameters; unspecified return."
+      },
+      {
+        "symbol": "src.visual_agent.subagent_orchestrator:SubagentOrchestrator.run",
+        "file": "src/visual_agent/subagent_orchestrator.py",
+        "distance": 3,
+        "direction": "upstream",
+        "representation": "abstract_summary",
+        "text": "run: Callable with 1 positional parameters; dict[str, Any]."
+      }
+    ],
+    "changed_files": [
+      "src/visual_agent/managed_checkpoint.py"
+    ],
+    "token_count": 1571,
+    "max_context_tokens": 4000,
+    "naive_token_count": 647763,
+    "compression_ratio": 0.997575,
+    "critical_symbol_recall": 1.0,
+    "critical_symbol_count": 7,
+    "recalled_symbol_count": 7,
+    "omitted_symbols": [],
+    "graph_metrics": {
+      "symbols": 3282,
+      "call_edges": 2726,
+      "reference_edges": 3031,
+      "unresolved_references": 166,
+      "files": 219
+    },
+    "budget_unit": "lexical_tokens_v1"
+  },
+  "synthesized_probe": {
+    "case_count": 12,
+    "case_categories": {
+      "positive": 3,
+      "negative": 4,
+      "randomized": 5
+    },
+    "baseline_true_red": "ASSERTION_FAILED"
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "candidate_count": 1,
+      "winner": "validate-checkpoint-state",
+      "accepted_count": 1,
+      "pareto_front": [
+        "validate-checkpoint-state"
+      ],
+      "token_spend": 186,
+      "elapsed_sec": 40.403178,
+      "tournament": {
+        "schema_version": "aegis.tournament.v1",
+        "base_commit": "3968968da6961847fe419e3592ef1e11c5a90b40",
+        "candidate_count": 1,
+        "accepted_count": 1,
+        "winner": "validate-checkpoint-state",
+        "pareto_front": [
+          "validate-checkpoint-state"
+        ],
+        "evaluations": [
+          {
+            "candidate_id": "validate-checkpoint-state",
+            "strategy": "explicit transition table for resumable checkpoint states",
+            "accepted": true,
+            "score": 0.98472074,
+            "changed_files": [
+              "src/visual_agent/managed_checkpoint.py"
+            ],
+            "static": [
+              {
+                "command": [
+                  "git",
+                  "diff",
+                  "--check"
+                ],
+                "exit_code": 0,
+                "passed": true,
+                "timed_out": false,
+                "stdout": "",
+                "stderr": "",
+                "elapsed_sec": 0.013846
+              },
+              {
+                "command": [
+                  "/tmp/aegis-v15-pacer-env/bin/python",
+                  "-B",
+                  "-m",
+                  "py_compile",
+                  "src/visual_agent/managed_checkpoint.py"
+                ],
+                "exit_code": 0,
+                "passed": true,
+                "timed_out": false,
+                "stdout": "",
+                "stderr": "",
+                "elapsed_sec": 0.116073
+              }
+            ],
+            "dynamic": [
+              {
+                "command": [
+                  "/tmp/aegis-v15-pacer-env/bin/python",
+                  "-B",
+                  "-m",
+                  "pytest",
+                  "--noconftest",
+                  "-o",
+                  "addopts=",
+                  "-p",
+                  "no:cacheprovider",
+                  "-q",
+                  "tests/test_aegis_probe.py"
+                ],
+                "exit_code": 0,
+                "passed": true,
+                "timed_out": false,
+                "stdout": "............                                                             [100%]\n=============================== warnings summary ===============================\n../../../../../aegis-v15-pacer-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636\n  /tmp/aegis-v15-pacer-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636: PytestConfigWarning: Unknown config option: cache_dir\n  \n    self._warn_or_fail_if_strict(f\"Unknown config option: {key}\\n\")\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n12 passed, 1 warning in 0.04s\n",
+                "stderr": "",
+                "elapsed_sec": 0.825562
+              },
+              {
+                "command": [
+                  "/tmp/aegis-v15-pacer-env/bin/python",
+                  "-m",
+                  "pytest",
+                  "--noconftest",
+                  "-q",
+                  "tests/test_phase15_checkpoint_transition.py"
+                ],
+                "exit_code": 0,
+                "passed": true,
+                "timed_out": false,
+                "stdout": ".........                                                                [100%]\n9 passed in 0.02s\n",
+                "stderr": "",
+                "elapsed_sec": 0.79204
+              },
+              {
+                "command": [
+                  "/tmp/aegis-v15-pacer-env/bin/python",
+                  "tests/test_phase15_checkpoint_transition.py"
+                ],
+                "exit_code": 0,
+                "passed": true,
+                "timed_out": false,
+                "elapsed_sec": 0.0,
+                "runtime_profile": true
+              }
+            ],
+            "mutation": [
+              {
+                "command": [
+                  "/tmp/aegis-v15-pacer-env/bin/python",
+                  "-B",
+                  "-m",
+                  "pytest",
+                  "--noconftest",
+                  "-o",
+                  "addopts=",
+                  "-p",
+                  "no:cacheprovider",
+                  "-q",
+                  "tests/test_aegis_probe.py",
+                  "-k",
+                  "randomized"
+                ],
+                "exit_code": 0,
+                "passed": true,
+                "timed_out": false,
+                "stdout": ".....                                                                    [100%]\n=============================== warnings summary ===============================\n../../../../../aegis-v15-pacer-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636\n  /tmp/aegis-v15-pacer-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636: PytestConfigWarning: Unknown config option: cache_dir\n  \n    self._warn_or_fail_if_strict(f\"Unknown config option: {key}\\n\")\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n5 passed, 7 deselected, 1 warning in 0.02s\n",
+                "stderr": "",
+                "elapsed_sec": 0.861636
+              }
+            ],
+            "audit": {
+              "reviewer": "independent_static_semantic",
+              "passed": true,
+              "audited_files": [
+                "src/visual_agent/managed_checkpoint.py"
+              ],
+              "findings": [],
+              "invariant_guard": {
+                "passed": true,
+                "scanned_files": [
+                  "src/visual_agent/managed_checkpoint.py"
+                ],
+                "findings": []
+              }
+            },
+            "static_pass_rate": 1.0,
+            "dynamic_pass_rate": 1.0,
+            "mutation_probe_survival_rate": 1.0,
+            "audit_passed": true,
+            "complexity_delta": 2,
+            "token_cost": 186,
+            "elapsed_sec": 30.328699,
+            "objectives": {
+              "static": 1.0,
+              "dynamic": 1.0,
+              "mutation": 1.0,
+              "audit": 1.0,
+              "complexity": 0.8333333333333334,
+              "cost": 0.48603697453901235
+            },
+            "patch_sha256": "fa8ac7c8c056efd9d6e44fd37852b160766fb0e8c02724a1f917fd43c13e4064",
+            "metadata": {},
+            "runtime_profile": {
+              "backend": "sys.monitoring+profile",
+              "profile_exit_code": 0,
+              "event_count": 138,
+              "event_limit_reached": false,
+              "functions_observed": 7,
+              "call_edges_observed": 4,
+              "exceptions_observed": 0,
+              "impact_merge": {
+                "observed_edges": 4,
+                "merged_edges": 1,
+                "new_edges": 0
+              },
+              "impact_graph_metrics": {
+                "symbols": 3285,
+                "call_edges": 2728,
+                "reference_edges": 3033,
+                "unresolved_references": 167,
+                "files": 220,
+                "runtime_observed_edges": 4,
+                "runtime_merged_edges": 1,
+                "runtime_new_edges": 0
+              },
+              "semantic_runtime_overlay": {
+                "observed_call_edges": 4,
+                "resolved_dynamic_sites": [],
+                "dynamic_sites_resolved": 0
+              },
+              "semantic_metrics": {
+                "schema_count": 3131,
+                "fields": 4592,
+                "flows": 3780,
+                "contract_mismatches": 720,
+                "dynamic_sites": 160,
+                "resolved_dynamic_sites": 22,
+                "unresolved_dynamic_sites": 138,
+                "legacy_dynamic_unresolved_sites": 160,
+                "dynamic_unresolved_reduction_rate": 0.1375,
+                "legacy_unresolved_references": 167,
+                "dynamic_resolution_rate": 0.1375,
+                "dynamic_resolution_kinds": {
+                  "argparse_option": 21,
+                  "typed_field": 1
+                },
+                "decorators_recognized": 42,
+                "callbacks_recognized": 178,
+                "runtime_observed_call_edges": 4,
+                "runtime_resolved_dynamic_sites": 0,
+                "runtime_augmented_dynamic_resolution_rate": 0.1375,
+                "runtime_augmented_unresolved_reduction_rate": 0.1375
+              }
+            },
+            "pareto_optimal": true
+          }
+        ],
+        "grpo_pairs_exported": 0,
+        "grpo_dataset": null,
+        "isolation": {
+          "git_worktree_per_candidate": true,
+          "max_parallel": 1,
+          "main_worktree_changed": false
+        }
+      },
+      "experience_hints": []
+    }
+  ],
+  "rounds_attempted": 1,
+  "converged_round": 1,
+  "winner": {
+    "candidate_id": "validate-checkpoint-state",
+    "strategy": "explicit transition table for resumable checkpoint states",
+    "patch": "diff --git a/src/visual_agent/managed_checkpoint.py b/src/visual_agent/managed_checkpoint.py\nindex 7c43872..e0d8b2e 100644\n--- a/src/visual_agent/managed_checkpoint.py\n+++ b/src/visual_agent/managed_checkpoint.py\n@@ -174,7 +174,9 @@ def clear_managed_checkpoint(workspace_root: str | Path) -> bool:\n \n def _checkpoint_resume_transition(status: str, action: str) -> str | None:\n     \"\"\"Describe whether a persisted checkpoint status can enter resume.\"\"\"\n-    if action == \"resume\" and status != \"completed\":\n+    if status == \"in_progress\" and action == \"resume\":\n+        return \"resumable\"\n+    if status == \"failed\" and action == \"resume\":\n         return \"resumable\"\n     if status == \"completed\" and action == \"resume\":\n         return \"closed\"\n",
+    "patch_sha256": "fa8ac7c8c056efd9d6e44fd37852b160766fb0e8c02724a1f917fd43c13e4064"
+  },
+  "diagnosis": null,
+  "experience_hints": [],
+  "time_travel_snapshot": {
+    "ticket_id": "phase15-pacer-checkpoint-v2",
+    "commit_oid": "3968968da6961847fe419e3592ef1e11c5a90b40",
+    "archive_sha256": "865213f309a98416227af3118587775dc37c4f827442fa5c0e126ba9553dd387",
+    "probe_sha256": "2cfcfa2b2088eaf83da784137186790e0f1dd98d0fbbe474f780dd6ac394ab5a",
+    "candidate_patch_sha256": "fa8ac7c8c056efd9d6e44fd37852b160766fb0e8c02724a1f917fd43c13e4064",
+    "mutation_seeds": [
+      15
+    ]
+  },
+  "learning": {
+    "verified_recoveries": 0,
+    "selected_model_traces": 0,
+    "selection_counts": {
+      "predictions_made": 0,
+      "no_prediction_count": 1,
+      "below_threshold_count": 0,
+      "unscored_count": 0,
+      "excluded_count": 0,
+      "above_threshold_count": 0,
+      "repair_attempt_count": 1,
+      "selection_limited_count": 0
+    },
+    "experience_ingest": {
+      "added": 0,
+      "experience_count": 0,
+      "version": 0,
+      "version_sha256": null
+    },
+    "experience_bank": {
+      "experience_count": 0,
+      "version": 0,
+      "version_sha256": null
+    },
+    "replayed_hints": [],
+    "grpo_dataset_sha256": null
+  },
+  "budget": {
+    "max_rounds": 1,
+    "max_total_tokens": 4000,
+    "tokens_used": 186,
+    "max_wall_clock_sec": 180,
+    "elapsed_sec": 40.471577
+  },
+  "ledger": {
+    "tickets": 1,
+    "statuses": {
+      "succeeded": 1
+    },
+    "traces": 3,
+    "terminal_tickets": 1,
+    "success_rate": 1.0,
+    "repair_attempts": 1,
+    "cheat_interceptions": 0,
+    "replay_interceptions": 0,
+    "mean_reward": 1.0
+  }
+}

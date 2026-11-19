@@ -220,11 +220,25 @@ class ImpactAnalyzer:
 
     @property
     def graph_metrics(self) -> dict:
-        return {"symbols": len(self.symbols),
+        metrics = {"symbols": len(self.symbols),
                 "call_edges": sum(map(len, self.callees.values())),
                 "reference_edges": sum(map(len, self.references.values())),
                 "unresolved_references": sum(map(len, self.unresolved.values())),
                 "files": len(set(item.file for item in self.symbols.values()))}
+        if hasattr(self, "runtime_merge_metrics"):
+            metrics["runtime_observed_edges"] = self.runtime_merge_metrics["observed_edges"]
+            metrics["runtime_merged_edges"] = self.runtime_merge_metrics["merged_edges"]
+            metrics["runtime_new_edges"] = self.runtime_merge_metrics["new_edges"]
+            metrics["runtime_observed_dynamic_attributes"] = self.runtime_merge_metrics.get("observed_dynamic_attributes", 0)
+            metrics["runtime_merged_dynamic_references"] = self.runtime_merge_metrics.get("merged_dynamic_references", 0)
+            metrics["runtime_new_dynamic_references"] = self.runtime_merge_metrics.get("new_dynamic_references", 0)
+        return metrics
+
+    def merge_runtime(self, profile: dict) -> dict:
+        """Add observed Python call relationships to this static graph."""
+        from .runtime_profiler import merge_into_impact
+        self.runtime_merge_metrics = merge_into_impact(self, profile)
+        return dict(self.runtime_merge_metrics)
 
     def _target_keys(self, targets) -> set[str]:
         if isinstance(targets, (str, dict)):

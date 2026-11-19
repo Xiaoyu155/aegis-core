@@ -1,0 +1,511 @@
+{
+  "schema_version": "aegis.autopilot.v1",
+  "status": "succeeded",
+  "reason": "all_candidate_gates_passed",
+  "ticket_id": "phase15-okx-leverage-guard-v4",
+  "base_commit": "b0554afb279118c48e77120982fb2ea324910a7b",
+  "phases": [
+    "contract",
+    "expand",
+    "synth_probe",
+    "tournament",
+    "mutation_probe",
+    "l3_audit",
+    "failure_diagnosis",
+    "multi_round_self_heal",
+    "online_replay_learn"
+  ],
+  "expanded_spec": {
+    "kind": "ExpandedSpec",
+    "status": "READY",
+    "intent": "Reject nonpositive, boolean, nonfinite, or nonnumeric leverage before calculating an OKX stake cap.",
+    "acceptance_criteria": [
+      {
+        "kind": "normal",
+        "expected": "At freqtrade/exchange/okx.py::_max_stake_from_leverage, demonstrate the requested result for a representative valid input (Reject nonpositive, boolean, nonfinite, or nonnumeric leverage before calculating an OKX stake cap.)."
+      },
+      {
+        "kind": "boundary",
+        "expected": "At freqtrade/exchange/okx.py::_max_stake_from_leverage, verify empty/minimum input and exercise both sides of each stated or existing limit."
+      },
+      {
+        "kind": "fallback",
+        "expected": "At freqtrade/exchange/okx.py::_max_stake_from_leverage, verify malformed input or a failed dependency produces the expected error or safe recovery."
+      }
+    ],
+    "edge_cases": [
+      "Empty or minimum valid input",
+      "Invalid or malformed input",
+      "Repeated operation following a failed attempt"
+    ],
+    "engineering_invariants": [
+      "Preserve existing callable signatures and data shapes unless the requirement changes them.",
+      "Validate input before persisting a change and keep state consistent after a failed operation."
+    ],
+    "context": {
+      "target": "freqtrade.exchange.okx:_max_stake_from_leverage",
+      "items": [
+        {
+          "symbol": "freqtrade.exchange.okx:_max_stake_from_leverage",
+          "file": "freqtrade/exchange/okx.py",
+          "start_line": 23,
+          "end_line": 25,
+          "relation": "target",
+          "distance": 0,
+          "source": "def _max_stake_from_leverage(payload: dict) -> dict:\n    \"\"\"Return the exchange notional divided by leverage.\"\"\"\n    return {\"max_stake\": payload[\"max_notional\"] / payload[\"leverage\"]}"
+        },
+        {
+          "symbol": "tests.test_okx_leverage_guard_v15:test_max_stake_rejects_unsafe_leverage",
+          "file": "tests/test_okx_leverage_guard_v15.py",
+          "start_line": 15,
+          "end_line": 18,
+          "relation": "caller",
+          "distance": 1,
+          "source": "def test_max_stake_rejects_unsafe_leverage(leverage):\n    ..."
+        },
+        {
+          "symbol": "tests.test_okx_leverage_guard_v15:test_max_stake_uses_positive_leverage",
+          "file": "tests/test_okx_leverage_guard_v15.py",
+          "start_line": 10,
+          "end_line": 12,
+          "relation": "caller",
+          "distance": 1,
+          "source": "def test_max_stake_uses_positive_leverage(leverage, expected):\n    ..."
+        }
+      ],
+      "truncated": false,
+      "diagnostics": [],
+      "budget_unit": "utf8_bytes_upper_bound",
+      "token_upper_bound": 1141,
+      "structured_probe": {
+        "kind": "contract_schema",
+        "path": "freqtrade/exchange/okx.py",
+        "symbol": "_max_stake_from_leverage",
+        "seed": 15,
+        "input_schema": {
+          "type": "object",
+          "required": [
+            "max_notional",
+            "leverage"
+          ],
+          "properties": {
+            "max_notional": {
+              "type": "number"
+            },
+            "leverage": {
+              "type": "number"
+            }
+          }
+        },
+        "return_schema": {
+          "type": "object",
+          "required": [
+            "max_stake"
+          ],
+          "properties": {
+            "max_stake": {
+              "type": "number"
+            }
+          }
+        },
+        "valid_args": [
+          [
+            {
+              "max_notional": 100.0,
+              "leverage": 2.0
+            }
+          ]
+        ],
+        "invalid_args": [
+          [
+            {
+              "max_notional": 100.0,
+              "leverage": 0
+            }
+          ],
+          [
+            {
+              "max_notional": 100.0,
+              "leverage": -1
+            }
+          ]
+        ],
+        "invalid_exception": "ValueError"
+      },
+      "impact_summary": {
+        "changed_files": [
+          "freqtrade/exchange/okx.py"
+        ],
+        "token_count": 2311,
+        "compression_ratio": 0.997879,
+        "critical_symbol_recall": 1.0,
+        "graph_metrics": {
+          "symbols": 4842,
+          "call_edges": 6889,
+          "reference_edges": 9864,
+          "unresolved_references": 769,
+          "files": 431
+        }
+      }
+    },
+    "experience": [],
+    "business_parameters": {},
+    "questions": []
+  },
+  "impact_context": {
+    "context": "[full_source freqtrade/exchange/okx.py:<file> freqtrade/exchange/okx.py distance=0 target]\nimport logging\nfrom datetime import timedelta\n\nimport ccxt\n\nfrom freqtrade.constants import BuySell\nfrom freqtrade.enums import CandleType, MarginMode, PriceType, TradingMode\nfrom freqtrade.exceptions import (\n    DDosProtection,\n    OperationalException,\n    RetryableOrderError,\n    TemporaryError,\n)\nfrom freqtrade.exchange import Exchange\nfrom freqtrade.exchange.common import API_RETRY_COUNT, retrier\nfrom freqtrade.exchange.exchange_types import CcxtOrder, FtHas\nfrom freqtrade.util import dt_now, dt_ts\n\n\nlogger = logging.getLogger(__name__)\n\n\ndef _max_stake_from_leverage(payload: dict) -> dict:\n    \"\"\"Return the exchange notional divided by leverage.\"\"\"\n    return {\"max_stake\": payload[\"max_notional\"] / payload[\"leverage\"]}\n\n\nclass Okx(Exchange):\n    \"\"\"Okx exchange class.\n\n    Contains adjustments needed for Freqtrade to work with this exchange.\n    \"\"\"\n\n    _ft_has: FtHas = {\n        \"ohlcv_candle_limit\": 100,  # Warning, special case with data prior to X months\n        \"stoploss_order_types\": {\"limit\": \"limit\", \"market\": \"market\"},\n        \"stoploss_on_exchange\": True,\n        \"stoploss_query_requires_stop_flag\": True,\n        \"trades_has_history\": False,  # Endpoint doesn't have a \"since\" parameter\n        \"ws_enabled\": True,\n    }\n    _ft_has_futures: FtHas = {\n        \"tickers_have_quoteVolume\": False,\n        \"stop_price_type_field\": \"slTriggerPxType\",\n        \"stop_price_type_value_mapping\": {\n            PriceType.LAST: \"last\",\n            PriceType.MARK: \"mark\",\n            PriceType.INDEX: \"index\",\n        },\n        \"stoploss_blocks_assets\": False,\n        \"ws_enabled\": True,\n        # ccxt maps \"total\" to the currency's \"eq\" (equity), which includes unrealized PnL\n        \"balance_includes_unrealized_pnl\": True,\n    }\n\n    _supported_trading_mode_margin_pairs: list[tuple[TradingMode, MarginMode]] = [\n        (TradingMode.SPOT, MarginMode.NONE),\n        # (TradingMode.MARGIN, MarginMode.CROSS),\n        # (TradingMode.FUTURES, MarginMode.CROSS),\n        (TradingMode.FUTURES, MarginMode.ISOLATED),\n    ]\n\n    net_only = True\n\n    _ccxt_params: dict = {\"options\": {\"brokerId\": \"ffb5405ad327SUDE\"}}\n\n    def ohlcv_candle_limit(\n        self, timeframe: str, candle_type: CandleType, since_ms: int | None = None\n    ) -> int:\n        \"\"\"\n        Exchange ohlcv candle limit\n        OKX has the following behaviour:\n        * spot and futures:\n            * 300 candles for regular candles\n        * mark and premium-index:\n            * 300 candles for up-to-date data\n            * 100 candles for historic data\n        * additional data:\n            * 100 candles for additional candles\n        :param timeframe: Timeframe to check\n        :param candle_type: Candle type to use (spot, futures, funding_rate, ...)\n        :param since_ms: Starting timestamp\n        :return: Candle limit as integer\n        \"\"\"\n        if candle_type in (CandleType.FUTURES, CandleType.SPOT):\n            return 300\n\n        return super().ohlcv_candle_limit(timeframe, candle_type, since_ms)\n\n    @retrier\n    def additional_exchange_init(self) -> None:\n        \"\"\"\n        Additional exchange initialization logic.\n        .api will be available at this point.\n        Must be overridden in child methods if required.\n        \"\"\"\n        try:\n            if self.trading_mode == TradingMode.FUTURES and not self._config[\"dry_run\"]:\n                accounts = self._api.fetch_accounts()\n                self._log_exchange_response(\"fetch_accounts\", accounts)\n                if len(accounts) > 0:\n                    self.net_only = accounts[0].get(\"info\", {}).get(\"posMode\") == \"net_mode\"\n        except ccxt.DDoSProtection as e:\n            raise DDosProtection(e) from e\n        except (ccxt.OperationFailed, ccxt.ExchangeError) as e:\n            raise TemporaryError(\n                f\"Error in additional_exchange_init due to {e.__class__.__name__}. Message: {e}\"\n            ) from e\n        except ccxt.BaseError as e:\n            raise OperationalException(e) from e\n\n    def _get_posSide(self, side: BuySell, reduceOnly: bool):\n        if self.net_only:\n            return \"net\"\n        if not reduceOnly:\n            # Enter\n            return \"long\" if side == \"buy\" else \"short\"\n        else:\n            # Exit\n            return \"long\" if side == \"sell\" else \"short\"\n\n    def _get_params(\n        self,\n        side: BuySell,\n        ordertype: str,\n        leverage: float,\n        reduceOnly: bool,\n        time_in_force: str = \"GTC\",\n    ) -> dict:\n        params = super()._get_params(\n            side=side,\n            ordertype=ordertype,\n            leverage=leverage,\n            reduceOnly=reduceOnly,\n            time_in_force=time_in_force,\n        )\n        if self.trading_mode == TradingMode.FUTURES and self.margin_mode:\n            params[\"tdMode\"] = self.margin_mode.value\n            params[\"posSide\"] = self._get_posSide(side, reduceOnly)\n        return params\n\n    def __fetch_leverage_already_set(self, pair: str, leverage: float, side: BuySell) -> bool:\n        try:\n            res_lev = self._api.fetch_leverage(\n                symbol=pair,\n                params={\n                    \"mgnMode\": self.margin_mode.value,\n                    \"posSide\": self._get_posSide(side, False),\n                },\n            )\n            self._log_exchange_response(\"get_leverage\", res_lev)\n            already_set = all(float(x[\"lever\"]) == leverage for x in res_lev[\"data\"])\n            return already_set\n\n        except ccxt.BaseError:\n            # Assume all errors as \"not set yet\"\n            return False\n\n    @retrier\n    def _lev_prep(self, pair: str, leverage: float, side: BuySell, accept_fail: bool = False):\n        if self.trading_mode != TradingMode.SPOT and self.margin_mode is not None:\n            try:\n                res = self._api.set_leverage(\n                    leverage=leverage,\n                    symbol=pair,\n                    params={\n                        \"mgnMode\": self.margin_mode.value,\n                        \"posSide\": self._get_posSide(side, False),\n                    },\n                )\n                self._log_exchange_response(\"set_leverage\", res)\n\n            except ccxt.DDoSProtection as e:\n                raise DDosProtection(e) from e\n            except (ccxt.OperationFailed, ccxt.ExchangeError) as e:\n                already_set = self.__fetch_leverage_already_set(pair, leverage, side)\n                if not already_set:\n                    raise TemporaryError(\n                        f\"Could not set leverage due to {e.__class__.__name__}. Message: {e}\"\n                    ) from e\n            except ccxt.BaseError as e:\n                raise OperationalException(e) from e\n\n    def get_max_pair_stake_amount(self, pair: str, price: float, leverage: float = 1.0) -> float:\n        if self.trading_mode == TradingMode.SPOT:\n            return float(\"inf\")  # Not actually inf, but this probably won't matter for SPOT\n\n        if pair not in self._leverage_tiers:\n            return float(\"inf\")\n\n        pair_tiers = self._leverage_tiers[pair]\n        last_max_notional = pair_tiers[-1][\"maxNotional\"]\n        if last_max_notional is None:\n            return float(\"inf\")\n        return last_max_notional / leverage\n\n    def _get_stop_params(self, side: BuySell, ordertype: str, stop_price: float) -> dict:\n        params = super()._get_stop_params(side, ordertype, stop_price)\n        if self.trading_mode == TradingMode.SPOT:\n            params[\"tdMode\"] = \"cash\"\n        elif self.trading_mode == TradingMode.FUTURES and self.margin_mode:\n            params[\"tdMode\"] = self.margin_mode.value\n            params[\"posSide\"] = self._get_posSide(side, True)\n        return params\n\n    def _convert_stop_order(self, pair: str, order_id: str, order: CcxtOrder) -> CcxtOrder:\n        if (\n            order.get(\"status\", \"open\") == \"closed\"\n            and (real_order_id := order.get(\"info\", {}).get(\"ordId\")) is not None\n        ):\n            # Once a order triggered, we fetch the regular followup order.\n            order_reg = self.fetch_order(real_order_id, pair)\n            self._log_exchange_response(\"fetch_stoploss_order1\", order_reg)\n            order_reg[\"id_stop\"] = order_reg[\"id\"]\n            order_reg[\"id\"] = order_id\n            order_reg[\"type\"] = \"stoploss\"\n            order_reg[\"status_stop\"] = \"triggered\"\n            return order_reg\n        order = self._order_contracts_to_amount(order)\n        order[\"type\"] = \"stoploss\"\n        return order\n\n    @retrier(retries=API_RETRY_COUNT)\n    def fetch_stoploss_order(\n        self, order_id: str, pair: str, params: dict | None = None\n    ) -> CcxtOrder:\n        if self._config[\"dry_run\"]:\n            return self.fetch_dry_run_order(order_id)\n\n        try:\n            params1 = {\"stop\": True}\n            order_reg = self._api.fetch_order(order_id, pair, params=params1)\n            self._log_exchange_response(\"fetch_stoploss_order\", order_reg)\n            return self._convert_stop_order(pair, order_id, order_reg)\n        except (ccxt.OrderNotFound, ccxt.InvalidOrder):\n            pass\n        except ccxt.DDoSProtection as e:\n            raise DDosProtection(e) from e\n        except (ccxt.OperationFailed, ccxt.ExchangeError) as e:\n            raise TemporaryError(\n                f\"Could not get order due to {e.__class__.__name__}. Message: {e}\"\n            ) from e\n        except ccxt.BaseError as e:\n            raise OperationalException(e) from e\n\n        return self._fetch_stop_order_fallback(order_id, pair)\n\n    def _fetch_stop_order_fallback(self, order_id: str, pair: str) -> CcxtOrder:\n        params2 = {\"stop\": True, \"ordType\": \"conditional\"}\n        for method in (\n            self._api.fetch_open_orders,\n            self._api.fetch_closed_orders,\n            self._api.fetch_canceled_orders,\n        ):\n            try:\n                orders = method(pair, params=params2)\n                orders_f = [order for order in orders if order[\"id\"] == order_id]\n                if orders_f:\n                    order = orders_f[0]\n                    return self._convert_stop_order(pair, order_id, order)\n            except (ccxt.OrderNotFound, ccxt.InvalidOrder):\n                pass\n            except ccxt.DDoSProtection as e:\n                raise DDosProtection(e) from e\n            except (ccxt.OperationFailed, ccxt.ExchangeError) as e:\n                raise TemporaryError(\n                    f\"Could not get order due to {e.__class__.__name__}. Message: {e}\"\n                ) from e\n            except ccxt.BaseError as e:\n                raise OperationalException(e) from e\n        raise RetryableOrderError(f\"StoplossOrder not found (pair: {pair} id: {order_id}).\")\n\n    def _fetch_orders_emulate(self, pair: str, since_ms: int) -> list[CcxtOrder]:\n        orders = []\n\n        orders = self._api.fetch_closed_orders(pair, since=since_ms)\n        if since_ms < dt_ts(dt_now() - timedelta(days=6, hours=23)):\n            # Regular fetch_closed_orders only returns 7 days of data.\n            # Force usage of \"archive\" endpoint, which returns 3 months of data.\n            params = {\"method\": \"privateGetTradeOrdersHistoryArchive\"}\n            orders_hist = self._api.fetch_closed_orders(pair, since=since_ms, params=params)\n            orders.extend(orders_hist)\n\n        orders_open = self._api.fetch_open_orders(pair, since=since_ms)\n        orders.extend(orders_open)\n        return orders\n\n\nclass Myokx(Okx):\n    \"\"\"MyOkx exchange class.\n    Minimal adjustment to disable futures trading for the EU subsidiary of Okx\n    \"\"\"\n\n    _supported_trading_mode_margin_pairs: list[tuple[TradingMode, MarginMode]] = [\n        (TradingMode.SPOT, MarginMode.NONE),\n    ]\n\n\nclass Okxus(Okx):\n    \"\"\"Okxus exchange class.\n    Minimal adjustment to disable futures trading for the US subsidiary of Okx\n    \"\"\"\n\n    _supported_trading_mode_margin_pairs: list[tuple[TradingMode, MarginMode]] = [\n        (TradingMode.SPOT, MarginMode.NONE),\n    ]\n\n\n[signature tests.test_okx_leverage_guard_v15:test_max_stake_rejects_unsafe_leverage tests/test_okx_leverage_guard_v15.py distance=1 upstream]\ndef test_max_stake_rejects_unsafe_leverage(leverage):\n    ...\n\n[signature tests.test_okx_leverage_guard_v15:test_max_stake_uses_positive_leverage tests/test_okx_leverage_guard_v15.py distance=1 upstream]\ndef test_max_stake_uses_positive_leverage(leverage, expected):\n    ...",
+    "items": [
+      {
+        "symbol": "freqtrade/exchange/okx.py:<file>",
+        "file": "freqtrade/exchange/okx.py",
+        "distance": 0,
+        "direction": "target",
+        "representation": "full_source",
+        "text": "import logging\nfrom datetime import timedelta\n\nimport ccxt\n\nfrom freqtrade.constants import BuySell\nfrom freqtrade.enums import CandleType, MarginMode, PriceType, TradingMode\nfrom freqtrade.exceptions import (\n    DDosProtection,\n    OperationalException,\n    RetryableOrderError,\n    TemporaryError,\n)\nfrom freqtrade.exchange import Exchange\nfrom freqtrade.exchange.common import API_RETRY_COUNT, retrier\nfrom freqtrade.exchange.exchange_types import CcxtOrder, FtHas\nfrom freqtrade.util import dt_now, dt_ts\n\n\nlogger = logging.getLogger(__name__)\n\n\ndef _max_stake_from_leverage(payload: dict) -> dict:\n    \"\"\"Return the exchange notional divided by leverage.\"\"\"\n    return {\"max_stake\": payload[\"max_notional\"] / payload[\"leverage\"]}\n\n\nclass Okx(Exchange):\n    \"\"\"Okx exchange class.\n\n    Contains adjustments needed for Freqtrade to work with this exchange.\n    \"\"\"\n\n    _ft_has: FtHas = {\n        \"ohlcv_candle_limit\": 100,  # Warning, special case with data prior to X months\n        \"stoploss_order_types\": {\"limit\": \"limit\", \"market\": \"market\"},\n        \"stoploss_on_exchange\": True,\n        \"stoploss_query_requires_stop_flag\": True,\n        \"trades_has_history\": False,  # Endpoint doesn't have a \"since\" parameter\n        \"ws_enabled\": True,\n    }\n    _ft_has_futures: FtHas = {\n        \"tickers_have_quoteVolume\": False,\n        \"stop_price_type_field\": \"slTriggerPxType\",\n        \"stop_price_type_value_mapping\": {\n            PriceType.LAST: \"last\",\n            PriceType.MARK: \"mark\",\n            PriceType.INDEX: \"index\",\n        },\n        \"stoploss_blocks_assets\": False,\n        \"ws_enabled\": True,\n        # ccxt maps \"total\" to the currency's \"eq\" (equity), which includes unrealized PnL\n        \"balance_includes_unrealized_pnl\": True,\n    }\n\n    _supported_trading_mode_margin_pairs: list[tuple[TradingMode, MarginMode]] = [\n        (TradingMode.SPOT, MarginMode.NONE),\n        # (TradingMode.MARGIN, MarginMode.CROSS),\n        # (TradingMode.FUTURES, MarginMode.CROSS),\n        (TradingMode.FUTURES, MarginMode.ISOLATED),\n    ]\n\n    net_only = True\n\n    _ccxt_params: dict = {\"options\": {\"brokerId\": \"ffb5405ad327SUDE\"}}\n\n    def ohlcv_candle_limit(\n        self, timeframe: str, candle_type: CandleType, since_ms: int | None = None\n    ) -> int:\n        \"\"\"\n        Exchange ohlcv candle limit\n        OKX has the following behaviour:\n        * spot and futures:\n            * 300 candles for regular candles\n        * mark and premium-index:\n            * 300 candles for up-to-date data\n            * 100 candles for historic data\n        * additional data:\n            * 100 candles for additional candles\n        :param timeframe: Timeframe to check\n        :param candle_type: Candle type to use (spot, futures, funding_rate, ...)\n        :param since_ms: Starting timestamp\n        :return: Candle limit as integer\n        \"\"\"\n        if candle_type in (CandleType.FUTURES, CandleType.SPOT):\n            return 300\n\n        return super().ohlcv_candle_limit(timeframe, candle_type, since_ms)\n\n    @retrier\n    def additional_exchange_init(self) -> None:\n        \"\"\"\n        Additional exchange initialization logic.\n        .api will be available at this point.\n        Must be overridden in child methods if required.\n        \"\"\"\n        try:\n            if self.trading_mode == TradingMode.FUTURES and not self._config[\"dry_run\"]:\n                accounts = self._api.fetch_accounts()\n                self._log_exchange_response(\"fetch_accounts\", accounts)\n                if len(accounts) > 0:\n                    self.net_only = accounts[0].get(\"info\", {}).get(\"posMode\") == \"net_mode\"\n        except ccxt.DDoSProtection as e:\n            raise DDosProtection(e) from e\n        except (ccxt.OperationFailed, ccxt.ExchangeError) as e:\n            raise TemporaryError(\n                f\"Error in additional_exchange_init due to {e.__class__.__name__}. Message: {e}\"\n            ) from e\n        except ccxt.BaseError as e:\n            raise OperationalException(e) from e\n\n    def _get_posSide(self, side: BuySell, reduceOnly: bool):\n        if self.net_only:\n            return \"net\"\n        if not reduceOnly:\n            # Enter\n            return \"long\" if side == \"buy\" else \"short\"\n        else:\n            # Exit\n            return \"long\" if side == \"sell\" else \"short\"\n\n    def _get_params(\n        self,\n        side: BuySell,\n        ordertype: str,\n        leverage: float,\n        reduceOnly: bool,\n        time_in_force: str = \"GTC\",\n    ) -> dict:\n        params = super()._get_params(\n            side=side,\n            ordertype=ordertype,\n            leverage=leverage,\n            reduceOnly=reduceOnly,\n            time_in_force=time_in_force,\n        )\n        if self.trading_mode == TradingMode.FUTURES and self.margin_mode:\n            params[\"tdMode\"] = self.margin_mode.value\n            params[\"posSide\"] = self._get_posSide(side, reduceOnly)\n        return params\n\n    def __fetch_leverage_already_set(self, pair: str, leverage: float, side: BuySell) -> bool:\n        try:\n            res_lev = self._api.fetch_leverage(\n                symbol=pair,\n                params={\n                    \"mgnMode\": self.margin_mode.value,\n                    \"posSide\": self._get_posSide(side, False),\n                },\n            )\n            self._log_exchange_response(\"get_leverage\", res_lev)\n            already_set = all(float(x[\"lever\"]) == leverage for x in res_lev[\"data\"])\n            return already_set\n\n        except ccxt.BaseError:\n            # Assume all errors as \"not set yet\"\n            return False\n\n    @retrier\n    def _lev_prep(self, pair: str, leverage: float, side: BuySell, accept_fail: bool = False):\n        if self.trading_mode != TradingMode.SPOT and self.margin_mode is not None:\n            try:\n                res = self._api.set_leverage(\n                    leverage=leverage,\n                    symbol=pair,\n                    params={\n                        \"mgnMode\": self.margin_mode.value,\n                        \"posSide\": self._get_posSide(side, False),\n                    },\n                )\n                self._log_exchange_response(\"set_leverage\", res)\n\n            except ccxt.DDoSProtection as e:\n                raise DDosProtection(e) from e\n            except (ccxt.OperationFailed, ccxt.ExchangeError) as e:\n                already_set = self.__fetch_leverage_already_set(pair, leverage, side)\n                if not already_set:\n                    raise TemporaryError(\n                        f\"Could not set leverage due to {e.__class__.__name__}. Message: {e}\"\n                    ) from e\n            except ccxt.BaseError as e:\n                raise OperationalException(e) from e\n\n    def get_max_pair_stake_amount(self, pair: str, price: float, leverage: float = 1.0) -> float:\n        if self.trading_mode == TradingMode.SPOT:\n            return float(\"inf\")  # Not actually inf, but this probably won't matter for SPOT\n\n        if pair not in self._leverage_tiers:\n            return float(\"inf\")\n\n        pair_tiers = self._leverage_tiers[pair]\n        last_max_notional = pair_tiers[-1][\"maxNotional\"]\n        if last_max_notional is None:\n            return float(\"inf\")\n        return last_max_notional / leverage\n\n    def _get_stop_params(self, side: BuySell, ordertype: str, stop_price: float) -> dict:\n        params = super()._get_stop_params(side, ordertype, stop_price)\n        if self.trading_mode == TradingMode.SPOT:\n            params[\"tdMode\"] = \"cash\"\n        elif self.trading_mode == TradingMode.FUTURES and self.margin_mode:\n            params[\"tdMode\"] = self.margin_mode.value\n            params[\"posSide\"] = self._get_posSide(side, True)\n        return params\n\n    def _convert_stop_order(self, pair: str, order_id: str, order: CcxtOrder) -> CcxtOrder:\n        if (\n            order.get(\"status\", \"open\") == \"closed\"\n            and (real_order_id := order.get(\"info\", {}).get(\"ordId\")) is not None\n        ):\n            # Once a order triggered, we fetch the regular followup order.\n            order_reg = self.fetch_order(real_order_id, pair)\n            self._log_exchange_response(\"fetch_stoploss_order1\", order_reg)\n            order_reg[\"id_stop\"] = order_reg[\"id\"]\n            order_reg[\"id\"] = order_id\n            order_reg[\"type\"] = \"stoploss\"\n            order_reg[\"status_stop\"] = \"triggered\"\n            return order_reg\n        order = self._order_contracts_to_amount(order)\n        order[\"type\"] = \"stoploss\"\n        return order\n\n    @retrier(retries=API_RETRY_COUNT)\n    def fetch_stoploss_order(\n        self, order_id: str, pair: str, params: dict | None = None\n    ) -> CcxtOrder:\n        if self._config[\"dry_run\"]:\n            return self.fetch_dry_run_order(order_id)\n\n        try:\n            params1 = {\"stop\": True}\n            order_reg = self._api.fetch_order(order_id, pair, params=params1)\n            self._log_exchange_response(\"fetch_stoploss_order\", order_reg)\n            return self._convert_stop_order(pair, order_id, order_reg)\n        except (ccxt.OrderNotFound, ccxt.InvalidOrder):\n            pass\n        except ccxt.DDoSProtection as e:\n            raise DDosProtection(e) from e\n        except (ccxt.OperationFailed, ccxt.ExchangeError) as e:\n            raise TemporaryError(\n                f\"Could not get order due to {e.__class__.__name__}. Message: {e}\"\n            ) from e\n        except ccxt.BaseError as e:\n            raise OperationalException(e) from e\n\n        return self._fetch_stop_order_fallback(order_id, pair)\n\n    def _fetch_stop_order_fallback(self, order_id: str, pair: str) -> CcxtOrder:\n        params2 = {\"stop\": True, \"ordType\": \"conditional\"}\n        for method in (\n            self._api.fetch_open_orders,\n            self._api.fetch_closed_orders,\n            self._api.fetch_canceled_orders,\n        ):\n            try:\n                orders = method(pair, params=params2)\n                orders_f = [order for order in orders if order[\"id\"] == order_id]\n                if orders_f:\n                    order = orders_f[0]\n                    return self._convert_stop_order(pair, order_id, order)\n            except (ccxt.OrderNotFound, ccxt.InvalidOrder):\n                pass\n            except ccxt.DDoSProtection as e:\n                raise DDosProtection(e) from e\n            except (ccxt.OperationFailed, ccxt.ExchangeError) as e:\n                raise TemporaryError(\n                    f\"Could not get order due to {e.__class__.__name__}. Message: {e}\"\n                ) from e\n            except ccxt.BaseError as e:\n                raise OperationalException(e) from e\n        raise RetryableOrderError(f\"StoplossOrder not found (pair: {pair} id: {order_id}).\")\n\n    def _fetch_orders_emulate(self, pair: str, since_ms: int) -> list[CcxtOrder]:\n        orders = []\n\n        orders = self._api.fetch_closed_orders(pair, since=since_ms)\n        if since_ms < dt_ts(dt_now() - timedelta(days=6, hours=23)):\n            # Regular fetch_closed_orders only returns 7 days of data.\n            # Force usage of \"archive\" endpoint, which returns 3 months of data.\n            params = {\"method\": \"privateGetTradeOrdersHistoryArchive\"}\n            orders_hist = self._api.fetch_closed_orders(pair, since=since_ms, params=params)\n            orders.extend(orders_hist)\n\n        orders_open = self._api.fetch_open_orders(pair, since=since_ms)\n        orders.extend(orders_open)\n        return orders\n\n\nclass Myokx(Okx):\n    \"\"\"MyOkx exchange class.\n    Minimal adjustment to disable futures trading for the EU subsidiary of Okx\n    \"\"\"\n\n    _supported_trading_mode_margin_pairs: list[tuple[TradingMode, MarginMode]] = [\n        (TradingMode.SPOT, MarginMode.NONE),\n    ]\n\n\nclass Okxus(Okx):\n    \"\"\"Okxus exchange class.\n    Minimal adjustment to disable futures trading for the US subsidiary of Okx\n    \"\"\"\n\n    _supported_trading_mode_margin_pairs: list[tuple[TradingMode, MarginMode]] = [\n        (TradingMode.SPOT, MarginMode.NONE),\n    ]\n"
+      },
+      {
+        "symbol": "tests.test_okx_leverage_guard_v15:test_max_stake_rejects_unsafe_leverage",
+        "file": "tests/test_okx_leverage_guard_v15.py",
+        "distance": 1,
+        "direction": "upstream",
+        "representation": "signature",
+        "text": "def test_max_stake_rejects_unsafe_leverage(leverage):\n    ..."
+      },
+      {
+        "symbol": "tests.test_okx_leverage_guard_v15:test_max_stake_uses_positive_leverage",
+        "file": "tests/test_okx_leverage_guard_v15.py",
+        "distance": 1,
+        "direction": "upstream",
+        "representation": "signature",
+        "text": "def test_max_stake_uses_positive_leverage(leverage, expected):\n    ..."
+      }
+    ],
+    "changed_files": [
+      "freqtrade/exchange/okx.py"
+    ],
+    "token_count": 2311,
+    "max_context_tokens": 4000,
+    "naive_token_count": 1089366,
+    "compression_ratio": 0.997879,
+    "critical_symbol_recall": 1.0,
+    "critical_symbol_count": 3,
+    "recalled_symbol_count": 3,
+    "omitted_symbols": [],
+    "graph_metrics": {
+      "symbols": 4842,
+      "call_edges": 6889,
+      "reference_edges": 9864,
+      "unresolved_references": 769,
+      "files": 431
+    },
+    "budget_unit": "lexical_tokens_v1"
+  },
+  "synthesized_probe": {
+    "case_count": 8,
+    "case_categories": {
+      "positive": 1,
+      "negative": 2,
+      "randomized": 5
+    },
+    "baseline_true_red": "ASSERTION_FAILED"
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "candidate_count": 1,
+      "winner": "guard-invalid-leverage",
+      "accepted_count": 1,
+      "pareto_front": [
+        "guard-invalid-leverage"
+      ],
+      "token_spend": 306,
+      "elapsed_sec": 101.938673,
+      "tournament": {
+        "schema_version": "aegis.tournament.v1",
+        "base_commit": "b0554afb279118c48e77120982fb2ea324910a7b",
+        "candidate_count": 1,
+        "accepted_count": 1,
+        "winner": "guard-invalid-leverage",
+        "pareto_front": [
+          "guard-invalid-leverage"
+        ],
+        "evaluations": [
+          {
+            "candidate_id": "guard-invalid-leverage",
+            "strategy": "validate finite positive leverage before division",
+            "accepted": true,
+            "score": 0.98060729,
+            "changed_files": [
+              "freqtrade/exchange/okx.py"
+            ],
+            "static": [
+              {
+                "command": [
+                  "git",
+                  "diff",
+                  "--check"
+                ],
+                "exit_code": 0,
+                "passed": true,
+                "timed_out": false,
+                "stdout": "",
+                "stderr": "",
+                "elapsed_sec": 0.003473
+              },
+              {
+                "command": [
+                  "/tmp/aegis-v15-okx-env/bin/python",
+                  "-B",
+                  "-m",
+                  "py_compile",
+                  "freqtrade/exchange/okx.py"
+                ],
+                "exit_code": 0,
+                "passed": true,
+                "timed_out": false,
+                "stdout": "",
+                "stderr": "",
+                "elapsed_sec": 0.129399
+              }
+            ],
+            "dynamic": [
+              {
+                "command": [
+                  "/tmp/aegis-v15-okx-env/bin/python",
+                  "-B",
+                  "-m",
+                  "pytest",
+                  "--noconftest",
+                  "-o",
+                  "addopts=",
+                  "-p",
+                  "no:cacheprovider",
+                  "-q",
+                  "tests/test_aegis_probe.py"
+                ],
+                "exit_code": 0,
+                "passed": true,
+                "timed_out": false,
+                "stdout": "........                                                                 [100%]\n=============================== warnings summary ===============================\n../../../../../aegis-v15-okx-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636\n  /tmp/aegis-v15-okx-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636: PytestConfigWarning: Unknown config option: asyncio_default_fixture_loop_scope\n  \n    self._warn_or_fail_if_strict(f\"Unknown config option: {key}\\n\")\n\n../../../../../aegis-v15-okx-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636\n  /tmp/aegis-v15-okx-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636: PytestConfigWarning: Unknown config option: asyncio_mode\n  \n    self._warn_or_fail_if_strict(f\"Unknown config option: {key}\\n\")\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n8 passed, 2 warnings in 5.11s\n",
+                "stderr": "",
+                "elapsed_sec": 6.824929
+              },
+              {
+                "command": [
+                  "/tmp/aegis-v15-okx-env/bin/python",
+                  "-m",
+                  "pytest",
+                  "--noconftest",
+                  "-q",
+                  "tests/test_okx_leverage_guard_v15.py"
+                ],
+                "exit_code": 0,
+                "passed": true,
+                "timed_out": false,
+                "stdout": "..........                                                               [100%]\n=============================== warnings summary ===============================\n../../../../../aegis-v15-okx-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636\n  /tmp/aegis-v15-okx-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636: PytestConfigWarning: Unknown config option: asyncio_default_fixture_loop_scope\n  \n    self._warn_or_fail_if_strict(f\"Unknown config option: {key}\\n\")\n\n../../../../../aegis-v15-okx-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636\n  /tmp/aegis-v15-okx-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636: PytestConfigWarning: Unknown config option: asyncio_mode\n  \n    self._warn_or_fail_if_strict(f\"Unknown config option: {key}\\n\")\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n10 passed, 2 warnings in 4.91s\n",
+                "stderr": "",
+                "elapsed_sec": 6.562216
+              },
+              {
+                "command": [
+                  "/tmp/aegis-v15-okx-env/bin/python",
+                  "tests/test_okx_leverage_guard_v15.py"
+                ],
+                "exit_code": 0,
+                "passed": true,
+                "timed_out": false,
+                "elapsed_sec": 0.0,
+                "runtime_profile": true
+              }
+            ],
+            "mutation": [
+              {
+                "command": [
+                  "/tmp/aegis-v15-okx-env/bin/python",
+                  "-B",
+                  "-m",
+                  "pytest",
+                  "--noconftest",
+                  "-o",
+                  "addopts=",
+                  "-p",
+                  "no:cacheprovider",
+                  "-q",
+                  "tests/test_aegis_probe.py",
+                  "-k",
+                  "randomized"
+                ],
+                "exit_code": 0,
+                "passed": true,
+                "timed_out": false,
+                "stdout": ".....                                                                    [100%]\n=============================== warnings summary ===============================\n../../../../../aegis-v15-okx-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636\n  /tmp/aegis-v15-okx-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636: PytestConfigWarning: Unknown config option: asyncio_default_fixture_loop_scope\n  \n    self._warn_or_fail_if_strict(f\"Unknown config option: {key}\\n\")\n\n../../../../../aegis-v15-okx-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636\n  /tmp/aegis-v15-okx-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636: PytestConfigWarning: Unknown config option: asyncio_mode\n  \n    self._warn_or_fail_if_strict(f\"Unknown config option: {key}\\n\")\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n5 passed, 3 deselected, 2 warnings in 5.10s\n",
+                "stderr": "",
+                "elapsed_sec": 6.743177
+              }
+            ],
+            "audit": {
+              "reviewer": "independent_static_semantic",
+              "passed": true,
+              "audited_files": [
+                "freqtrade/exchange/okx.py"
+              ],
+              "findings": [],
+              "invariant_guard": {
+                "passed": true,
+                "scanned_files": [
+                  "freqtrade/exchange/okx.py"
+                ],
+                "findings": []
+              }
+            },
+            "static_pass_rate": 1.0,
+            "dynamic_pass_rate": 1.0,
+            "mutation_probe_survival_rate": 1.0,
+            "audit_passed": true,
+            "complexity_delta": 5,
+            "token_cost": 306,
+            "elapsed_sec": 72.80963,
+            "objectives": {
+              "static": 1.0,
+              "dynamic": 1.0,
+              "mutation": 1.0,
+              "audit": 1.0,
+              "complexity": 0.6666666666666666,
+              "cost": 0.5303644560134247
+            },
+            "patch_sha256": "39a5c702e0e6bbf589ba4917e94161d0f2e514b85557df848b2f05e50d01d8b8",
+            "metadata": {},
+            "runtime_profile": {
+              "backend": "sys.monitoring+profile",
+              "profile_exit_code": 0,
+              "event_count": 6313,
+              "event_limit_reached": false,
+              "functions_observed": 187,
+              "call_edges_observed": 137,
+              "exceptions_observed": 4,
+              "impact_merge": {
+                "observed_edges": 137,
+                "merged_edges": 36,
+                "new_edges": 11
+              },
+              "impact_graph_metrics": {
+                "symbols": 4845,
+                "call_edges": 6902,
+                "reference_edges": 9877,
+                "unresolved_references": 770,
+                "files": 432,
+                "runtime_observed_edges": 137,
+                "runtime_merged_edges": 36,
+                "runtime_new_edges": 11
+              },
+              "semantic_runtime_overlay": {
+                "observed_call_edges": 137,
+                "resolved_dynamic_sites": [],
+                "dynamic_sites_resolved": 0
+              },
+              "semantic_metrics": {
+                "schema_count": 4530,
+                "fields": 4392,
+                "flows": 5747,
+                "contract_mismatches": 71,
+                "dynamic_sites": 33,
+                "resolved_dynamic_sites": 13,
+                "unresolved_dynamic_sites": 20,
+                "legacy_dynamic_unresolved_sites": 33,
+                "dynamic_unresolved_reduction_rate": 0.3939393939393939,
+                "legacy_unresolved_references": 770,
+                "dynamic_resolution_rate": 0.3939393939393939,
+                "dynamic_resolution_kinds": {
+                  "typed_field": 11,
+                  "unique_callable": 2
+                },
+                "decorators_recognized": 387,
+                "callbacks_recognized": 174,
+                "runtime_observed_call_edges": 137,
+                "runtime_resolved_dynamic_sites": 0,
+                "runtime_augmented_dynamic_resolution_rate": 0.3939393939393939,
+                "runtime_augmented_unresolved_reduction_rate": 0.3939393939393939
+              }
+            },
+            "pareto_optimal": true
+          }
+        ],
+        "grpo_pairs_exported": 0,
+        "grpo_dataset": null,
+        "isolation": {
+          "git_worktree_per_candidate": true,
+          "max_parallel": 1,
+          "main_worktree_changed": false
+        }
+      },
+      "experience_hints": []
+    }
+  ],
+  "rounds_attempted": 1,
+  "converged_round": 1,
+  "winner": {
+    "candidate_id": "guard-invalid-leverage",
+    "strategy": "validate finite positive leverage before division",
+    "patch": "diff --git a/freqtrade/exchange/okx.py b/freqtrade/exchange/okx.py\nindex 641a76098..41a900198 100644\n--- a/freqtrade/exchange/okx.py\n+++ b/freqtrade/exchange/okx.py\n@@ -1,4 +1,5 @@\n import logging\n+import math\n from datetime import timedelta\n \n import ccxt\n@@ -21,8 +22,16 @@ logger = logging.getLogger(__name__)\n \n \n def _max_stake_from_leverage(payload: dict) -> dict:\n-    \"\"\"Return the exchange notional divided by leverage.\"\"\"\n-    return {\"max_stake\": payload[\"max_notional\"] / payload[\"leverage\"]}\n+    \"\"\"Return a finite nonnegative stake cap for a valid leverage input.\"\"\"\n+    leverage = payload.get(\"leverage\")\n+    if isinstance(leverage, bool) or not isinstance(leverage, (int, float)) or not math.isfinite(leverage):\n+        raise ValueError(\"leverage must be a finite positive number\")\n+    if leverage <= 0:\n+        raise ValueError(\"leverage must be a finite positive number\")\n+    notional = payload.get(\"max_notional\")\n+    if isinstance(notional, bool) or not isinstance(notional, (int, float)) or not math.isfinite(notional):\n+        raise ValueError(\"max_notional must be a finite number\")\n+    return {\"max_stake\": notional / leverage}\n \n \n class Okx(Exchange):\n",
+    "patch_sha256": "39a5c702e0e6bbf589ba4917e94161d0f2e514b85557df848b2f05e50d01d8b8"
+  },
+  "diagnosis": null,
+  "experience_hints": [],
+  "time_travel_snapshot": {
+    "ticket_id": "phase15-okx-leverage-guard-v4",
+    "commit_oid": "b0554afb279118c48e77120982fb2ea324910a7b",
+    "archive_sha256": "548a0c288b64949a5942335845b7ba80886d739d19e000ec9a01907e7ccf4784",
+    "probe_sha256": "241080e78b0b6869d3639f1e53ac4c80a49c4c726a8830786d4a9825f8bdf0a6",
+    "candidate_patch_sha256": "39a5c702e0e6bbf589ba4917e94161d0f2e514b85557df848b2f05e50d01d8b8",
+    "mutation_seeds": [
+      15
+    ]
+  },
+  "learning": {
+    "verified_recoveries": 0,
+    "selected_model_traces": 0,
+    "selection_counts": {
+      "predictions_made": 0,
+      "no_prediction_count": 1,
+      "below_threshold_count": 0,
+      "unscored_count": 0,
+      "excluded_count": 0,
+      "above_threshold_count": 0,
+      "repair_attempt_count": 1,
+      "selection_limited_count": 0
+    },
+    "experience_ingest": {
+      "added": 0,
+      "experience_count": 0,
+      "version": 0,
+      "version_sha256": null
+    },
+    "experience_bank": {
+      "experience_count": 0,
+      "version": 0,
+      "version_sha256": null
+    },
+    "replayed_hints": [],
+    "grpo_dataset_sha256": null
+  },
+  "budget": {
+    "max_rounds": 1,
+    "max_total_tokens": 4000,
+    "tokens_used": 306,
+    "max_wall_clock_sec": 360,
+    "elapsed_sec": 102.512595
+  },
+  "ledger": {
+    "tickets": 1,
+    "statuses": {
+      "succeeded": 1
+    },
+    "traces": 3,
+    "terminal_tickets": 1,
+    "success_rate": 1.0,
+    "repair_attempts": 1,
+    "cheat_interceptions": 0,
+    "replay_interceptions": 0,
+    "mean_reward": 1.0
+  }
+}

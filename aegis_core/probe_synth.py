@@ -387,8 +387,16 @@ def test_aegis_structured_acceptance(case):
         return value
     expected_exception = case.get("exception")
     if expected_exception:
-        with pytest.raises(getattr(builtins, expected_exception)):
+        try:
             invoke()
+        except Exception as error:
+            expected_type = getattr(builtins, expected_exception)
+            if not isinstance(error, expected_type):
+                raise AssertionError(
+                    "AEGIS_ACCEPTANCE: expected " + expected_exception + ", got " + type(error).__name__
+                ) from error
+        else:
+            raise AssertionError("AEGIS_ACCEPTANCE: expected " + expected_exception + ", got no exception")
         return
     try:
         actual = invoke()

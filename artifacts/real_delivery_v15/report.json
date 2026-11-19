@@ -1,0 +1,224 @@
+{
+  "schema_version": "aegis.real_delivery.v15",
+  "campaign": "Phase 15 real business repository delivery",
+  "status": "local_regressions_and_business_gates_passed_ci_pending",
+  "default_branch_writes_issued": false,
+  "business_repositories": {
+    "okx-freqtrade-live": {
+      "branch": "feat/aegis-v15-delivery",
+      "head": "c2370e1deb3270703c640da8f78341f65b313658",
+      "commit": "c2370e1deb3270703c640da8f78341f65b313658",
+      "changed_files": [
+        "freqtrade/exchange/okx.py",
+        "tests/test_okx_leverage_guard_v15.py"
+      ],
+      "repair": "Reject boolean, nonnumeric, non-finite or non-positive leverage and non-finite notional before calculating the max stake cap.",
+      "verified_tests": {
+        "okx_exchange_and_v15_leverage": {
+          "passed": 32,
+          "failed": 0,
+          "elapsed_seconds": 97.41
+        }
+      },
+      "aegis_receipt": "okx_autopilot.json",
+      "runtime_profile": "runtime_profile_summary.json#okx_full_suite"
+    },
+    "pet-miniapp-backend": {
+      "branch": "feat/aegis-v15-delivery",
+      "head": "80a004a91722e8e96a741e6d652057f8df2f92dd",
+      "commit": "80a004a91722e8e96a741e6d652057f8df2f92dd",
+      "changed_files": [
+        "src/services/db.js",
+        "test/dbTransactionPostgres.integration.test.js"
+      ],
+      "repair": "Observe checked-out pg Client socket errors, discard broken clients, preserve the original transaction error and attach rollback failure detail.",
+      "verified_tests": {
+        "full_node_suite": {
+          "passed": 274,
+          "failed": 0,
+          "skipped": 1,
+          "total": 275
+        },
+        "postgres_fault_integration": {
+          "passed": 1,
+          "failed": 0
+        }
+      },
+      "aegis_receipt": "pet_backend_autopilot.json"
+    },
+    "pet-miniapp-frontend": {
+      "branch": "feat/aegis-v15-delivery",
+      "head": "16154611c316b2209dee36ae6991badad66b9af5",
+      "commit": "16154611c316b2209dee36ae6991badad66b9af5",
+      "changed_files": [
+        "package.json",
+        "scripts/aegis_frontend_probe.py",
+        "scripts/e2e/realBackendPostgres.mjs"
+      ],
+      "repairs": [
+        "Replace removed Node 24 --experimental-default-type option while preserving the existing test glob.",
+        "Add real frontend-to-PostgreSQL E2E flow for anonymous auth, pet create/list, journal write/read and reminder outbox sync/list."
+      ],
+      "verified_tests": {
+        "npm_test": {
+          "passed": 114,
+          "failed": 0,
+          "skipped": 0
+        },
+        "postgres_e2e": {
+          "passed": 1,
+          "failed": 0
+        }
+      },
+      "aegis_receipts": [
+        "pet_frontend_e2e_autopilot.json",
+        "pet_frontend_test_runner_autopilot.json"
+      ]
+    },
+    "pacer-recovery": {
+      "branch": "feat/aegis-v15-delivery",
+      "head": "73f50a7ee09742d0b2ea0c62041acae31c8e1d25",
+      "commit": "73f50a7ee09742d0b2ea0c62041acae31c8e1d25",
+      "changed_files": [
+        "src/visual_agent/managed_checkpoint.py",
+        "tests/test_phase15_checkpoint_transition.py"
+      ],
+      "repair": "Allow resume only from recognized in_progress or failed checkpoint states; reject unknown/corrupt states and completed work.",
+      "verified_tests": {
+        "checkpoint_suite": {
+          "passed": 38,
+          "failed": 0
+        }
+      },
+      "aegis_receipt": "pacer_autopilot.json"
+    }
+  },
+  "runtime_profile_comparison": {
+    "pr14_static_corpus": {
+      "dynamic_sites": 780,
+      "resolved": 90,
+      "unresolved": 690,
+      "resolution_rate": 0.11538461538461539
+    },
+    "runtime_profile_samples": {
+      "okx_full_suite": {
+        "source_profile_sha256": "f3613281e3f59712e4b0b693ae43c483da9a6e5cc76a8e701b9b679208b6ee82",
+        "backend": "sys.monitoring+profile",
+        "exit_code": 0,
+        "completed": true,
+        "timed_out": false,
+        "event_count": 50000,
+        "event_limit_reached": true,
+        "observed_functions": 486,
+        "dynamic_sites": 68,
+        "resolved_dynamic_sites": 18,
+        "unresolved_dynamic_sites": 50,
+        "runtime_resolved_dynamic_sites": 5,
+        "runtime_profiled_dynamic_sites": 7,
+        "runtime_profiled_dynamic_sites_resolved": 7,
+        "runtime_profiled_dynamic_resolution_rate": 1.0,
+        "runtime_augmented_dynamic_resolution_rate": 0.2647058823529412,
+        "runtime_observed_call_edges": 509,
+        "dynamic_resolution_kinds": {
+          "runtime_observed": 5,
+          "typed_field": 11,
+          "unique_callable": 2
+        }
+      },
+      "pacer_full_suite": {
+        "source_profile_sha256": "b4f6d63090970c7dd8540536bfd0fcde409d9159017ec479d475f5a6b93d29dc",
+        "backend": "sys.monitoring+profile",
+        "exit_code": 0,
+        "completed": true,
+        "timed_out": false,
+        "event_count": 7856,
+        "event_limit_reached": false,
+        "observed_functions": 123,
+        "dynamic_sites": 163,
+        "resolved_dynamic_sites": 23,
+        "unresolved_dynamic_sites": 140,
+        "runtime_resolved_dynamic_sites": 1,
+        "runtime_profiled_dynamic_sites": 1,
+        "runtime_profiled_dynamic_sites_resolved": 1,
+        "runtime_profiled_dynamic_resolution_rate": 1.0,
+        "runtime_augmented_dynamic_resolution_rate": 0.1411042944785276,
+        "runtime_observed_call_edges": 122,
+        "dynamic_resolution_kinds": {
+          "argparse_option": 21,
+          "runtime_observed": 1,
+          "typed_field": 1
+        }
+      }
+    },
+    "global_75_percent_target_met": false,
+    "limitation": "Runtime-profile denominators are sites observed in each executed test profile; they do not represent all 780 PR14 corpus sites. The OKX 50,000-event profile hit its event cap. The profile result is 100% only among the 7 OKX sites and 1 Pacer site observed at runtime; whole-repository augmented rates are 26.47% and 14.11%, respectively."
+  },
+  "training_release": {
+    "manifest": "datasets/release_v15_bundle_manifest.json",
+    "bundle_sha256": "a258cd031f13204eceeb0b40045c7878b3b5e72a855198cdb70cd0ed3901106a",
+    "tokenizer": {
+      "max_tokens": 4096,
+      "model_id": "Qwen/Qwen2.5-Coder-3B-Instruct",
+      "official_tokenizer": true,
+      "tokenizer_id": "Qwen/Qwen2.5-Coder-3B-Instruct",
+      "zero_truncation": true
+    },
+    "counts": {
+      "chosen_positive": 342,
+      "duplicate_experience_rows": 21,
+      "duplicate_sft_rows": 468,
+      "experience_rows_seen": 21,
+      "labeled_rollout_groups_paired": 264,
+      "labeled_rollout_rows_seen": 528,
+      "ledger_repair_attempts": 85,
+      "ledger_traces_seen": 381,
+      "ledger_verified_repair_examples": 24,
+      "preference_pairs": 342,
+      "rejected_negative": 342,
+      "sft_examples": 1462,
+      "sft_rows_seen": 1906,
+      "tournament_pairs_seen": 321,
+      "truncated_rows": 0
+    },
+    "token_length_distribution": {
+      "preference": {
+        "count": 342,
+        "max": 757,
+        "min": 103,
+        "p50": 413,
+        "p90": 646
+      },
+      "sft": {
+        "count": 1462,
+        "max": 2122,
+        "min": 86,
+        "p50": 1856,
+        "p90": 2037
+      }
+    },
+    "zero_truncation": true,
+    "verified_files": 10,
+    "sft_sha256": "8fb67693c7b693fa698dade551fe801f0e3e3e30b3f043a2c41384b60124dc4c",
+    "preference_sha256": "b5cab843e47c6f4ce22ee3a28d6db93e3d6027a04c9a82581bcc77ac4b065899"
+  },
+  "aegis_receipts": {
+    "OKX": "okx_autopilot.json",
+    "Pet backend": "pet_backend_autopilot.json",
+    "Pet frontend E2E": "pet_frontend_e2e_autopilot.json",
+    "Pet frontend npm test command": "pet_frontend_test_runner_autopilot.json",
+    "Pacer": "pacer_autopilot.json"
+  },
+  "raw_outputs": "stdout.txt",
+  "core_regression": {
+    "command": "PYTHONPATH=. /tmp/aegis-v15-env/bin/python -m pytest -q",
+    "collected": 1142,
+    "passed": 1142,
+    "failed": 0,
+    "baseline_preserved": 944,
+    "new_tests": 198,
+    "elapsed_seconds": 225.26,
+    "stdout": "core_full_regression.stdout",
+    "targeted_config_scope_tests": 7,
+    "config_scope_regression": "169 passed"
+  }
+}

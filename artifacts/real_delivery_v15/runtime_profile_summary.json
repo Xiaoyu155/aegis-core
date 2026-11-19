@@ -1,0 +1,50 @@
+{
+  "okx_full_suite": {
+    "source_profile_sha256": "f3613281e3f59712e4b0b693ae43c483da9a6e5cc76a8e701b9b679208b6ee82",
+    "backend": "sys.monitoring+profile",
+    "exit_code": 0,
+    "completed": true,
+    "timed_out": false,
+    "event_count": 50000,
+    "event_limit_reached": true,
+    "observed_functions": 486,
+    "dynamic_sites": 68,
+    "resolved_dynamic_sites": 18,
+    "unresolved_dynamic_sites": 50,
+    "runtime_resolved_dynamic_sites": 5,
+    "runtime_profiled_dynamic_sites": 7,
+    "runtime_profiled_dynamic_sites_resolved": 7,
+    "runtime_profiled_dynamic_resolution_rate": 1.0,
+    "runtime_augmented_dynamic_resolution_rate": 0.2647058823529412,
+    "runtime_observed_call_edges": 509,
+    "dynamic_resolution_kinds": {
+      "runtime_observed": 5,
+      "typed_field": 11,
+      "unique_callable": 2
+    }
+  },
+  "pacer_full_suite": {
+    "source_profile_sha256": "b4f6d63090970c7dd8540536bfd0fcde409d9159017ec479d475f5a6b93d29dc",
+    "backend": "sys.monitoring+profile",
+    "exit_code": 0,
+    "completed": true,
+    "timed_out": false,
+    "event_count": 7856,
+    "event_limit_reached": false,
+    "observed_functions": 123,
+    "dynamic_sites": 163,
+    "resolved_dynamic_sites": 23,
+    "unresolved_dynamic_sites": 140,
+    "runtime_resolved_dynamic_sites": 1,
+    "runtime_profiled_dynamic_sites": 1,
+    "runtime_profiled_dynamic_sites_resolved": 1,
+    "runtime_profiled_dynamic_resolution_rate": 1.0,
+    "runtime_augmented_dynamic_resolution_rate": 0.1411042944785276,
+    "runtime_observed_call_edges": 122,
+    "dynamic_resolution_kinds": {
+      "argparse_option": 21,
+      "runtime_observed": 1,
+      "typed_field": 1
+    }
+  }
+}
