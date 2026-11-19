@@ -1,0 +1,83 @@
+{
+  "schema_version": "aegis.cli.v1",
+  "ticket_id": "v14-batch-overseas-quant-system-2-batch-retry",
+  "repo_root": "/tmp/aegis-v14-mega-bfqqq2at/repos/overseas-quant-system",
+  "base_commit": "f7faac007e007d308908feaa130e9b07c15dc6fb",
+  "compilation": {
+    "kind": "CompiledContract",
+    "ticket_id": "v14-batch-overseas-quant-system-2-batch-retry",
+    "status": "COMPILED",
+    "target_files": [
+      "新架构设计/run_compare_comprehensive.py"
+    ],
+    "contract_stub": "def document_audited_contract() -> None:\n    ...",
+    "constraints": {}
+  },
+  "fail_before_cmd": [
+    "/tmp/aegis-v13-test-env/bin/python",
+    "-B",
+    "-c",
+    "from pathlib import Path; p=Path('新架构设计/run_compare_comprehensive.py'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_OVERSEAS-QUANT-SYSTEM_DEPENDENCY_HANDOFF' in s; compile(s, '新架构设计/run_compare_comprehensive.py', 'exec')"
+  ],
+  "pass_after_cmd": [
+    "/tmp/aegis-v13-test-env/bin/python",
+    "-B",
+    "-c",
+    "from pathlib import Path; p=Path('新架构设计/run_compare_comprehensive.py'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_OVERSEAS-QUANT-SYSTEM_DEPENDENCY_HANDOFF' in s; compile(s, '新架构设计/run_compare_comprehensive.py', 'exec')"
+  ],
+  "probe_kind": "unit",
+  "probe_script_sha256": {},
+  "source_dirs": [
+    "."
+  ],
+  "tool_source_globs": [
+    "**/tools/**/*.py",
+    "**/tools/**/*.js",
+    "**/tools/**/*.jsx",
+    "**/tools/**/*.cjs",
+    "**/tools/**/*.mjs",
+    "**/tools/**/*.ts",
+    "**/tools/**/*.tsx",
+    "**/tools/**/*.mts",
+    "**/tools/**/*.cts",
+    "**/tools/**/*.html",
+    "**/tools/**/*.htm",
+    "**/tools/**/*.css"
+  ],
+  "patches": [
+    "/tmp/aegis-v14-batch-retry/workorders/overseas-quant-system/v14-batch-overseas-quant-system-2-batch-retry.patch"
+  ],
+  "models_path": null,
+  "probe_patch": "",
+  "context": {
+    "target": "新架构设计.run_compare_comprehensive:gaussian_rank",
+    "items": [
+      {
+        "symbol": "新架构设计.run_compare_comprehensive:gaussian_rank",
+        "file": "新架构设计/run_compare_comprehensive.py",
+        "start_line": 78,
+        "end_line": 80,
+        "relation": "target",
+        "distance": 0,
+        "source": "def gaussian_rank(df_slice):\n    ranks = df_slice.rank(axis=1, pct=True, na_option=\"keep\").clip(1e-4, 1 - 1e-4)\n    return pd.DataFrame(norm.ppf(ranks), index=df_slice.index, columns=df_slice.columns)"
+      }
+    ],
+    "truncated": false,
+    "diagnostics": [
+      {
+        "file": "新架构设计/phase3_patchtst_model/train_with_class_weights.py",
+        "error": "SyntaxError"
+      },
+      {
+        "file": "项目档案/项目画布.html",
+        "error": "SourceTooLarge"
+      }
+    ],
+    "budget_unit": "utf8_bytes_upper_bound",
+    "token_upper_bound": 864
+  },
+  "allow_model": false,
+  "max_attempts": 3,
+  "timeout_sec": 120,
+  "contract_sha256": "601266430505c31f71310f8551c6fc69d3531bef2676efe65007fe22a16efaa0"
+}

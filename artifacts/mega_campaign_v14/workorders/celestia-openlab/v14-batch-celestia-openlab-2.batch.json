@@ -1,0 +1,180 @@
+{
+  "status": "succeeded",
+  "jobs": [
+    {
+      "id": "v14-batch-celestia-openlab-2",
+      "priority": 1,
+      "repo_root": "/tmp/aegis-v14-mega-ocjs05u7/repos/celestia-openlab",
+      "languages": {
+        "python": {
+          "files": 83,
+          "present": true
+        },
+        "javascript": {
+          "files": 0,
+          "present": false
+        },
+        "typescript": {
+          "files": 0,
+          "present": false
+        }
+      },
+      "result": {
+        "ticket_id": "v14-batch-celestia-openlab-2",
+        "status": "succeeded",
+        "reason": "gate_passed",
+        "attempts": 1,
+        "results": [
+          {
+            "baseline_failed": true,
+            "after_passed": true,
+            "passed": true,
+            "cheat_detected": false,
+            "changed_files": [
+              "tools/celestia_agent.py"
+            ],
+            "diff_lines": 1,
+            "repeated_patch": false,
+            "patch_sha256": "25e5786a5f749bb37a616a4095148f5b1d56bd09504723e6c15ed8bb3b7913fe",
+            "complexity": {
+              "level": "L1",
+              "tier": "L1_LOCAL_CAUSAL",
+              "impact_radius": 0,
+              "coupling": 0,
+              "impacted_files": [
+                "tools/celestia_agent.py"
+              ],
+              "risk_probability": null
+            },
+            "model_tier": null,
+            "probe_kind": "unit",
+            "probe_script_sha256": {},
+            "predicted_next_state": {
+              "outcome": "assertion_error",
+              "probabilities": {
+                "gate_passed": 0.007619898515384034,
+                "assertion_error": 0.8265268491291003,
+                "cheat_detected": 0.017999622905060932,
+                "replay_blocked": 0.009618400438750264,
+                "missing_constraint": 0.13823522901170435
+              },
+              "decision_source": "causal_world_net",
+              "high_risk_pre_block": false,
+              "pre_block_reason": null,
+              "changed_paths": [
+                "tools/celestia_agent.py"
+              ]
+            },
+            "predicted_reward": -0.25395600150185405,
+            "predicted_reward_interval": [
+              -0.8790025852009573,
+              0.3710905821972492
+            ],
+            "prediction_confidence": 0.8265268491291003,
+            "risk_probability": 0.186476716338403,
+            "world_model_version": "5c64ee2972cf103513d5a29ba6bb0bf61f0a6c621451618c292eb91f158ac8aa",
+            "baseline": {
+              "command": [
+                "/tmp/aegis-v13-test-env/bin/python",
+                "-B",
+                "-c",
+                "from pathlib import Path; p=Path('tools/celestia_agent.py'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_CELESTIA-OPENLAB_DEPENDENCY_HANDOFF' in s; compile(s, 'tools/celestia_agent.py', 'exec')"
+              ],
+              "exit_code": 1,
+              "stdout": "",
+              "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\nAssertionError\n",
+              "before_hash": "e6552d3b242db827395947db69fb9d60b412660236e3405d918502d00974d2e5",
+              "after_hash": "e6552d3b242db827395947db69fb9d60b412660236e3405d918502d00974d2e5",
+              "changed": false,
+              "reward": -1.0,
+              "passed": false,
+              "probe_kind": "unit",
+              "probe_script_sha256": {},
+              "probe_runtime_sha256": {},
+              "failure_code": "ASSERTION_FAILED",
+              "timed_out": false,
+              "timeout_killed": false,
+              "termination_reason": null,
+              "killed_process_group": false
+            },
+            "final": {
+              "command": [
+                "/tmp/aegis-v13-test-env/bin/python",
+                "-B",
+                "-c",
+                "from pathlib import Path; p=Path('tools/celestia_agent.py'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_CELESTIA-OPENLAB_DEPENDENCY_HANDOFF' in s; compile(s, 'tools/celestia_agent.py', 'exec')"
+              ],
+              "exit_code": 0,
+              "stdout": "",
+              "stderr": "",
+              "before_hash": "d3e182171fc60b42e8a19f516df4e1802b68dc85902133cba6ac8b74bef626b0",
+              "after_hash": "d3e182171fc60b42e8a19f516df4e1802b68dc85902133cba6ac8b74bef626b0",
+              "changed": false,
+              "reward": 1.0,
+              "passed": true,
+              "probe_kind": "unit",
+              "probe_script_sha256": {},
+              "probe_runtime_sha256": {},
+              "failure_code": null,
+              "timed_out": false,
+              "timeout_killed": false,
+              "termination_reason": null,
+              "killed_process_group": false
+            },
+            "timeout_killed": false,
+            "before_hash": "e6552d3b242db827395947db69fb9d60b412660236e3405d918502d00974d2e5",
+            "after_hash": "d3e182171fc60b42e8a19f516df4e1802b68dc85902133cba6ac8b74bef626b0",
+            "reward": 1.497110977208334,
+            "source_changed_lines": 1,
+            "protected_changed": [],
+            "termination_reason": null,
+            "elapsed_sec": 0.19179662200076564,
+            "world_model_outcome": "gate_passed",
+            "causal_prediction_error": {
+              "predicted_outcome": "assertion_error",
+              "actual_outcome": "gate_passed",
+              "state_mismatch": true,
+              "state_error": 1,
+              "reward_absolute_error": 1.75106697871,
+              "reward_interval_covered": false,
+              "composite_error": 2.75106697871
+            }
+          }
+        ],
+        "telemetry": {
+          "model_loaded": true,
+          "world_model_version": "5c64ee2972cf103513d5a29ba6bb0bf61f0a6c621451618c292eb91f158ac8aa",
+          "model_source": "bundled",
+          "model_mode": "observe",
+          "predictions_made": 1,
+          "no_prediction_count": 0,
+          "below_threshold_count": 0,
+          "scope": "repair_attempts"
+        },
+        "budget": {
+          "scope": "v14-batch-celestia-openlab-2:10cc690745f14fe18473916ba430c538",
+          "limits": {},
+          "token_consumption": 0,
+          "estimated_cost_usd": 0.0,
+          "estimated_usd_per_token": 1e-05,
+          "wall_clock_sec": 0.6039362190003885,
+          "reward": 1.497110977208334,
+          "reward_per_1000_tokens": null,
+          "reward_per_usd": null,
+          "halted_by": null
+        }
+      },
+      "status": "succeeded",
+      "exit_code": 0
+    }
+  ],
+  "passed": 1,
+  "failed": 0,
+  "budget": {
+    "token_consumption": 0,
+    "estimated_cost_usd": 0.0,
+    "reward": 1.497110977208334,
+    "wall_clock_sec": 0.6039362190003885,
+    "reward_per_usd": null
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "schema_version": "aegis.cli.v1",
+  "ticket_id": "v14-batch-pet-miniapp-frontend-1",
+  "repo_root": "/tmp/aegis-v14-mega-ocjs05u7/repos/pet-miniapp-frontend",
+  "base_commit": "b8719738e2f54c4f292fb78703a908dad076684f",
+  "compilation": {
+    "kind": "CompiledContract",
+    "ticket_id": "v14-batch-pet-miniapp-frontend-1",
+    "status": "COMPILED",
+    "target_files": [
+      "src/main.js"
+    ],
+    "contract_stub": "def document_audited_contract() -> None:\n    ...",
+    "constraints": {}
+  },
+  "fail_before_cmd": [
+    "/tmp/aegis-v13-test-env/bin/python",
+    "-B",
+    "-c",
+    "from pathlib import Path; p=Path('src/main.js'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_PET-MINIAPP-FRONTEND_DOC_CONTRACT' in s; assert len(s) > 0"
+  ],
+  "pass_after_cmd": [
+    "/tmp/aegis-v13-test-env/bin/python",
+    "-B",
+    "-c",
+    "from pathlib import Path; p=Path('src/main.js'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_PET-MINIAPP-FRONTEND_DOC_CONTRACT' in s; assert len(s) > 0"
+  ],
+  "probe_kind": "unit",
+  "probe_script_sha256": {},
+  "source_dirs": [
+    "."
+  ],
+  "tool_source_globs": [
+    "**/tools/**/*.py",
+    "**/tools/**/*.js",
+    "**/tools/**/*.jsx",
+    "**/tools/**/*.cjs",
+    "**/tools/**/*.mjs",
+    "**/tools/**/*.ts",
+    "**/tools/**/*.tsx",
+    "**/tools/**/*.mts",
+    "**/tools/**/*.cts",
+    "**/tools/**/*.html",
+    "**/tools/**/*.htm",
+    "**/tools/**/*.css"
+  ],
+  "patches": [
+    "/workspace/aegis-core/artifacts/mega_campaign_v14/workorders/pet-miniapp-frontend/v14-batch-pet-miniapp-frontend-1.patch"
+  ],
+  "models_path": null,
+  "probe_patch": "",
+  "context": {
+    "target": "src/main.js:createApp",
+    "items": [
+      {
+        "symbol": "src/main.js:createApp",
+        "file": "src/main.js",
+        "start_line": 5,
+        "end_line": 9,
+        "relation": "target",
+        "distance": 0,
+        "source": "export function createApp() {\n  const app = createSSRApp(App);\n  app.use(createPinia());\n  return { app };\n}"
+      }
+    ],
+    "truncated": false,
+    "diagnostics": [],
+    "budget_unit": "utf8_bytes_upper_bound",
+    "token_upper_bound": 413
+  },
+  "allow_model": false,
+  "max_attempts": 3,
+  "timeout_sec": 120,
+  "contract_sha256": "6acffb8066e0e948daafc001c548162ad1797bac7c5814e9d8374065bfd90a3e"
+}

@@ -1,0 +1,180 @@
+{
+  "status": "succeeded",
+  "jobs": [
+    {
+      "id": "v14-batch-promo-videos-2-batch-retry",
+      "priority": 1,
+      "repo_root": "/tmp/aegis-v14-mega-bfqqq2at/repos/promo-videos",
+      "languages": {
+        "python": {
+          "files": 46,
+          "present": true
+        },
+        "javascript": {
+          "files": 2,
+          "present": true
+        },
+        "typescript": {
+          "files": 0,
+          "present": false
+        }
+      },
+      "result": {
+        "ticket_id": "v14-batch-promo-videos-2-batch-retry",
+        "status": "succeeded",
+        "reason": "gate_passed",
+        "attempts": 1,
+        "results": [
+          {
+            "baseline_failed": true,
+            "after_passed": true,
+            "passed": true,
+            "cheat_detected": false,
+            "changed_files": [
+              "capture-prototype/capture.mjs"
+            ],
+            "diff_lines": 1,
+            "repeated_patch": false,
+            "patch_sha256": "62fd0c88e1ee2bdb9ca06de161941343ea255fe2a209097e38d53fe35325743a",
+            "complexity": {
+              "level": "L1",
+              "tier": "L1_LOCAL_CAUSAL",
+              "impact_radius": 0,
+              "coupling": 0,
+              "impacted_files": [
+                "capture-prototype/capture.mjs"
+              ],
+              "risk_probability": null
+            },
+            "model_tier": null,
+            "probe_kind": "unit",
+            "probe_script_sha256": {},
+            "predicted_next_state": {
+              "outcome": "assertion_error",
+              "probabilities": {
+                "gate_passed": 0.007517615305422977,
+                "assertion_error": 0.7792729438551911,
+                "cheat_detected": 0.0229781247425449,
+                "replay_blocked": 0.011789177168616004,
+                "missing_constraint": 0.17844213892822497
+              },
+              "decision_source": "causal_world_net",
+              "high_risk_pre_block": false,
+              "pre_block_reason": null,
+              "changed_paths": [
+                "capture-prototype/capture.mjs"
+              ]
+            },
+            "predicted_reward": -0.22898816078950623,
+            "predicted_reward_interval": [
+              -0.8540347444886095,
+              0.39605842290959703
+            ],
+            "prediction_confidence": 0.7792729438551911,
+            "risk_probability": 0.22788437490958516,
+            "world_model_version": "5c64ee2972cf103513d5a29ba6bb0bf61f0a6c621451618c292eb91f158ac8aa",
+            "baseline": {
+              "command": [
+                "/tmp/aegis-v13-test-env/bin/python",
+                "-B",
+                "-c",
+                "from pathlib import Path; p=Path('capture-prototype/capture.mjs'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_PROMO-VIDEOS_DEPENDENCY_HANDOFF' in s; assert len(s) > 0"
+              ],
+              "exit_code": 1,
+              "stdout": "",
+              "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\nAssertionError\n",
+              "before_hash": "54c47018421c9bd5c411e9e88fdeb27236ea614a4e6fcb4955dcda8aad597414",
+              "after_hash": "54c47018421c9bd5c411e9e88fdeb27236ea614a4e6fcb4955dcda8aad597414",
+              "changed": false,
+              "reward": -1.0,
+              "passed": false,
+              "probe_kind": "unit",
+              "probe_script_sha256": {},
+              "probe_runtime_sha256": {},
+              "failure_code": "ASSERTION_FAILED",
+              "timed_out": false,
+              "timeout_killed": false,
+              "termination_reason": null,
+              "killed_process_group": false
+            },
+            "final": {
+              "command": [
+                "/tmp/aegis-v13-test-env/bin/python",
+                "-B",
+                "-c",
+                "from pathlib import Path; p=Path('capture-prototype/capture.mjs'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_PROMO-VIDEOS_DEPENDENCY_HANDOFF' in s; assert len(s) > 0"
+              ],
+              "exit_code": 0,
+              "stdout": "",
+              "stderr": "",
+              "before_hash": "637f6300fb8c6b665e00f5db1b944e5ea31035ebc13d09a2a463c4e3b2a2aa17",
+              "after_hash": "637f6300fb8c6b665e00f5db1b944e5ea31035ebc13d09a2a463c4e3b2a2aa17",
+              "changed": false,
+              "reward": 1.0,
+              "passed": true,
+              "probe_kind": "unit",
+              "probe_script_sha256": {},
+              "probe_runtime_sha256": {},
+              "failure_code": null,
+              "timed_out": false,
+              "timeout_killed": false,
+              "termination_reason": null,
+              "killed_process_group": false
+            },
+            "timeout_killed": false,
+            "before_hash": "54c47018421c9bd5c411e9e88fdeb27236ea614a4e6fcb4955dcda8aad597414",
+            "after_hash": "637f6300fb8c6b665e00f5db1b944e5ea31035ebc13d09a2a463c4e3b2a2aa17",
+            "reward": 1.4971069869050007,
+            "source_changed_lines": 1,
+            "protected_changed": [],
+            "termination_reason": null,
+            "elapsed_sec": 0.20940633899954264,
+            "world_model_outcome": "gate_passed",
+            "causal_prediction_error": {
+              "predicted_outcome": "assertion_error",
+              "actual_outcome": "gate_passed",
+              "state_mismatch": true,
+              "state_error": 1,
+              "reward_absolute_error": 1.726095147695,
+              "reward_interval_covered": false,
+              "composite_error": 2.726095147695
+            }
+          }
+        ],
+        "telemetry": {
+          "model_loaded": true,
+          "world_model_version": "5c64ee2972cf103513d5a29ba6bb0bf61f0a6c621451618c292eb91f158ac8aa",
+          "model_source": "bundled",
+          "model_mode": "observe",
+          "predictions_made": 1,
+          "no_prediction_count": 0,
+          "below_threshold_count": 0,
+          "scope": "repair_attempts"
+        },
+        "budget": {
+          "scope": "v14-batch-promo-videos-2-batch-retry:69d5056012984b0db66050646530d99f",
+          "limits": {},
+          "token_consumption": 0,
+          "estimated_cost_usd": 0.0,
+          "estimated_usd_per_token": 1e-05,
+          "wall_clock_sec": 0.6140837599996303,
+          "reward": 1.4971069869050007,
+          "reward_per_1000_tokens": null,
+          "reward_per_usd": null,
+          "halted_by": null
+        }
+      },
+      "status": "succeeded",
+      "exit_code": 0
+    }
+  ],
+  "passed": 1,
+  "failed": 0,
+  "budget": {
+    "token_consumption": 0,
+    "estimated_cost_usd": 0.0,
+    "reward": 1.4971069869050007,
+    "wall_clock_sec": 0.6140837599996303,
+    "reward_per_usd": null
+  }
+}

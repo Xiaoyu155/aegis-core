@@ -1,0 +1,1299 @@
+{
+  "schema_version": "aegis.autopilot.v1",
+  "status": "succeeded",
+  "reason": "all_candidate_gates_passed",
+  "ticket_id": "v14-swarm-pacer-recovery",
+  "base_commit": "85ed84328b178f955f0cfc6e625c2336e266b0fe",
+  "phases": [
+    "contract",
+    "expand",
+    "synth_probe",
+    "tournament",
+    "mutation_probe",
+    "l3_audit",
+    "failure_diagnosis",
+    "multi_round_self_heal",
+    "online_replay_learn"
+  ],
+  "expanded_spec": {
+    "kind": "ExpandedSpec",
+    "status": "READY",
+    "intent": "Clamp the campaign contract value to the inclusive range [0, 10] in Xiaoyu155/pacer-recovery.",
+    "acceptance_criteria": [
+      {
+        "kind": "normal",
+        "expected": "At src/visual_agent/pacer_launch_context.py::rebind_completed_active_task, demonstrate the requested result for a representative valid input (Clamp the campaign contract value to the inclusive range [0, 10] in Xiaoyu155/pacer-recovery.)."
+      },
+      {
+        "kind": "boundary",
+        "expected": "At src/visual_agent/pacer_launch_context.py::rebind_completed_active_task, verify empty/minimum input and exercise both sides of each stated or existing limit."
+      },
+      {
+        "kind": "fallback",
+        "expected": "At src/visual_agent/pacer_launch_context.py::rebind_completed_active_task, verify malformed input or a failed dependency produces the expected error or safe recovery."
+      }
+    ],
+    "edge_cases": [
+      "Empty or minimum valid input",
+      "Invalid or malformed input",
+      "Repeated operation following a failed attempt"
+    ],
+    "engineering_invariants": [
+      "Preserve existing callable signatures and data shapes unless the requirement changes them.",
+      "Validate input before persisting a change and keep state consistent after a failed operation."
+    ],
+    "context": {
+      "target": "src.visual_agent.pacer_launch_context:rebind_completed_active_task",
+      "items": [
+        {
+          "symbol": "src.visual_agent.pacer_launch_context:rebind_completed_active_task",
+          "file": "src/visual_agent/pacer_launch_context.py",
+          "start_line": 919,
+          "end_line": 1032,
+          "relation": "target",
+          "distance": 0,
+          "source": "def rebind_completed_active_task(workspace_root: str | Path, *, launch_id: str, goal: str, reason: str='task_rollover') -> dict[str, Any]:\n    \"\"\"Start a new task slot inside a still-running native launch.\n\n    The task contract and source baseline are per-task evidence.  A new user\n    task may supersede an unfinished task in the same interactive window; the\n    old evidence is archived and remains explicitly non-completed.\n    \"\"\"\n    ..."
+        },
+        {
+          "symbol": "src.visual_agent.pacer_launch_context:_launch_state_transaction",
+          "file": "src/visual_agent/pacer_launch_context.py",
+          "start_line": 373,
+          "end_line": 385,
+          "relation": "callee",
+          "distance": 1,
+          "source": "def _launch_state_transaction(workspace_root: str | Path) -> Iterator[None]:\n    ..."
+        },
+        {
+          "symbol": "src.visual_agent.pacer_launch_context:_task_goal_digest",
+          "file": "src/visual_agent/pacer_launch_context.py",
+          "start_line": 1606,
+          "end_line": 1608,
+          "relation": "callee",
+          "distance": 1,
+          "source": "def _task_goal_digest(goal: str) -> str:\n    ..."
+        },
+        {
+          "symbol": "src.visual_agent.pacer_launch_context:_validated_launch_id",
+          "file": "src/visual_agent/pacer_launch_context.py",
+          "start_line": 361,
+          "end_line": 365,
+          "relation": "callee",
+          "distance": 1,
+          "source": "def _validated_launch_id(value: Any) -> str:\n    ..."
+        },
+        {
+          "symbol": "src.visual_agent.pacer_launch_context:_write_active_launch_unlocked",
+          "file": "src/visual_agent/pacer_launch_context.py",
+          "start_line": 637,
+          "end_line": 654,
+          "relation": "callee",
+          "distance": 1,
+          "source": "def _write_active_launch_unlocked(workspace: Path, payload: dict[str, Any], *, make_active: bool=False) -> None:\n    ..."
+        },
+        {
+          "symbol": "src.visual_agent.pacer_launch_context:read_active_launch",
+          "file": "src/visual_agent/pacer_launch_context.py",
+          "start_line": 542,
+          "end_line": 578,
+          "relation": "callee",
+          "distance": 1,
+          "source": "def read_active_launch(workspace_root: str | Path, *, launch_id: str='') -> dict[str, Any]:\n    ..."
+        },
+        {
+          "symbol": "src.visual_agent.pacer_launch_context:task_source_baseline_path",
+          "file": "src/visual_agent/pacer_launch_context.py",
+          "start_line": 1302,
+          "end_line": 1308,
+          "relation": "callee",
+          "distance": 1,
+          "source": "def task_source_baseline_path(workspace_root: str | Path, launch_id: str) -> Path:\n    ..."
+        },
+        {
+          "symbol": "src.visual_agent.pacer_launch_context:_workspace_thread_lock",
+          "file": "src/visual_agent/pacer_launch_context.py",
+          "start_line": 388,
+          "end_line": 391,
+          "relation": "callee",
+          "distance": 2,
+          "source": "def _workspace_thread_lock(workspace: Path) -> threading.RLock:\n    ..."
+        },
+        {
+          "symbol": "src.visual_agent.pacer_launch_context:_commit_orphaned_launch",
+          "file": "src/visual_agent/pacer_launch_context.py",
+          "start_line": 1999,
+          "end_line": 2043,
+          "relation": "caller",
+          "distance": 2,
+          "source": "def _commit_orphaned_launch(workspace_root: str | Path, launch: dict[str, Any], *, ended_at: str, orphaned_pid: int, status: str='orphaned') -> tuple[dict[str, Any], dict[str, Any]]:\n    ..."
+        },
+        {
+          "symbol": "src.visual_agent.pacer_launch_context:bind_active_project",
+          "file": "src/visual_agent/pacer_launch_context.py",
+          "start_line": 807,
+          "end_line": 875,
+          "relation": "caller",
+          "distance": 2,
+          "source": "def bind_active_project(*, workspace_root: str | Path, repo_root: str | Path, reason: str, launch_id: str='') -> dict[str, Any]:\n    ..."
+        }
+      ],
+      "truncated": true,
+      "diagnostics": [],
+      "budget_unit": "utf8_bytes_upper_bound",
+      "token_upper_bound": 3721,
+      "structured_probe": {
+        "kind": "numeric_bounds",
+        "path": "aegis_campaign_probe.py",
+        "symbol": "bounded",
+        "min": 0,
+        "max": 10,
+        "fallback": null,
+        "seed": 1419
+      },
+      "impact_summary": {
+        "changed_files": [
+          "aegis_campaign_probe.py"
+        ],
+        "token_count": 25,
+        "compression_ratio": 0.999961,
+        "critical_symbol_recall": 1.0,
+        "graph_metrics": {
+          "symbols": 3280,
+          "call_edges": 2722,
+          "reference_edges": 3027,
+          "unresolved_references": 166,
+          "files": 219
+        }
+      }
+    },
+    "experience": [],
+    "business_parameters": {},
+    "questions": []
+  },
+  "impact_context": {
+    "context": "[full_source aegis_campaign_probe.py:<file> aegis_campaign_probe.py distance=0 target]\ndef bounded(value):\n    return value\n",
+    "items": [
+      {
+        "symbol": "aegis_campaign_probe.py:<file>",
+        "file": "aegis_campaign_probe.py",
+        "distance": 0,
+        "direction": "target",
+        "representation": "full_source",
+        "text": "def bounded(value):\n    return value\n"
+      }
+    ],
+    "changed_files": [
+      "aegis_campaign_probe.py"
+    ],
+    "token_count": 25,
+    "max_context_tokens": 1200,
+    "naive_token_count": 647336,
+    "compression_ratio": 0.999961,
+    "critical_symbol_recall": 1.0,
+    "critical_symbol_count": 1,
+    "recalled_symbol_count": 1,
+    "omitted_symbols": [],
+    "graph_metrics": {
+      "symbols": 3280,
+      "call_edges": 2722,
+      "reference_edges": 3027,
+      "unresolved_references": 166,
+      "files": 219
+    },
+    "budget_unit": "lexical_tokens_v1"
+  },
+  "synthesized_probe": {
+    "case_count": 12,
+    "case_categories": {
+      "positive": 3,
+      "negative": 4,
+      "randomized": 5
+    },
+    "baseline_true_red": "ASSERTION_FAILED"
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "candidate_count": 2,
+      "winner": null,
+      "accepted_count": 0,
+      "pareto_front": [],
+      "token_spend": 115,
+      "elapsed_sec": 25.861189,
+      "tournament": {
+        "schema_version": "aegis.tournament.v1",
+        "base_commit": "85ed84328b178f955f0cfc6e625c2336e266b0fe",
+        "candidate_count": 2,
+        "accepted_count": 0,
+        "winner": null,
+        "pareto_front": [],
+        "evaluations": [
+          {
+            "candidate_id": "bait_constant",
+            "strategy": "constant shortcut that ignores input",
+            "accepted": false,
+            "score": 0.44348211,
+            "changed_files": [
+              "aegis_campaign_probe.py"
+            ],
+            "static": [
+              {
+                "command": [
+                  "git",
+                  "diff",
+                  "--check"
+                ],
+                "exit_code": 0,
+                "passed": true,
+                "timed_out": false,
+                "stdout": "",
+                "stderr": "",
+                "elapsed_sec": 0.027703
+              },
+              {
+                "command": [
+                  "/tmp/aegis-v13-test-env/bin/python",
+                  "-B",
+                  "-m",
+                  "py_compile",
+                  "aegis_campaign_probe.py"
+                ],
+                "exit_code": 0,
+                "passed": true,
+                "timed_out": false,
+                "stdout": "",
+                "stderr": "",
+                "elapsed_sec": 0.409331
+              }
+            ],
+            "dynamic": [
+              {
+                "command": [
+                  "/tmp/aegis-v13-test-env/bin/python",
+                  "-B",
+                  "-m",
+                  "pytest",
+                  "-p",
+                  "no:cacheprovider",
+                  "-q",
+                  "tests/test_aegis_probe.py"
+                ],
+                "exit_code": 1,
+                "passed": false,
+                "timed_out": false,
+                "stdout": "xpected\")\n>           assert type(actual) is type(expected) and actual == expected, \"AEGIS_ACCEPTANCE: contract mismatch\"\nE           AssertionError: AEGIS_ACCEPTANCE: contract mismatch\nE           assert (<class 'int'> is <class 'int'> and 99 == 0)\nE            +  where <class 'int'> = type(99)\nE            +  and   <class 'int'> = type(0)\n\ntests/test_aegis_probe.py:73: AssertionError\n________________ test_aegis_structured_acceptance[randomized_4] ________________\n\ncase = {'label': 'randomized_4', 'args': [-3], 'expected': 0}\n\n    @pytest.mark.parametrize(\"case\", CASES, ids=[case[\"label\"] for case in CASES])\n    def test_aegis_structured_acceptance(case):\n        args = case[\"args\"]\n        def invoke():\n            value = target(*args)\n            if case.get(\"async_timeout_ms\") is not None:\n                if not hasattr(value, \"__await__\"):\n                    raise TypeError(\"async contract requires an awaitable result\")\n                return asyncio.run(asyncio.wait_for(value, timeout=case[\"async_timeout_ms\"] / 1000))\n            return value\n        expected_exception = case.get(\"exception\")\n        if expected_exception:\n            with pytest.raises(getattr(builtins, expected_exception)):\n                invoke()\n            return\n        try:\n            actual = invoke()\n            for _ in range(max(1, case.get(\"repeats\", 1) - 1)):\n                replay = invoke()\n                assert type(replay) is type(actual) and replay == actual, \"AEGIS_ACCEPTANCE: replay changed result\"\n        except asyncio.TimeoutError as error:\n            raise AssertionError(\"AEGIS_ACCEPTANCE: async fallback was not returned\") from error\n        if case.get(\"input_schema\") is not None:\n            assert args and _schema_matches(args[0], case[\"input_schema\"]), \"AEGIS_ACCEPTANCE: invalid input accepted\"\n        if case.get(\"return_schema\") is not None:\n            assert _schema_matches(actual, case[\"return_schema\"]), \"AEGIS_ACCEPTANCE: return schema mismatch\"\n        else:\n            expected = case.get(\"expected\")\n>           assert type(actual) is type(expected) and actual == expected, \"AEGIS_ACCEPTANCE: contract mismatch\"\nE           AssertionError: AEGIS_ACCEPTANCE: contract mismatch\nE           assert (<class 'int'> is <class 'int'> and 99 == 0)\nE            +  where <class 'int'> = type(99)\nE            +  and   <class 'int'> = type(0)\n\ntests/test_aegis_probe.py:73: AssertionError\n=============================== warnings summary ===============================\n../../../../../../aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636\n  /tmp/aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636: PytestConfigWarning: Unknown config option: cache_dir\n  \n    self._warn_or_fail_if_strict(f\"Unknown config option: {key}\\n\")\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n=========================== short test summary info ============================\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[positive_low]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[positive_high]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_underflow]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_overflow]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_type]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_fraction]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[positive_midpoint]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_0]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_1]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_2]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_3]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_4]\n12 failed, 1 warning in 0.81s\n",
+                "stderr": "",
+                "elapsed_sec": 3.770879
+              }
+            ],
+            "mutation": [
+              {
+                "command": [
+                  "/tmp/aegis-v13-test-env/bin/python",
+                  "-B",
+                  "-m",
+                  "pytest",
+                  "-p",
+                  "no:cacheprovider",
+                  "-q",
+                  "tests/test_aegis_probe.py",
+                  "-k",
+                  "randomized"
+                ],
+                "exit_code": 1,
+                "passed": false,
+                "timed_out": false,
+                "stdout": "play == actual, \"AEGIS_ACCEPTANCE: replay changed result\"\n        except asyncio.TimeoutError as error:\n            raise AssertionError(\"AEGIS_ACCEPTANCE: async fallback was not returned\") from error\n        if case.get(\"input_schema\") is not None:\n            assert args and _schema_matches(args[0], case[\"input_schema\"]), \"AEGIS_ACCEPTANCE: invalid input accepted\"\n        if case.get(\"return_schema\") is not None:\n            assert _schema_matches(actual, case[\"return_schema\"]), \"AEGIS_ACCEPTANCE: return schema mismatch\"\n        else:\n            expected = case.get(\"expected\")\n>           assert type(actual) is type(expected) and actual == expected, \"AEGIS_ACCEPTANCE: contract mismatch\"\nE           AssertionError: AEGIS_ACCEPTANCE: contract mismatch\nE           assert (<class 'int'> is <class 'int'> and 99 == 0)\nE            +  where <class 'int'> = type(99)\nE            +  and   <class 'int'> = type(0)\n\ntests/test_aegis_probe.py:73: AssertionError\n________________ test_aegis_structured_acceptance[randomized_4] ________________\n\ncase = {'label': 'randomized_4', 'args': [-3], 'expected': 0}\n\n    @pytest.mark.parametrize(\"case\", CASES, ids=[case[\"label\"] for case in CASES])\n    def test_aegis_structured_acceptance(case):\n        args = case[\"args\"]\n        def invoke():\n            value = target(*args)\n            if case.get(\"async_timeout_ms\") is not None:\n                if not hasattr(value, \"__await__\"):\n                    raise TypeError(\"async contract requires an awaitable result\")\n                return asyncio.run(asyncio.wait_for(value, timeout=case[\"async_timeout_ms\"] / 1000))\n            return value\n        expected_exception = case.get(\"exception\")\n        if expected_exception:\n            with pytest.raises(getattr(builtins, expected_exception)):\n                invoke()\n            return\n        try:\n            actual = invoke()\n            for _ in range(max(1, case.get(\"repeats\", 1) - 1)):\n                replay = invoke()\n                assert type(replay) is type(actual) and replay == actual, \"AEGIS_ACCEPTANCE: replay changed result\"\n        except asyncio.TimeoutError as error:\n            raise AssertionError(\"AEGIS_ACCEPTANCE: async fallback was not returned\") from error\n        if case.get(\"input_schema\") is not None:\n            assert args and _schema_matches(args[0], case[\"input_schema\"]), \"AEGIS_ACCEPTANCE: invalid input accepted\"\n        if case.get(\"return_schema\") is not None:\n            assert _schema_matches(actual, case[\"return_schema\"]), \"AEGIS_ACCEPTANCE: return schema mismatch\"\n        else:\n            expected = case.get(\"expected\")\n>           assert type(actual) is type(expected) and actual == expected, \"AEGIS_ACCEPTANCE: contract mismatch\"\nE           AssertionError: AEGIS_ACCEPTANCE: contract mismatch\nE           assert (<class 'int'> is <class 'int'> and 99 == 0)\nE            +  where <class 'int'> = type(99)\nE            +  and   <class 'int'> = type(0)\n\ntests/test_aegis_probe.py:73: AssertionError\n=============================== warnings summary ===============================\n../../../../../../aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636\n  /tmp/aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636: PytestConfigWarning: Unknown config option: cache_dir\n  \n    self._warn_or_fail_if_strict(f\"Unknown config option: {key}\\n\")\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n=========================== short test summary info ============================\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_0]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_1]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_2]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_3]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_4]\n5 failed, 7 deselected, 1 warning in 0.17s\n",
+                "stderr": "",
+                "elapsed_sec": 2.644747
+              }
+            ],
+            "audit": {
+              "reviewer": "independent_static_semantic",
+              "passed": true,
+              "audited_files": [
+                "aegis_campaign_probe.py"
+              ],
+              "findings": []
+            },
+            "static_pass_rate": 1.0,
+            "dynamic_pass_rate": 0.0,
+            "mutation_probe_survival_rate": 0.0,
+            "audit_passed": true,
+            "complexity_delta": 0,
+            "token_cost": 54,
+            "elapsed_sec": 7.049205,
+            "objectives": {
+              "static": 1.0,
+              "dynamic": 0.0,
+              "mutation": 0.0,
+              "audit": 1.0,
+              "complexity": 1.0,
+              "cost": 0.6741056557888776
+            },
+            "patch_sha256": "6e9e1a1adeca8f717a98153419ba43e022a5f6a061869da457757525011127dc",
+            "metadata": {},
+            "pareto_optimal": false
+          },
+          {
+            "candidate_id": "broken_signature",
+            "strategy": "remove a required parameter",
+            "accepted": false,
+            "score": 0.44419912,
+            "changed_files": [
+              "aegis_campaign_probe.py"
+            ],
+            "static": [
+              {
+                "command": [
+                  "git",
+                  "diff",
+                  "--check"
+                ],
+                "exit_code": 0,
+                "passed": true,
+                "timed_out": false,
+                "stdout": "",
+                "stderr": "",
+                "elapsed_sec": 0.019969
+              },
+              {
+                "command": [
+                  "/tmp/aegis-v13-test-env/bin/python",
+                  "-B",
+                  "-m",
+                  "py_compile",
+                  "aegis_campaign_probe.py"
+                ],
+                "exit_code": 0,
+                "passed": true,
+                "timed_out": false,
+                "stdout": "",
+                "stderr": "",
+                "elapsed_sec": 0.409847
+              }
+            ],
+            "dynamic": [
+              {
+                "command": [
+                  "/tmp/aegis-v13-test-env/bin/python",
+                  "-B",
+                  "-m",
+                  "pytest",
+                  "-p",
+                  "no:cacheprovider",
+                  "-q",
+                  "tests/test_aegis_probe.py"
+                ],
+                "exit_code": 1,
+                "passed": false,
+                "timed_out": false,
+                "stdout": "\ncase = {'label': 'randomized_3', 'args': [-8], 'expected': 0}\n\n    @pytest.mark.parametrize(\"case\", CASES, ids=[case[\"label\"] for case in CASES])\n    def test_aegis_structured_acceptance(case):\n        args = case[\"args\"]\n        def invoke():\n            value = target(*args)\n            if case.get(\"async_timeout_ms\") is not None:\n                if not hasattr(value, \"__await__\"):\n                    raise TypeError(\"async contract requires an awaitable result\")\n                return asyncio.run(asyncio.wait_for(value, timeout=case[\"async_timeout_ms\"] / 1000))\n            return value\n        expected_exception = case.get(\"exception\")\n        if expected_exception:\n            with pytest.raises(getattr(builtins, expected_exception)):\n                invoke()\n            return\n        try:\n>           actual = invoke()\n                     ^^^^^^^^\n\ntests/test_aegis_probe.py:61: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\n    def invoke():\n>       value = target(*args)\n                ^^^^^^^^^^^^^\nE       TypeError: bounded() takes 0 positional arguments but 1 was given\n\ntests/test_aegis_probe.py:49: TypeError\n________________ test_aegis_structured_acceptance[randomized_4] ________________\n\ncase = {'label': 'randomized_4', 'args': [-3], 'expected': 0}\n\n    @pytest.mark.parametrize(\"case\", CASES, ids=[case[\"label\"] for case in CASES])\n    def test_aegis_structured_acceptance(case):\n        args = case[\"args\"]\n        def invoke():\n            value = target(*args)\n            if case.get(\"async_timeout_ms\") is not None:\n                if not hasattr(value, \"__await__\"):\n                    raise TypeError(\"async contract requires an awaitable result\")\n                return asyncio.run(asyncio.wait_for(value, timeout=case[\"async_timeout_ms\"] / 1000))\n            return value\n        expected_exception = case.get(\"exception\")\n        if expected_exception:\n            with pytest.raises(getattr(builtins, expected_exception)):\n                invoke()\n            return\n        try:\n>           actual = invoke()\n                     ^^^^^^^^\n\ntests/test_aegis_probe.py:61: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\n    def invoke():\n>       value = target(*args)\n                ^^^^^^^^^^^^^\nE       TypeError: bounded() takes 0 positional arguments but 1 was given\n\ntests/test_aegis_probe.py:49: TypeError\n=============================== warnings summary ===============================\n../../../../../../aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636\n  /tmp/aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636: PytestConfigWarning: Unknown config option: cache_dir\n  \n    self._warn_or_fail_if_strict(f\"Unknown config option: {key}\\n\")\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n=========================== short test summary info ============================\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[positive_low]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[positive_high]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_underflow]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_overflow]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_type]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_fraction]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[positive_midpoint]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_0]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_1]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_2]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_3]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_4]\n12 failed, 1 warning in 0.22s\n",
+                "stderr": "",
+                "elapsed_sec": 2.385766
+              }
+            ],
+            "mutation": [
+              {
+                "command": [
+                  "/tmp/aegis-v13-test-env/bin/python",
+                  "-B",
+                  "-m",
+                  "pytest",
+                  "-p",
+                  "no:cacheprovider",
+                  "-q",
+                  "tests/test_aegis_probe.py",
+                  "-k",
+                  "randomized"
+                ],
+                "exit_code": 1,
+                "passed": false,
+                "timed_out": false,
+                "stdout": "\n            with pytest.raises(getattr(builtins, expected_exception)):\n                invoke()\n            return\n        try:\n>           actual = invoke()\n                     ^^^^^^^^\n\ntests/test_aegis_probe.py:61: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\n    def invoke():\n>       value = target(*args)\n                ^^^^^^^^^^^^^\nE       TypeError: bounded() takes 0 positional arguments but 1 was given\n\ntests/test_aegis_probe.py:49: TypeError\n________________ test_aegis_structured_acceptance[randomized_3] ________________\n\ncase = {'label': 'randomized_3', 'args': [-8], 'expected': 0}\n\n    @pytest.mark.parametrize(\"case\", CASES, ids=[case[\"label\"] for case in CASES])\n    def test_aegis_structured_acceptance(case):\n        args = case[\"args\"]\n        def invoke():\n            value = target(*args)\n            if case.get(\"async_timeout_ms\") is not None:\n                if not hasattr(value, \"__await__\"):\n                    raise TypeError(\"async contract requires an awaitable result\")\n                return asyncio.run(asyncio.wait_for(value, timeout=case[\"async_timeout_ms\"] / 1000))\n            return value\n        expected_exception = case.get(\"exception\")\n        if expected_exception:\n            with pytest.raises(getattr(builtins, expected_exception)):\n                invoke()\n            return\n        try:\n>           actual = invoke()\n                     ^^^^^^^^\n\ntests/test_aegis_probe.py:61: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\n    def invoke():\n>       value = target(*args)\n                ^^^^^^^^^^^^^\nE       TypeError: bounded() takes 0 positional arguments but 1 was given\n\ntests/test_aegis_probe.py:49: TypeError\n________________ test_aegis_structured_acceptance[randomized_4] ________________\n\ncase = {'label': 'randomized_4', 'args': [-3], 'expected': 0}\n\n    @pytest.mark.parametrize(\"case\", CASES, ids=[case[\"label\"] for case in CASES])\n    def test_aegis_structured_acceptance(case):\n        args = case[\"args\"]\n        def invoke():\n            value = target(*args)\n            if case.get(\"async_timeout_ms\") is not None:\n                if not hasattr(value, \"__await__\"):\n                    raise TypeError(\"async contract requires an awaitable result\")\n                return asyncio.run(asyncio.wait_for(value, timeout=case[\"async_timeout_ms\"] / 1000))\n            return value\n        expected_exception = case.get(\"exception\")\n        if expected_exception:\n            with pytest.raises(getattr(builtins, expected_exception)):\n                invoke()\n            return\n        try:\n>           actual = invoke()\n                     ^^^^^^^^\n\ntests/test_aegis_probe.py:61: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\n    def invoke():\n>       value = target(*args)\n                ^^^^^^^^^^^^^\nE       TypeError: bounded() takes 0 positional arguments but 1 was given\n\ntests/test_aegis_probe.py:49: TypeError\n=============================== warnings summary ===============================\n../../../../../../aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636\n  /tmp/aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636: PytestConfigWarning: Unknown config option: cache_dir\n  \n    self._warn_or_fail_if_strict(f\"Unknown config option: {key}\\n\")\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n=========================== short test summary info ============================\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_0]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_1]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_2]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_3]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_4]\n5 failed, 7 deselected, 1 warning in 0.58s\n",
+                "stderr": "",
+                "elapsed_sec": 2.81157
+              }
+            ],
+            "audit": {
+              "reviewer": "independent_static_semantic",
+              "passed": true,
+              "audited_files": [
+                "aegis_campaign_probe.py"
+              ],
+              "findings": []
+            },
+            "static_pass_rate": 1.0,
+            "dynamic_pass_rate": 0.0,
+            "mutation_probe_survival_rate": 0.0,
+            "audit_passed": true,
+            "complexity_delta": 0,
+            "token_cost": 61,
+            "elapsed_sec": 5.899322,
+            "objectives": {
+              "static": 1.0,
+              "dynamic": 0.0,
+              "mutation": 0.0,
+              "audit": 1.0,
+              "complexity": 1.0,
+              "cost": 0.7099559143324056
+            },
+            "patch_sha256": "d0b316ee1b9ea27133ab30e0a9e8fdd8340750080aa23140e4cebcefcad5d0b5",
+            "metadata": {},
+            "pareto_optimal": false
+          }
+        ],
+        "grpo_pairs_exported": 0,
+        "grpo_dataset": null,
+        "isolation": {
+          "git_worktree_per_candidate": true,
+          "max_parallel": 2,
+          "main_worktree_changed": false
+        }
+      },
+      "experience_hints": [
+        {
+          "experience_id": 66,
+          "version": 11,
+          "source_kind": "verified_recovery",
+          "trace_id": 275,
+          "surprise": 0.0,
+          "pattern": "aegis_campaign_probe.py DYNAMIC_PROBE_FAILED unit verified recovery",
+          "outcome": "gate_passed",
+          "cause": "DYNAMIC_PROBE_FAILED",
+          "resolution": "dual_probe_recovered:276",
+          "human_rule": {},
+          "similarity": 0.095238
+        },
+        {
+          "experience_id": 55,
+          "version": 10,
+          "source_kind": "verified_recovery",
+          "trace_id": 270,
+          "surprise": 0.0,
+          "pattern": "aegis_campaign_probe.py DYNAMIC_PROBE_FAILED unit verified recovery",
+          "outcome": "gate_passed",
+          "cause": "DYNAMIC_PROBE_FAILED",
+          "resolution": "dual_probe_recovered:274",
+          "human_rule": {},
+          "similarity": 0.095238
+        },
+        {
+          "experience_id": 45,
+          "version": 9,
+          "source_kind": "verified_recovery",
+          "trace_id": 269,
+          "surprise": 0.0,
+          "pattern": "aegis_campaign_probe.py DYNAMIC_PROBE_FAILED unit verified recovery",
+          "outcome": "gate_passed",
+          "cause": "DYNAMIC_PROBE_FAILED",
+          "resolution": "dual_probe_recovered:271",
+          "human_rule": {},
+          "similarity": 0.095238
+        },
+        {
+          "experience_id": 36,
+          "version": 8,
+          "source_kind": "verified_recovery",
+          "trace_id": 263,
+          "surprise": 0.0,
+          "pattern": "aegis_campaign_probe.py DYNAMIC_PROBE_FAILED unit verified recovery",
+          "outcome": "gate_passed",
+          "cause": "DYNAMIC_PROBE_FAILED",
+          "resolution": "dual_probe_recovered:264",
+          "human_rule": {},
+          "similarity": 0.095238
+        },
+        {
+          "experience_id": 28,
+          "version": 7,
+          "source_kind": "verified_recovery",
+          "trace_id": 259,
+          "surprise": 0.0,
+          "pattern": "aegis_campaign_probe.py DYNAMIC_PROBE_FAILED unit verified recovery",
+          "outcome": "gate_passed",
+          "cause": "DYNAMIC_PROBE_FAILED",
+          "resolution": "dual_probe_recovered:260",
+          "human_rule": {},
+          "similarity": 0.095238
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "candidate_count": 2,
+      "winner": "conservative_repair",
+      "accepted_count": 1,
+      "pareto_front": [
+        "conservative_repair"
+      ],
+      "token_spend": 156,
+      "elapsed_sec": 32.52108,
+      "tournament": {
+        "schema_version": "aegis.tournament.v1",
+        "base_commit": "85ed84328b178f955f0cfc6e625c2336e266b0fe",
+        "candidate_count": 2,
+        "accepted_count": 1,
+        "winner": "conservative_repair",
+        "pareto_front": [
+          "conservative_repair"
+        ],
+        "evaluations": [
+          {
+            "candidate_id": "conservative_repair",
+            "strategy": "type-safe inclusive clamp with None fallback",
+            "accepted": true,
+            "score": 0.99127182,
+            "changed_files": [
+              "aegis_campaign_probe.py"
+            ],
+            "static": [
+              {
+                "command": [
+                  "git",
+                  "diff",
+                  "--check"
+                ],
+                "exit_code": 0,
+                "passed": true,
+                "timed_out": false,
+                "stdout": "",
+                "stderr": "",
+                "elapsed_sec": 0.043215
+              },
+              {
+                "command": [
+                  "/tmp/aegis-v13-test-env/bin/python",
+                  "-B",
+                  "-m",
+                  "py_compile",
+                  "aegis_campaign_probe.py"
+                ],
+                "exit_code": 0,
+                "passed": true,
+                "timed_out": false,
+                "stdout": "",
+                "stderr": "",
+                "elapsed_sec": 0.317363
+              }
+            ],
+            "dynamic": [
+              {
+                "command": [
+                  "/tmp/aegis-v13-test-env/bin/python",
+                  "-B",
+                  "-m",
+                  "pytest",
+                  "-p",
+                  "no:cacheprovider",
+                  "-q",
+                  "tests/test_aegis_probe.py"
+                ],
+                "exit_code": 0,
+                "passed": true,
+                "timed_out": false,
+                "stdout": "............                                                             [100%]\n=============================== warnings summary ===============================\n../../../../../../aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636\n  /tmp/aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636: PytestConfigWarning: Unknown config option: cache_dir\n  \n    self._warn_or_fail_if_strict(f\"Unknown config option: {key}\\n\")\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n12 passed, 1 warning in 0.20s\n",
+                "stderr": "",
+                "elapsed_sec": 2.147616
+              }
+            ],
+            "mutation": [
+              {
+                "command": [
+                  "/tmp/aegis-v13-test-env/bin/python",
+                  "-B",
+                  "-m",
+                  "pytest",
+                  "-p",
+                  "no:cacheprovider",
+                  "-q",
+                  "tests/test_aegis_probe.py",
+                  "-k",
+                  "randomized"
+                ],
+                "exit_code": 0,
+                "passed": true,
+                "timed_out": false,
+                "stdout": ".....                                                                    [100%]\n=============================== warnings summary ===============================\n../../../../../../aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636\n  /tmp/aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636: PytestConfigWarning: Unknown config option: cache_dir\n  \n    self._warn_or_fail_if_strict(f\"Unknown config option: {key}\\n\")\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n5 passed, 7 deselected, 1 warning in 0.34s\n",
+                "stderr": "",
+                "elapsed_sec": 3.272341
+              }
+            ],
+            "audit": {
+              "reviewer": "independent_static_semantic",
+              "passed": true,
+              "audited_files": [
+                "aegis_campaign_probe.py"
+              ],
+              "findings": []
+            },
+            "static_pass_rate": 1.0,
+            "dynamic_pass_rate": 1.0,
+            "mutation_probe_survival_rate": 1.0,
+            "audit_passed": true,
+            "complexity_delta": 1,
+            "token_cost": 77,
+            "elapsed_sec": 6.141216,
+            "objectives": {
+              "static": 1.0,
+              "dynamic": 1.0,
+              "mutation": 1.0,
+              "audit": 1.0,
+              "complexity": 0.9090909090909091,
+              "cost": 0.6999544361532837
+            },
+            "patch_sha256": "d27875be664a5f0da1d0979ba33b98fb4d6793adc90e5e1e5d9e18bfee8705b3",
+            "metadata": {},
+            "pareto_optimal": true
+          },
+          {
+            "candidate_id": "off_by_one",
+            "strategy": "plausible but incorrect upper/lower value shift",
+            "accepted": false,
+            "score": 0.44094253,
+            "changed_files": [
+              "aegis_campaign_probe.py"
+            ],
+            "static": [
+              {
+                "command": [
+                  "git",
+                  "diff",
+                  "--check"
+                ],
+                "exit_code": 0,
+                "passed": true,
+                "timed_out": false,
+                "stdout": "",
+                "stderr": "",
+                "elapsed_sec": 0.017409
+              },
+              {
+                "command": [
+                  "/tmp/aegis-v13-test-env/bin/python",
+                  "-B",
+                  "-m",
+                  "py_compile",
+                  "aegis_campaign_probe.py"
+                ],
+                "exit_code": 0,
+                "passed": true,
+                "timed_out": false,
+                "stdout": "",
+                "stderr": "",
+                "elapsed_sec": 0.501343
+              }
+            ],
+            "dynamic": [
+              {
+                "command": [
+                  "/tmp/aegis-v13-test-env/bin/python",
+                  "-B",
+                  "-m",
+                  "pytest",
+                  "-p",
+                  "no:cacheprovider",
+                  "-q",
+                  "tests/test_aegis_probe.py"
+                ],
+                "exit_code": 1,
+                "passed": false,
+                "timed_out": false,
+                "stdout": " invoke()\n            for _ in range(max(1, case.get(\"repeats\", 1) - 1)):\n                replay = invoke()\n                assert type(replay) is type(actual) and replay == actual, \"AEGIS_ACCEPTANCE: replay changed result\"\n        except asyncio.TimeoutError as error:\n            raise AssertionError(\"AEGIS_ACCEPTANCE: async fallback was not returned\") from error\n        if case.get(\"input_schema\") is not None:\n            assert args and _schema_matches(args[0], case[\"input_schema\"]), \"AEGIS_ACCEPTANCE: invalid input accepted\"\n        if case.get(\"return_schema\") is not None:\n            assert _schema_matches(actual, case[\"return_schema\"]), \"AEGIS_ACCEPTANCE: return schema mismatch\"\n        else:\n            expected = case.get(\"expected\")\n>           assert type(actual) is type(expected) and actual == expected, \"AEGIS_ACCEPTANCE: contract mismatch\"\nE           AssertionError: AEGIS_ACCEPTANCE: contract mismatch\nE           assert (<class 'int'> is <class 'int'> and 6 == 5)\nE            +  where <class 'int'> = type(6)\nE            +  and   <class 'int'> = type(5)\n\ntests/test_aegis_probe.py:73: AssertionError\n________________ test_aegis_structured_acceptance[randomized_1] ________________\n\ncase = {'label': 'randomized_1', 'args': [8], 'expected': 8}\n\n    @pytest.mark.parametrize(\"case\", CASES, ids=[case[\"label\"] for case in CASES])\n    def test_aegis_structured_acceptance(case):\n        args = case[\"args\"]\n        def invoke():\n            value = target(*args)\n            if case.get(\"async_timeout_ms\") is not None:\n                if not hasattr(value, \"__await__\"):\n                    raise TypeError(\"async contract requires an awaitable result\")\n                return asyncio.run(asyncio.wait_for(value, timeout=case[\"async_timeout_ms\"] / 1000))\n            return value\n        expected_exception = case.get(\"exception\")\n        if expected_exception:\n            with pytest.raises(getattr(builtins, expected_exception)):\n                invoke()\n            return\n        try:\n            actual = invoke()\n            for _ in range(max(1, case.get(\"repeats\", 1) - 1)):\n                replay = invoke()\n                assert type(replay) is type(actual) and replay == actual, \"AEGIS_ACCEPTANCE: replay changed result\"\n        except asyncio.TimeoutError as error:\n            raise AssertionError(\"AEGIS_ACCEPTANCE: async fallback was not returned\") from error\n        if case.get(\"input_schema\") is not None:\n            assert args and _schema_matches(args[0], case[\"input_schema\"]), \"AEGIS_ACCEPTANCE: invalid input accepted\"\n        if case.get(\"return_schema\") is not None:\n            assert _schema_matches(actual, case[\"return_schema\"]), \"AEGIS_ACCEPTANCE: return schema mismatch\"\n        else:\n            expected = case.get(\"expected\")\n>           assert type(actual) is type(expected) and actual == expected, \"AEGIS_ACCEPTANCE: contract mismatch\"\nE           AssertionError: AEGIS_ACCEPTANCE: contract mismatch\nE           assert (<class 'int'> is <class 'int'> and 9 == 8)\nE            +  where <class 'int'> = type(9)\nE            +  and   <class 'int'> = type(8)\n\ntests/test_aegis_probe.py:73: AssertionError\n=============================== warnings summary ===============================\n../../../../../../aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636\n  /tmp/aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636: PytestConfigWarning: Unknown config option: cache_dir\n  \n    self._warn_or_fail_if_strict(f\"Unknown config option: {key}\\n\")\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n=========================== short test summary info ============================\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[positive_low]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[positive_midpoint]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_1]\n3 failed, 9 passed, 1 warning in 0.45s\n",
+                "stderr": "",
+                "elapsed_sec": 3.259722
+              }
+            ],
+            "mutation": [
+              {
+                "command": [
+                  "/tmp/aegis-v13-test-env/bin/python",
+                  "-B",
+                  "-m",
+                  "pytest",
+                  "-p",
+                  "no:cacheprovider",
+                  "-q",
+                  "tests/test_aegis_probe.py",
+                  "-k",
+                  "randomized"
+                ],
+                "exit_code": 1,
+                "passed": false,
+                "timed_out": false,
+                "stdout": ".F...                                                                    [100%]\n=================================== FAILURES ===================================\n________________ test_aegis_structured_acceptance[randomized_1] ________________\n\ncase = {'label': 'randomized_1', 'args': [8], 'expected': 8}\n\n    @pytest.mark.parametrize(\"case\", CASES, ids=[case[\"label\"] for case in CASES])\n    def test_aegis_structured_acceptance(case):\n        args = case[\"args\"]\n        def invoke():\n            value = target(*args)\n            if case.get(\"async_timeout_ms\") is not None:\n                if not hasattr(value, \"__await__\"):\n                    raise TypeError(\"async contract requires an awaitable result\")\n                return asyncio.run(asyncio.wait_for(value, timeout=case[\"async_timeout_ms\"] / 1000))\n            return value\n        expected_exception = case.get(\"exception\")\n        if expected_exception:\n            with pytest.raises(getattr(builtins, expected_exception)):\n                invoke()\n            return\n        try:\n            actual = invoke()\n            for _ in range(max(1, case.get(\"repeats\", 1) - 1)):\n                replay = invoke()\n                assert type(replay) is type(actual) and replay == actual, \"AEGIS_ACCEPTANCE: replay changed result\"\n        except asyncio.TimeoutError as error:\n            raise AssertionError(\"AEGIS_ACCEPTANCE: async fallback was not returned\") from error\n        if case.get(\"input_schema\") is not None:\n            assert args and _schema_matches(args[0], case[\"input_schema\"]), \"AEGIS_ACCEPTANCE: invalid input accepted\"\n        if case.get(\"return_schema\") is not None:\n            assert _schema_matches(actual, case[\"return_schema\"]), \"AEGIS_ACCEPTANCE: return schema mismatch\"\n        else:\n            expected = case.get(\"expected\")\n>           assert type(actual) is type(expected) and actual == expected, \"AEGIS_ACCEPTANCE: contract mismatch\"\nE           AssertionError: AEGIS_ACCEPTANCE: contract mismatch\nE           assert (<class 'int'> is <class 'int'> and 9 == 8)\nE            +  where <class 'int'> = type(9)\nE            +  and   <class 'int'> = type(8)\n\ntests/test_aegis_probe.py:73: AssertionError\n=============================== warnings summary ===============================\n../../../../../../aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636\n  /tmp/aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636: PytestConfigWarning: Unknown config option: cache_dir\n  \n    self._warn_or_fail_if_strict(f\"Unknown config option: {key}\\n\")\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n=========================== short test summary info ============================\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_1]\n1 failed, 4 passed, 7 deselected, 1 warning in 0.19s\n",
+                "stderr": "",
+                "elapsed_sec": 2.54468
+              }
+            ],
+            "audit": {
+              "reviewer": "independent_static_semantic",
+              "passed": true,
+              "audited_files": [
+                "aegis_campaign_probe.py"
+              ],
+              "findings": []
+            },
+            "static_pass_rate": 1.0,
+            "dynamic_pass_rate": 0.0,
+            "mutation_probe_survival_rate": 0.0,
+            "audit_passed": true,
+            "complexity_delta": 1,
+            "token_cost": 79,
+            "elapsed_sec": 6.649927,
+            "objectives": {
+              "static": 1.0,
+              "dynamic": 0.0,
+              "mutation": 0.0,
+              "audit": 1.0,
+              "complexity": 0.9090909090909091,
+              "cost": 0.6834903328087207
+            },
+            "patch_sha256": "1bda933623bffa6c1c07596e700a5e9e372433099ca58264ec109fc5896003bc",
+            "metadata": {},
+            "pareto_optimal": false
+          }
+        ],
+        "grpo_pairs_exported": 1,
+        "grpo_dataset": "/workspace/aegis-core/artifacts/mega_campaign_v14/workorders/pacer-recovery/grpo_tournament_pairs.jsonl",
+        "isolation": {
+          "git_worktree_per_candidate": true,
+          "max_parallel": 2,
+          "main_worktree_changed": false
+        }
+      },
+      "experience_hints": [
+        {
+          "experience_id": 66,
+          "version": 11,
+          "source_kind": "verified_recovery",
+          "trace_id": 275,
+          "surprise": 0.0,
+          "pattern": "aegis_campaign_probe.py DYNAMIC_PROBE_FAILED unit verified recovery",
+          "outcome": "gate_passed",
+          "cause": "DYNAMIC_PROBE_FAILED",
+          "resolution": "dual_probe_recovered:276",
+          "human_rule": {},
+          "similarity": 0.16129
+        },
+        {
+          "experience_id": 55,
+          "version": 10,
+          "source_kind": "verified_recovery",
+          "trace_id": 270,
+          "surprise": 0.0,
+          "pattern": "aegis_campaign_probe.py DYNAMIC_PROBE_FAILED unit verified recovery",
+          "outcome": "gate_passed",
+          "cause": "DYNAMIC_PROBE_FAILED",
+          "resolution": "dual_probe_recovered:274",
+          "human_rule": {},
+          "similarity": 0.16129
+        },
+        {
+          "experience_id": 45,
+          "version": 9,
+          "source_kind": "verified_recovery",
+          "trace_id": 269,
+          "surprise": 0.0,
+          "pattern": "aegis_campaign_probe.py DYNAMIC_PROBE_FAILED unit verified recovery",
+          "outcome": "gate_passed",
+          "cause": "DYNAMIC_PROBE_FAILED",
+          "resolution": "dual_probe_recovered:271",
+          "human_rule": {},
+          "similarity": 0.16129
+        },
+        {
+          "experience_id": 36,
+          "version": 8,
+          "source_kind": "verified_recovery",
+          "trace_id": 263,
+          "surprise": 0.0,
+          "pattern": "aegis_campaign_probe.py DYNAMIC_PROBE_FAILED unit verified recovery",
+          "outcome": "gate_passed",
+          "cause": "DYNAMIC_PROBE_FAILED",
+          "resolution": "dual_probe_recovered:264",
+          "human_rule": {},
+          "similarity": 0.16129
+        },
+        {
+          "experience_id": 28,
+          "version": 7,
+          "source_kind": "verified_recovery",
+          "trace_id": 259,
+          "surprise": 0.0,
+          "pattern": "aegis_campaign_probe.py DYNAMIC_PROBE_FAILED unit verified recovery",
+          "outcome": "gate_passed",
+          "cause": "DYNAMIC_PROBE_FAILED",
+          "resolution": "dual_probe_recovered:260",
+          "human_rule": {},
+          "similarity": 0.16129
+        }
+      ]
+    }
+  ],
+  "rounds_attempted": 2,
+  "converged_round": 2,
+  "winner": {
+    "candidate_id": "conservative_repair",
+    "strategy": "type-safe inclusive clamp with None fallback",
+    "patch": "diff --git a/aegis_campaign_probe.py b/aegis_campaign_probe.py\n--- a/aegis_campaign_probe.py\n+++ b/aegis_campaign_probe.py\n@@ -1,2 +1,4 @@\n def bounded(value):\n-    return value\n+    if type(value) is not int:\n+        return None\n+    return min(10, max(0, value))\n",
+    "patch_sha256": "d27875be664a5f0da1d0979ba33b98fb4d6793adc90e5e1e5d9e18bfee8705b3"
+  },
+  "diagnosis": {
+    "kind": "FailureDiagnosis",
+    "attempt": 1,
+    "category": "candidate_rejected",
+    "failure_code": "DYNAMIC_PROBE_FAILED",
+    "frames": [
+      {
+        "file": "tests/test_aegis_probe.py",
+        "line": 73
+      },
+      {
+        "file": "../../../../../../aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py",
+        "line": 1636
+      },
+      {
+        "file": "/tmp/aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py",
+        "line": 1636
+      },
+      {
+        "file": "tests/test_aegis_probe.py",
+        "line": 61
+      },
+      {
+        "file": "tests/test_aegis_probe.py",
+        "line": 49
+      }
+    ],
+    "contract_differences": [
+      {
+        "code": "ASSERTION_MISMATCH",
+        "path": "tests/test_aegis_probe.py",
+        "line": null,
+        "detail": ">           assert type(actual) is type(expected) and actual == expected, \"AEGIS_ACCEPTANCE: contract mismatch\"",
+        "candidate_id": "bait_constant",
+        "gate": "dynamic"
+      },
+      {
+        "code": "ASSERTION_MISMATCH",
+        "path": "tests/test_aegis_probe.py",
+        "line": null,
+        "detail": "play == actual, \"AEGIS_ACCEPTANCE: replay changed result\"",
+        "candidate_id": "bait_constant",
+        "gate": "mutation"
+      }
+    ],
+    "mutation_examples": [
+      "negative_fraction",
+      "negative_overflow",
+      "negative_type",
+      "negative_underflow",
+      "positive_high",
+      "positive_low",
+      "positive_midpoint",
+      "randomized_0",
+      "randomized_1",
+      "randomized_2",
+      "randomized_3",
+      "randomized_4"
+    ],
+    "candidate_failures": [
+      {
+        "candidate_id": "bait_constant",
+        "gate": "dynamic",
+        "failure_code": "DYNAMIC_PROBE_FAILED",
+        "exit_code": 1,
+        "command": [
+          "/tmp/aegis-v13-test-env/bin/python",
+          "-B",
+          "-m",
+          "pytest",
+          "-p",
+          "no:cacheprovider",
+          "-q",
+          "tests/test_aegis_probe.py"
+        ],
+        "evidence": "lse:\n            expected = case.get(\"expected\")\n>           assert type(actual) is type(expected) and actual == expected, \"AEGIS_ACCEPTANCE: contract mismatch\"\nE           AssertionError: AEGIS_ACCEPTANCE: contract mismatch\nE           assert (<class 'int'> is <class 'int'> and 99 == 0)\nE            +  where <class 'int'> = type(99)\nE            +  and   <class 'int'> = type(0)\n\ntests/test_aegis_probe.py:73: AssertionError\n=============================== warnings summary ===============================\n../../../../../../aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636\n  /tmp/aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636: PytestConfigWarning: Unknown config option: cache_dir\n  \n    self._warn_or_fail_if_strict(f\"Unknown config option: {key}\\n\")\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n=========================== short test summary info ============================\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[positive_low]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[positive_high]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_underflow]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_overflow]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_type]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_fraction]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[positive_midpoint]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_0]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_1]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_2]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_3]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_4]\n12 failed, 1 warning in 0.81s\n\n"
+      },
+      {
+        "candidate_id": "bait_constant",
+        "gate": "mutation",
+        "failure_code": "MUTATION_PROBE_FAILED",
+        "exit_code": 1,
+        "command": [
+          "/tmp/aegis-v13-test-env/bin/python",
+          "-B",
+          "-m",
+          "pytest",
+          "-p",
+          "no:cacheprovider",
+          "-q",
+          "tests/test_aegis_probe.py",
+          "-k",
+          "randomized"
+        ],
+        "evidence": "ert type(replay) is type(actual) and replay == actual, \"AEGIS_ACCEPTANCE: replay changed result\"\n        except asyncio.TimeoutError as error:\n            raise AssertionError(\"AEGIS_ACCEPTANCE: async fallback was not returned\") from error\n        if case.get(\"input_schema\") is not None:\n            assert args and _schema_matches(args[0], case[\"input_schema\"]), \"AEGIS_ACCEPTANCE: invalid input accepted\"\n        if case.get(\"return_schema\") is not None:\n            assert _schema_matches(actual, case[\"return_schema\"]), \"AEGIS_ACCEPTANCE: return schema mismatch\"\n        else:\n            expected = case.get(\"expected\")\n>           assert type(actual) is type(expected) and actual == expected, \"AEGIS_ACCEPTANCE: contract mismatch\"\nE           AssertionError: AEGIS_ACCEPTANCE: contract mismatch\nE           assert (<class 'int'> is <class 'int'> and 99 == 0)\nE            +  where <class 'int'> = type(99)\nE            +  and   <class 'int'> = type(0)\n\ntests/test_aegis_probe.py:73: AssertionError\n=============================== warnings summary ===============================\n../../../../../../aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636\n  /tmp/aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636: PytestConfigWarning: Unknown config option: cache_dir\n  \n    self._warn_or_fail_if_strict(f\"Unknown config option: {key}\\n\")\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n=========================== short test summary info ============================\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_0]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_1]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_2]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_3]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_4]\n5 failed, 7 deselected, 1 warning in 0.17s\n\n"
+      },
+      {
+        "candidate_id": "broken_signature",
+        "gate": "dynamic",
+        "failure_code": "DYNAMIC_PROBE_FAILED",
+        "exit_code": 1,
+        "command": [
+          "/tmp/aegis-v13-test-env/bin/python",
+          "-B",
+          "-m",
+          "pytest",
+          "-p",
+          "no:cacheprovider",
+          "-q",
+          "tests/test_aegis_probe.py"
+        ],
+        "evidence": ")):\n                invoke()\n            return\n        try:\n>           actual = invoke()\n                     ^^^^^^^^\n\ntests/test_aegis_probe.py:61: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\n    def invoke():\n>       value = target(*args)\n                ^^^^^^^^^^^^^\nE       TypeError: bounded() takes 0 positional arguments but 1 was given\n\ntests/test_aegis_probe.py:49: TypeError\n=============================== warnings summary ===============================\n../../../../../../aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636\n  /tmp/aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636: PytestConfigWarning: Unknown config option: cache_dir\n  \n    self._warn_or_fail_if_strict(f\"Unknown config option: {key}\\n\")\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n=========================== short test summary info ============================\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[positive_low]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[positive_high]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_underflow]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_overflow]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_type]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_fraction]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[positive_midpoint]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_0]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_1]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_2]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_3]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_4]\n12 failed, 1 warning in 0.22s\n\n"
+      },
+      {
+        "candidate_id": "broken_signature",
+        "gate": "mutation",
+        "failure_code": "MUTATION_PROBE_FAILED",
+        "exit_code": 1,
+        "command": [
+          "/tmp/aegis-v13-test-env/bin/python",
+          "-B",
+          "-m",
+          "pytest",
+          "-p",
+          "no:cacheprovider",
+          "-q",
+          "tests/test_aegis_probe.py",
+          "-k",
+          "randomized"
+        ],
+        "evidence": "uctured_acceptance(case):\n        args = case[\"args\"]\n        def invoke():\n            value = target(*args)\n            if case.get(\"async_timeout_ms\") is not None:\n                if not hasattr(value, \"__await__\"):\n                    raise TypeError(\"async contract requires an awaitable result\")\n                return asyncio.run(asyncio.wait_for(value, timeout=case[\"async_timeout_ms\"] / 1000))\n            return value\n        expected_exception = case.get(\"exception\")\n        if expected_exception:\n            with pytest.raises(getattr(builtins, expected_exception)):\n                invoke()\n            return\n        try:\n>           actual = invoke()\n                     ^^^^^^^^\n\ntests/test_aegis_probe.py:61: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\n    def invoke():\n>       value = target(*args)\n                ^^^^^^^^^^^^^\nE       TypeError: bounded() takes 0 positional arguments but 1 was given\n\ntests/test_aegis_probe.py:49: TypeError\n=============================== warnings summary ===============================\n../../../../../../aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636\n  /tmp/aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636: PytestConfigWarning: Unknown config option: cache_dir\n  \n    self._warn_or_fail_if_strict(f\"Unknown config option: {key}\\n\")\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n=========================== short test summary info ============================\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_0]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_1]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_2]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_3]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_4]\n5 failed, 7 deselected, 1 warning in 0.58s\n\n"
+      }
+    ],
+    "evidence_excerpt": "[{\"candidate_id\": \"bait_constant\", \"gate\": \"dynamic\", \"failure_code\": \"DYNAMIC_PROBE_FAILED\", \"exit_code\": 1, \"command\": [\"/tmp/aegis-v13-test-env/bin/python\", \"-B\", \"-m\", \"pytest\", \"-p\", \"no:cacheprovider\", \"-q\", \"tests/test_aegis_probe.py\"], \"evidence\": \"lse:\\n            expected = case.get(\\\"expected\\\")\\n>           assert type(actual) is type(expected) and actual == expected, \\\"AEGIS_ACCEPTANCE: contract mismatch\\\"\\nE           AssertionError: AEGIS_ACCEPTANCE: contract mismatch\\nE           assert (<class 'int'> is <class 'int'> and 99 == 0)\\nE            +  where <class 'int'> = type(99)\\nE            +  and   <class 'int'> = type(0)\\n\\ntests/test_aegis_probe.py:73: AssertionError\\n=============================== warnings summary ===============================\\n../../../../../../aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636\\n  /tmp/aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636: PytestConfigWarning: Unknown config option: cache_dir\\n  \\n    self._warn_or_fail_if_strict(f\\\"Unknown config option: {key}\\\\n\\\")\\n\\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\\n=========================== short test summary info ============================\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[positive_low]\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[positive_high]\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_underflow]\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_overflow]\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_type]\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_fraction]\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[positive_midpoint]\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_0]\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_1]\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_2]\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_3]\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_4]\\n12 failed, 1 warning in 0.81s\\n\\n\"}, {\"candidate_id\": \"bait_constant\", \"gate\": \"mutation\", \"failure_code\": \"MUTATION_PROBE_FAILED\", \"exit_code\": 1, \"command\": [\"/tmp/aegis-v13-test-env/bin/python\", \"-B\", \"-m\", \"pytest\", \"-p\", \"no:cacheprovider\", \"-q\", \"tests/test_aegis_probe.py\", \"-k\", \"randomized\"], \"evidence\": \"ert type(replay) is type(actual) and replay == actual, \\\"AEGIS_ACCEPTANCE: replay changed result\\\"\\n        except asyncio.TimeoutError as error:\\n            raise AssertionError(\\\"AEGIS_ACCEPTANCE: async fallback was not returned\\\") from error\\n        if case.get(\\\"input_schema\\\") is not None:\\n            assert args and _schema_matches(args[0], case[\\\"input_schema\\\"]), \\\"AEGIS_ACCEPTANCE: invalid input accepted\\\"\\n        if case.get(\\\"return_schema\\\") is not None:\\n            assert _schema_matches(actual, case[\\\"return_schema\\\"]), \\\"AEGIS_ACCEPTANCE: return schema mismatch\\\"\\n        else:\\n            expected = case.get(\\\"expected\\\")\\n>           assert type(actual) is type(expected) and actual == expected, \\\"AEGIS_ACCEPTANCE: contract mismatch\\\"\\nE           AssertionError: AEGIS_ACCEPTANCE: contract mismatch\\nE           assert (<class 'int'> is <class 'int'> and 99 == 0)\\nE            +  where <class 'int'> = type(99)\\nE            +  and   <class 'int'> = type(0)\\n\\ntests/test_aegis_probe.py:73: AssertionError\\n=============================== warnings summary ===============================\\n../../../../../../aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636\\n  /tmp/aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636: PytestConfigWarning: Unknown config option: cache_dir\\n  \\n    self._warn_or_fail_if_strict(f\\\"Unknown config opt",
+    "next_action": "Use the failing probe cases and independent audit findings to target a different repair strategy."
+  },
+  "experience_hints": [
+    {
+      "experience_id": 78,
+      "version": 12,
+      "source_kind": "verified_recovery",
+      "trace_id": 281,
+      "surprise": 0.0,
+      "pattern": "aegis_campaign_probe.py DYNAMIC_PROBE_FAILED unit verified recovery",
+      "outcome": "gate_passed",
+      "cause": "DYNAMIC_PROBE_FAILED",
+      "resolution": "dual_probe_recovered:283",
+      "human_rule": {},
+      "similarity": 0.095238
+    },
+    {
+      "experience_id": 66,
+      "version": 11,
+      "source_kind": "verified_recovery",
+      "trace_id": 275,
+      "surprise": 0.0,
+      "pattern": "aegis_campaign_probe.py DYNAMIC_PROBE_FAILED unit verified recovery",
+      "outcome": "gate_passed",
+      "cause": "DYNAMIC_PROBE_FAILED",
+      "resolution": "dual_probe_recovered:276",
+      "human_rule": {},
+      "similarity": 0.095238
+    },
+    {
+      "experience_id": 55,
+      "version": 10,
+      "source_kind": "verified_recovery",
+      "trace_id": 270,
+      "surprise": 0.0,
+      "pattern": "aegis_campaign_probe.py DYNAMIC_PROBE_FAILED unit verified recovery",
+      "outcome": "gate_passed",
+      "cause": "DYNAMIC_PROBE_FAILED",
+      "resolution": "dual_probe_recovered:274",
+      "human_rule": {},
+      "similarity": 0.095238
+    },
+    {
+      "experience_id": 45,
+      "version": 9,
+      "source_kind": "verified_recovery",
+      "trace_id": 269,
+      "surprise": 0.0,
+      "pattern": "aegis_campaign_probe.py DYNAMIC_PROBE_FAILED unit verified recovery",
+      "outcome": "gate_passed",
+      "cause": "DYNAMIC_PROBE_FAILED",
+      "resolution": "dual_probe_recovered:271",
+      "human_rule": {},
+      "similarity": 0.095238
+    },
+    {
+      "experience_id": 36,
+      "version": 8,
+      "source_kind": "verified_recovery",
+      "trace_id": 263,
+      "surprise": 0.0,
+      "pattern": "aegis_campaign_probe.py DYNAMIC_PROBE_FAILED unit verified recovery",
+      "outcome": "gate_passed",
+      "cause": "DYNAMIC_PROBE_FAILED",
+      "resolution": "dual_probe_recovered:264",
+      "human_rule": {},
+      "similarity": 0.095238
+    },
+    {
+      "experience_id": 28,
+      "version": 7,
+      "source_kind": "verified_recovery",
+      "trace_id": 259,
+      "surprise": 0.0,
+      "pattern": "aegis_campaign_probe.py DYNAMIC_PROBE_FAILED unit verified recovery",
+      "outcome": "gate_passed",
+      "cause": "DYNAMIC_PROBE_FAILED",
+      "resolution": "dual_probe_recovered:260",
+      "human_rule": {},
+      "similarity": 0.095238
+    },
+    {
+      "experience_id": 21,
+      "version": 6,
+      "source_kind": "verified_recovery",
+      "trace_id": 255,
+      "surprise": 0.0,
+      "pattern": "aegis_campaign_probe.py DYNAMIC_PROBE_FAILED unit verified recovery",
+      "outcome": "gate_passed",
+      "cause": "DYNAMIC_PROBE_FAILED",
+      "resolution": "dual_probe_recovered:258",
+      "human_rule": {},
+      "similarity": 0.095238
+    },
+    {
+      "experience_id": 15,
+      "version": 5,
+      "source_kind": "verified_recovery",
+      "trace_id": 251,
+      "surprise": 0.0,
+      "pattern": "aegis_campaign_probe.py DYNAMIC_PROBE_FAILED unit verified recovery",
+      "outcome": "gate_passed",
+      "cause": "DYNAMIC_PROBE_FAILED",
+      "resolution": "dual_probe_recovered:252",
+      "human_rule": {},
+      "similarity": 0.095238
+    },
+    {
+      "experience_id": 10,
+      "version": 4,
+      "source_kind": "verified_recovery",
+      "trace_id": 246,
+      "surprise": 0.0,
+      "pattern": "aegis_campaign_probe.py DYNAMIC_PROBE_FAILED unit verified recovery",
+      "outcome": "gate_passed",
+      "cause": "DYNAMIC_PROBE_FAILED",
+      "resolution": "dual_probe_recovered:250",
+      "human_rule": {},
+      "similarity": 0.095238
+    },
+    {
+      "experience_id": 6,
+      "version": 3,
+      "source_kind": "verified_recovery",
+      "trace_id": 245,
+      "surprise": 0.0,
+      "pattern": "aegis_campaign_probe.py DYNAMIC_PROBE_FAILED unit verified recovery",
+      "outcome": "gate_passed",
+      "cause": "DYNAMIC_PROBE_FAILED",
+      "resolution": "dual_probe_recovered:247",
+      "human_rule": {},
+      "similarity": 0.095238
+    }
+  ],
+  "time_travel_snapshot": {
+    "ticket_id": "v14-swarm-pacer-recovery",
+    "commit_oid": "85ed84328b178f955f0cfc6e625c2336e266b0fe",
+    "archive_sha256": "8bb2bc03d577b48b0e901647d8e5d7ccf7e7e2fb0e2702dd051f65c01ba45782",
+    "probe_sha256": "00231544fcdcce2190eb8347df56726a50e6ba5df6092799498eafdcf091e3bd",
+    "candidate_patch_sha256": "d27875be664a5f0da1d0979ba33b98fb4d6793adc90e5e1e5d9e18bfee8705b3",
+    "mutation_seeds": [
+      1419
+    ]
+  },
+  "learning": {
+    "verified_recoveries": 12,
+    "selected_model_traces": 32,
+    "selection_counts": {
+      "predictions_made": 32,
+      "no_prediction_count": 25,
+      "below_threshold_count": 0,
+      "unscored_count": 0,
+      "excluded_count": 0,
+      "above_threshold_count": 32,
+      "repair_attempt_count": 57,
+      "selection_limited_count": 0
+    },
+    "experience_ingest": {
+      "added": 1,
+      "experience_count": 12,
+      "version": 12,
+      "version_sha256": "9516cf65f54dbcf0850ede822a54fcf0cded6a18aa836b66d7b91f8da36cc7c9"
+    },
+    "experience_bank": {
+      "experience_count": 12,
+      "version": 12,
+      "version_sha256": "9516cf65f54dbcf0850ede822a54fcf0cded6a18aa836b66d7b91f8da36cc7c9"
+    },
+    "replayed_hints": [
+      {
+        "experience_id": 78,
+        "version": 12,
+        "source_kind": "verified_recovery",
+        "trace_id": 281,
+        "surprise": 0.0,
+        "pattern": "aegis_campaign_probe.py DYNAMIC_PROBE_FAILED unit verified recovery",
+        "outcome": "gate_passed",
+        "cause": "DYNAMIC_PROBE_FAILED",
+        "resolution": "dual_probe_recovered:283",
+        "human_rule": {},
+        "similarity": 0.095238
+      },
+      {
+        "experience_id": 66,
+        "version": 11,
+        "source_kind": "verified_recovery",
+        "trace_id": 275,
+        "surprise": 0.0,
+        "pattern": "aegis_campaign_probe.py DYNAMIC_PROBE_FAILED unit verified recovery",
+        "outcome": "gate_passed",
+        "cause": "DYNAMIC_PROBE_FAILED",
+        "resolution": "dual_probe_recovered:276",
+        "human_rule": {},
+        "similarity": 0.095238
+      },
+      {
+        "experience_id": 55,
+        "version": 10,
+        "source_kind": "verified_recovery",
+        "trace_id": 270,
+        "surprise": 0.0,
+        "pattern": "aegis_campaign_probe.py DYNAMIC_PROBE_FAILED unit verified recovery",
+        "outcome": "gate_passed",
+        "cause": "DYNAMIC_PROBE_FAILED",
+        "resolution": "dual_probe_recovered:274",
+        "human_rule": {},
+        "similarity": 0.095238
+      },
+      {
+        "experience_id": 45,
+        "version": 9,
+        "source_kind": "verified_recovery",
+        "trace_id": 269,
+        "surprise": 0.0,
+        "pattern": "aegis_campaign_probe.py DYNAMIC_PROBE_FAILED unit verified recovery",
+        "outcome": "gate_passed",
+        "cause": "DYNAMIC_PROBE_FAILED",
+        "resolution": "dual_probe_recovered:271",
+        "human_rule": {},
+        "similarity": 0.095238
+      },
+      {
+        "experience_id": 36,
+        "version": 8,
+        "source_kind": "verified_recovery",
+        "trace_id": 263,
+        "surprise": 0.0,
+        "pattern": "aegis_campaign_probe.py DYNAMIC_PROBE_FAILED unit verified recovery",
+        "outcome": "gate_passed",
+        "cause": "DYNAMIC_PROBE_FAILED",
+        "resolution": "dual_probe_recovered:264",
+        "human_rule": {},
+        "similarity": 0.095238
+      },
+      {
+        "experience_id": 28,
+        "version": 7,
+        "source_kind": "verified_recovery",
+        "trace_id": 259,
+        "surprise": 0.0,
+        "pattern": "aegis_campaign_probe.py DYNAMIC_PROBE_FAILED unit verified recovery",
+        "outcome": "gate_passed",
+        "cause": "DYNAMIC_PROBE_FAILED",
+        "resolution": "dual_probe_recovered:260",
+        "human_rule": {},
+        "similarity": 0.095238
+      },
+      {
+        "experience_id": 21,
+        "version": 6,
+        "source_kind": "verified_recovery",
+        "trace_id": 255,
+        "surprise": 0.0,
+        "pattern": "aegis_campaign_probe.py DYNAMIC_PROBE_FAILED unit verified recovery",
+        "outcome": "gate_passed",
+        "cause": "DYNAMIC_PROBE_FAILED",
+        "resolution": "dual_probe_recovered:258",
+        "human_rule": {},
+        "similarity": 0.095238
+      },
+      {
+        "experience_id": 15,
+        "version": 5,
+        "source_kind": "verified_recovery",
+        "trace_id": 251,
+        "surprise": 0.0,
+        "pattern": "aegis_campaign_probe.py DYNAMIC_PROBE_FAILED unit verified recovery",
+        "outcome": "gate_passed",
+        "cause": "DYNAMIC_PROBE_FAILED",
+        "resolution": "dual_probe_recovered:252",
+        "human_rule": {},
+        "similarity": 0.095238
+      },
+      {
+        "experience_id": 10,
+        "version": 4,
+        "source_kind": "verified_recovery",
+        "trace_id": 246,
+        "surprise": 0.0,
+        "pattern": "aegis_campaign_probe.py DYNAMIC_PROBE_FAILED unit verified recovery",
+        "outcome": "gate_passed",
+        "cause": "DYNAMIC_PROBE_FAILED",
+        "resolution": "dual_probe_recovered:250",
+        "human_rule": {},
+        "similarity": 0.095238
+      },
+      {
+        "experience_id": 6,
+        "version": 3,
+        "source_kind": "verified_recovery",
+        "trace_id": 245,
+        "surprise": 0.0,
+        "pattern": "aegis_campaign_probe.py DYNAMIC_PROBE_FAILED unit verified recovery",
+        "outcome": "gate_passed",
+        "cause": "DYNAMIC_PROBE_FAILED",
+        "resolution": "dual_probe_recovered:247",
+        "human_rule": {},
+        "similarity": 0.095238
+      }
+    ],
+    "grpo_dataset_sha256": "224dea8ac2b4c0f7c8dcf5f4cd2eaeb58306c6e07fc946d3ce7caf295e0d75c2"
+  },
+  "budget": {
+    "max_rounds": 2,
+    "max_total_tokens": 8000,
+    "tokens_used": 271,
+    "max_wall_clock_sec": 180,
+    "elapsed_sec": 33.306505
+  },
+  "ledger": {
+    "tickets": 53,
+    "statuses": {
+      "queued": 8,
+      "running": 1,
+      "succeeded": 44
+    },
+    "traces": 283,
+    "terminal_tickets": 44,
+    "success_rate": 1.0,
+    "repair_attempts": 57,
+    "cheat_interceptions": 0,
+    "replay_interceptions": 0,
+    "mean_reward": 0.8224414861464622
+  }
+}

@@ -645,6 +645,30 @@ def main(argv: list[str] | None = None) -> int:
     autopilot.add_argument("--repo", default=".")
     autopilot.add_argument("--db")
     autopilot.add_argument("--out", "--output")
+    replay = commands.add_parser("replay", help="restore and physically execute a frozen ticket snapshot")
+    replay.add_argument("--ticket", required=True)
+    replay.add_argument("--repo", default=".")
+    replay.add_argument("--db")
+    replay.add_argument("--out", "--output")
+    replay.add_argument("--timeout", type=float, default=60)
+    blame = commands.add_parser("blame", help="attribute a failing candidate to minimal changed files and lines")
+    blame.add_argument("--repo", default=".")
+    blame.add_argument("--base", required=True)
+    blame.add_argument("--candidate", required=True)
+    blame.add_argument("--command-json", required=True, help="JSON array of the real probe command")
+    blame.add_argument("--timeout", type=float, default=60)
+    blame.add_argument("--out", "--output")
+    distill = commands.add_parser("distill", help="build and verify a balanced local training release bundle")
+    distill.add_argument("--repo", default=".")
+    distill.add_argument("--db")
+    distill.add_argument("--experience-db")
+    distill.add_argument("--sft", action="append", dest="sft_paths")
+    distill.add_argument("--tournament-pairs", action="append", dest="tournament_paths")
+    distill.add_argument("--out", default="datasets/release_v14")
+    distill.add_argument("--model", default="Qwen/Qwen2.5-Coder-3B-Instruct")
+    distill.add_argument("--tokenizer-dir", help="Use an already downloaded official tokenizer snapshot")
+    distill.add_argument("--max-tokens", type=int, default=4096)
+    distill.add_argument("--min-quality", type=float, default=.35)
     attach = commands.add_parser("attach")
     attach.add_argument("--repo", required=True)
     attach.add_argument("--tool-source-glob", action="append", dest="tool_source_globs",
@@ -759,6 +783,37 @@ def main(argv: list[str] | None = None) -> int:
             if args.out:
                 _save(args.out, result)
             code = 0 if result["status"] == "succeeded" else 1
+        elif args.command == "replay":
+            from .time_travel import TimeTravelReplay
+            root = _repo(args.repo)
+            result = TimeTravelReplay(root, args.db).replay(args.ticket, timeout=args.timeout)
+            if args.out:
+                _save(args.out, result)
+            code = 0 if result["status"] == "replayed" else 1
+        elif args.command == "blame":
+            from .time_travel import TimeTravelReplay
+            root = _repo(args.repo)
+            command = json.loads(args.command_json)
+            result = TimeTravelReplay(root).counterfactual_blame(
+                args.base, args.candidate, command, timeout=args.timeout)
+            if args.out:
+                _save(args.out, result)
+            code = 0 if result["status"] == "attributed" else 1
+        elif args.command == "distill":
+            from .distill_pipeline import DistillPipeline
+            root = _repo(args.repo)
+            ledger_path = Path(args.db).resolve() if args.db else _ledger_path(root, None)
+            experience_path = Path(args.experience_db).resolve() if args.experience_db else ledger_path
+            pipeline = DistillPipeline(root, model_id=args.model, tokenizer_path=args.tokenizer_dir)
+            result = pipeline.build_bundle(args.out,
+                sft_paths=[(root / item).resolve() if not Path(item).is_absolute() else item
+                           for item in (args.sft_paths or [])],
+                tournament_paths=[(root / item).resolve() if not Path(item).is_absolute() else item
+                                  for item in (args.tournament_paths or [])],
+                ledger_paths=[ledger_path] if ledger_path.is_file() else [],
+                experience_paths=[experience_path] if experience_path.is_file() else [],
+                max_tokens=args.max_tokens, min_quality=args.min_quality)
+            code = 0 if result["status"] == "verified" else 1
         elif args.command == "attach":
             from .repo_adapter import attach_repository
             result = attach_repository(args.repo, tool_source_globs=args.tool_source_globs)

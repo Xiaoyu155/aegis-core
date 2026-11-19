@@ -1,0 +1,8 @@
+diff --git a/快手/e2e/browser_e2e.py b/快手/e2e/browser_e2e.py
+--- a/快手/e2e/browser_e2e.py
++++ b/快手/e2e/browser_e2e.py
+@@ -355,3 +355,4 @@
+     except Exception as error:
+         print(f"browser e2e failed: {error}", file=sys.stderr)
+         sys.exit(1)
++# AEGIS_V14_DOUYIN-KUAISHOU-ALIPAY-MINIAPP_DOC_CONTRACT

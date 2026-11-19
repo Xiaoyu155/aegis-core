@@ -1,0 +1,137 @@
+{
+  "schema_version": "aegis.cli.v1",
+  "ticket_id": "v14-batch-yuansi_app-2-batch-retry",
+  "repo_root": "/tmp/aegis-v14-mega-bfqqq2at/repos/yuansi_app",
+  "base_commit": "8418afe2e41496efb4b8f7144ee168076dd6ba5d",
+  "compilation": {
+    "kind": "CompiledContract",
+    "ticket_id": "v14-batch-yuansi_app-2-batch-retry",
+    "status": "COMPILED",
+    "target_files": [
+      "prod_wechat_youyou_isolated/youyou_courier.py"
+    ],
+    "contract_stub": "def document_audited_contract() -> None:\n    ...",
+    "constraints": {}
+  },
+  "fail_before_cmd": [
+    "/tmp/aegis-v13-test-env/bin/python",
+    "-B",
+    "-c",
+    "from pathlib import Path; p=Path('prod_wechat_youyou_isolated/youyou_courier.py'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_YUANSI_APP_DEPENDENCY_HANDOFF' in s; compile(s, 'prod_wechat_youyou_isolated/youyou_courier.py', 'exec')"
+  ],
+  "pass_after_cmd": [
+    "/tmp/aegis-v13-test-env/bin/python",
+    "-B",
+    "-c",
+    "from pathlib import Path; p=Path('prod_wechat_youyou_isolated/youyou_courier.py'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_YUANSI_APP_DEPENDENCY_HANDOFF' in s; compile(s, 'prod_wechat_youyou_isolated/youyou_courier.py', 'exec')"
+  ],
+  "probe_kind": "unit",
+  "probe_script_sha256": {},
+  "source_dirs": [
+    "."
+  ],
+  "tool_source_globs": [
+    "**/tools/**/*.py",
+    "**/tools/**/*.js",
+    "**/tools/**/*.jsx",
+    "**/tools/**/*.cjs",
+    "**/tools/**/*.mjs",
+    "**/tools/**/*.ts",
+    "**/tools/**/*.tsx",
+    "**/tools/**/*.mts",
+    "**/tools/**/*.cts",
+    "**/tools/**/*.html",
+    "**/tools/**/*.htm",
+    "**/tools/**/*.css"
+  ],
+  "patches": [
+    "/tmp/aegis-v14-batch-retry/workorders/yuansi_app/v14-batch-yuansi_app-2-batch-retry.patch"
+  ],
+  "models_path": null,
+  "probe_patch": "",
+  "context": {
+    "target": "prod_wechat_youyou_isolated.youyou_courier:_courier_client",
+    "items": [
+      {
+        "symbol": "prod_wechat_youyou_isolated.youyou_courier:_courier_client",
+        "file": "prod_wechat_youyou_isolated/youyou_courier.py",
+        "start_line": 1963,
+        "end_line": 1964,
+        "relation": "target",
+        "distance": 0,
+        "source": "def _courier_client() -> CourierClient:\n    return CourierClient(COURIER_USERNAME, COURIER_PRIVATE_KEY, COURIER_URL)"
+      },
+      {
+        "symbol": "prod_wechat_youyou_isolated.youyou_courier:CourierClient",
+        "file": "prod_wechat_youyou_isolated/youyou_courier.py",
+        "start_line": 1361,
+        "end_line": 1459,
+        "relation": "callee",
+        "distance": 1,
+        "source": "class CourierClient:\n\n    def __init__(self, username: str, private_key: str, base_url: str):\n        ...\n\n    def _sign(self, timestamp: str) -> str:\n        ...\n\n    def call(self, api_method: str, data: dict[str, Any]) -> dict[str, Any]:\n        ...\n\n    def query_price(self, args: dict[str, Any]) -> dict[str, Any]:\n        ...\n\n    def create_order(self, order: dict[str, Any]) -> dict[str, Any]:\n        ...\n\n    def track_order(self, express_id: str) -> dict[str, Any]:\n        ...\n\n    def express_info(self, express_id: str) -> dict[str, Any]:\n        ...\n\n    def outcome_order(self, start_date: str, end_date: str, page_num: int=1, page_size: int=50, refund_flag: str='2') -> dict[str, Any]:\n        ...\n\n    def cancel_order(self, order: dict[str, Any], reason: str='用户取消寄件') -> dict[str, Any]:\n        ...\n    ..."
+      },
+      {
+        "symbol": "prod_wechat_youyou_isolated.youyou_courier:_ensure_recent_quote_options",
+        "file": "prod_wechat_youyou_isolated/youyou_courier.py",
+        "start_line": 1596,
+        "end_line": 1634,
+        "relation": "caller",
+        "distance": 1,
+        "source": "def _ensure_recent_quote_options(openid: str, draft: dict[str, Any]) -> list[dict[str, Any]]:\n    ..."
+      },
+      {
+        "symbol": "prod_wechat_youyou_isolated.youyou_courier:cancel_courier_order",
+        "file": "prod_wechat_youyou_isolated/youyou_courier.py",
+        "start_line": 2102,
+        "end_line": 2124,
+        "relation": "caller",
+        "distance": 1,
+        "source": "def cancel_courier_order(out_trade_no: str, reason: str='用户从详情页取消寄件') -> tuple[bool, str]:\n    ..."
+      },
+      {
+        "symbol": "prod_wechat_youyou_isolated.youyou_courier:fetch_order_tracking",
+        "file": "prod_wechat_youyou_isolated/youyou_courier.py",
+        "start_line": 2057,
+        "end_line": 2068,
+        "relation": "caller",
+        "distance": 1,
+        "source": "def fetch_order_tracking(order: dict[str, Any]) -> dict[str, Any]:\n    ..."
+      },
+      {
+        "symbol": "prod_wechat_youyou_isolated.youyou_courier:find_platform_refund_confirmation",
+        "file": "prod_wechat_youyou_isolated/youyou_courier.py",
+        "start_line": 2343,
+        "end_line": 2368,
+        "relation": "caller",
+        "distance": 1,
+        "source": "def find_platform_refund_confirmation(order: dict[str, Any], lookback_days: int=14, max_pages: int=5) -> tuple[bool, int, str]:\n    ..."
+      },
+      {
+        "symbol": "prod_wechat_youyou_isolated.youyou_courier:handle_payment_paid",
+        "file": "prod_wechat_youyou_isolated/youyou_courier.py",
+        "start_line": 2848,
+        "end_line": 2965,
+        "relation": "caller",
+        "distance": 1,
+        "source": "def handle_payment_paid(out_trade_no: str, openid: str, total_fee: int, transaction_id: str='') -> str:\n    \"\"\"Mark a paid courier order and create the courier shipment once.\n\n    total_fee is WeChat Pay's amount in fen.\n    \"\"\"\n    ..."
+      },
+      {
+        "symbol": "prod_wechat_youyou_isolated.youyou_courier:CourierConversation.__init__",
+        "file": "prod_wechat_youyou_isolated/youyou_courier.py",
+        "start_line": 3078,
+        "end_line": 3080,
+        "relation": "caller",
+        "distance": 2,
+        "source": "def __init__(self, allow_pending_order: bool=True):\n    ..."
+      }
+    ],
+    "truncated": true,
+    "diagnostics": [],
+    "budget_unit": "utf8_bytes_upper_bound",
+    "token_upper_bound": 3781
+  },
+  "allow_model": false,
+  "max_attempts": 3,
+  "timeout_sec": 120,
+  "contract_sha256": "1435da874d56ab9f3d3c0ce02856a66986054d9f2e6ca5ae4e41be812566232b"
+}

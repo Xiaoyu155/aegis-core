@@ -129,3 +129,37 @@ The same script launches the `aegis autopilot` CLI against a 12-work-order Pytho
 The 36 real chosen/rejected patch pairs have SHA-256 `8cf50f972735c08eae5e1d5831b3b20cec442615315ad294fc58e1ab8dbbe9a3`. Full receipts and exact stdout are saved at `artifacts/endurance_v13/report.json` and `artifacts/endurance_v13/stdout.txt`. `STATUS.json` holds the machine-readable metrics. The 656-test local regression passed on Python 3.12.14 with Node v24.22.1. All eight Linux/Windows × Python 3.11/3.12 Actions jobs passed on source commit `2cdae7dcac410c5bf1472bbc3f0cddbf49aeaa18`: [push](https://github.com/Xiaoyu155/aegis-core/actions/runs/44433120954) · [pull request](https://github.com/Xiaoyu155/aegis-core/actions/runs/44433127869).
 
 The cloud run had no commercial model API key, so candidate code was authored offline and evaluated through the production tournament gates. The Windows 11 RTX 5060 handoff remains intact; no GPU training claim is made for this Linux run.
+
+## PR #14 — semantic contracts, replay attribution, swarm merge, and data release
+
+PR #14 is stacked on PR #13 at `c3a892c3963c24ddee1d359898ce22213e53fff9` on branch `feat/world-model-v13`. It preserves the 656-test PR #13 baseline, `training/`, and `scripts/bootstrap_local.ps1`; new work is additive. The v14 branch adds 288 tests (final local collection: 944 total; all 656 baseline tests remain in the suite).
+
+### Semantic contract inference
+
+`aegis_core/semantic_contract.py` statically indexes Python `TypedDict`, dataclass declarations, inferred class attributes, dictionary literals and returned JSON fields. It follows aliased cross-file producers into Python field reads and TypeScript/JavaScript object destructuring/property reads, including HTML inline scripts. `@property`, static/class methods, common route decorators, callback registrations, receiver-typed dynamic method dispatch, and dataclass fields are recorded with source locations. Same-named methods are resolved only when the receiver type makes the target unique; ambiguous dynamic calls remain unresolved. `compare()` reports added/removed fields and type changes.
+
+The corpus scan records inferred field, flow, decorator, callback and dynamic-resolution metrics for each of the 21 repositories. Across 4,920 tracked source files it found 780 literal-name Python `getattr` sites: 90 were resolved from static evidence (11.54%) and 690 remain unresolved. This is below the requested 70% unresolved-rate reduction; the remaining cases mostly lack a source-visible receiver type/schema or depend on external runtime objects. The report distinguishes statically resolved references from the unresolved remainder rather than guessing at reflection or untyped dynamic dispatch.
+
+### Deterministic replay and counterfactual blame
+
+`aegis_core/time_travel.py` stores immutable commit archive bytes, probe bytes, candidate patch, mutation seeds, world context, and observed result digest in the SQLite WAL ledger. `aegis replay --ticket <id>` rebuilds the detached Git scene, verifies byte hashes and executes the frozen command with deterministic environment values. `aegis blame` uses file-level delta debugging over two detached worktrees and returns the smallest failing file set with exact changed line ranges. The physical 21-repository campaign produced 21 successful two-round replay receipts after one first-run pytest configuration failure was corrected.
+
+### Swarm arbitration and semantic merge
+
+`aegis_core/swarm_arbiter.py` runs Architect, Coder, Adversarial Critic and Verifier states with explicit receipts. Its three-way merger uses AST function/class spans for Python and brace-aware function regions for JavaScript/TypeScript. Disjoint function edits merge; overlapping semantic blocks and edits to shared uppercase invariants are returned as conflicts for arbitration. It does not claim a conflict-free merge for unsupported syntax.
+
+### Distillation and Windows training release
+
+`aegis_core/distill_pipeline.py` reads tournament pairs, SFT JSONL, SQLite trace/recovery evidence and ExperienceBank records without altering the sources. It canonicalizes and deduplicates rows, rejects low-quality or overlength records without truncation, balances each GRPO comparison as one chosen and one rejected patch, and verifies output hashes and row counts. The CPU release used the official `Qwen/Qwen2.5-Coder-3B-Instruct` tokenizer: 489 SFT examples (86–592 tokens) and 78 preference pairs (103–247 tokens), zero truncated rows, and 10 verified bundle files. The bundle preserves the existing Windows bootstrap and trainer sources. SFT SHA-256: `a6f17cedce5d60772c20c52bb95d7f68f492b792a3a16ab6bd01ca79dde0a182`; GRPO SHA-256: `879520ba0f90c21dd63d4986133ccd95c43d979803ca40986675bff9ea4eb8f4`; manifest SHA-256: `d4c61f551caada89be90fcf28c7aa4156db8a5450d20cab4b3083559195cdb79`.
+
+### 21-repository campaign and scope
+
+`scripts/run_21repos_mega_campaign.py` cloned and analyzed all 21 accessible Xiaoyu155 repositories, covering 4,920 tracked source files. It physically ran Aegis batch in detached worktrees and a two-round candidate tournament/autopilot/replay contract on isolated tracked fixtures. After targeted retries, 40 source-annotation batch gates passed; two additional requested targets in `pet-miniapp` were refused because its tracked files did not include a source path accepted by the business-source policy. All 21 autopilot fixtures converged; 63 of 63 intentionally invalid candidates were rejected and all 21 valid candidates were accepted. The campaign ledger records 69 tickets, 372 traces and 21 ExperienceBank records; peak WAL was 588,537,912 bytes, lock errors were zero, and registered worktree residuals were zero. Local clone HEADs remained unchanged and the run issued no remote write operation.
+
+The campaign completed 72 work-order attempts and 61 final physical gate passes. Batch passed 40 of 50 attempts after retrying 8 initial compiler failures; one repository (`pet-miniapp`) had no target accepted by the business-source policy. All 21 autopilot fixture runs converged, and all 63 intentionally invalid candidates were rejected among 84 evaluations. The shared WAL recorded 69 tickets and 372 traces, with zero lock errors, 588,537,912-byte peak WAL, and 21 new ExperienceBank records. All remote default heads stayed unchanged and no worktree residuals remained.
+
+The business-source batch patches in this read-only campaign were temporary audit comment markers that exercised real fail-before/pass-after Aegis gates; the autopilot repair was a temporary tracked contract fixture. These receipts prove isolation, gate behavior, replay, and learning on each repository's Git database; they do not represent application bug fixes delivered to those repositories. The complete first-pass output, retry receipts, final decision reconciliation, and machine-readable report are under `artifacts/mega_campaign_v14/`.
+
+### Verification and delivery
+
+The final Linux run is performed with local socket permission enabled because the inherited `test_real_socket` test binds loopback. The final pytest result and duration, plus the Linux/Windows × Python 3.11/3.12 Actions links, are recorded in `STATUS.json` after PR #14 checks complete. The official tokenizer and release bundle were CPU-validated; Windows GPU training was not run in this Linux environment.

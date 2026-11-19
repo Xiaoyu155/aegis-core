@@ -1,0 +1,74 @@
+{
+  "schema_version": "aegis.cli.v1",
+  "ticket_id": "v14-batch-weixin-miniprogram-2",
+  "repo_root": "/tmp/aegis-v14-mega-ocjs05u7/repos/weixin-miniprogram",
+  "base_commit": "fd53804383f8d79cc0a84fe930414896cce8e1c5",
+  "compilation": {
+    "kind": "CompiledContract",
+    "ticket_id": "v14-batch-weixin-miniprogram-2",
+    "status": "COMPILED",
+    "target_files": [
+      "server/src/app.js"
+    ],
+    "contract_stub": "def document_audited_contract() -> None:\n    ...",
+    "constraints": {}
+  },
+  "fail_before_cmd": [
+    "/tmp/aegis-v13-test-env/bin/python",
+    "-B",
+    "-c",
+    "from pathlib import Path; p=Path('server/src/app.js'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_WEIXIN-MINIPROGRAM_DEPENDENCY_HANDOFF' in s; assert len(s) > 0"
+  ],
+  "pass_after_cmd": [
+    "/tmp/aegis-v13-test-env/bin/python",
+    "-B",
+    "-c",
+    "from pathlib import Path; p=Path('server/src/app.js'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_WEIXIN-MINIPROGRAM_DEPENDENCY_HANDOFF' in s; assert len(s) > 0"
+  ],
+  "probe_kind": "unit",
+  "probe_script_sha256": {},
+  "source_dirs": [
+    "."
+  ],
+  "tool_source_globs": [
+    "**/tools/**/*.py",
+    "**/tools/**/*.js",
+    "**/tools/**/*.jsx",
+    "**/tools/**/*.cjs",
+    "**/tools/**/*.mjs",
+    "**/tools/**/*.ts",
+    "**/tools/**/*.tsx",
+    "**/tools/**/*.mts",
+    "**/tools/**/*.cts",
+    "**/tools/**/*.html",
+    "**/tools/**/*.htm",
+    "**/tools/**/*.css"
+  ],
+  "patches": [
+    "/workspace/aegis-core/artifacts/mega_campaign_v14/workorders/weixin-miniprogram/v14-batch-weixin-miniprogram-2.patch"
+  ],
+  "models_path": null,
+  "probe_patch": "",
+  "context": {
+    "target": "miniprogram/utils/request.js:request",
+    "items": [
+      {
+        "symbol": "miniprogram/utils/request.js:request",
+        "file": "miniprogram/utils/request.js",
+        "start_line": 6,
+        "end_line": 39,
+        "relation": "target",
+        "distance": 0,
+        "source": "function request(options) {\n  const { url, method = 'GET', data = {}, showLoading = true } = options;\n\n  if (showLoading) {\n    wx.showLoading({ title: '请稍候...', mask: true });\n  }\n\n  return new Promise((resolve, reject) => {\n    wx.request({\n      url: `${app.globalData.baseUrl}${url}`,\n      method,\n      data,\n      header: {\n        'Content-Type': 'application/json',\n        'X-Openid': app.globalData.openid || '',\n      },\n      success(res) {\n        if (showLoading) wx.hideLoading();\n        if (res.statusCode === 200 && res.data.success !== false) {\n          resolve(res.data);\n        } else {\n          const msg = res.data?.message || '请求失败';\n          wx.showToast({ title: msg, icon: 'none' });\n          reject(new Error(msg));\n        }\n      },\n      fail(err) {\n        if (showLoading) wx.hideLoading();\n        wx.showToast({ title: '网络连接失败', icon: 'none' });\n        reject(err);\n      },\n    });\n  });\n}"
+      }
+    ],
+    "truncated": false,
+    "diagnostics": [],
+    "budget_unit": "utf8_bytes_upper_bound",
+    "token_upper_bound": 1340
+  },
+  "allow_model": false,
+  "max_attempts": 3,
+  "timeout_sec": 120,
+  "contract_sha256": "9c3f39faa38246e218899e5093f1364568d933655c627ea375fbb562b2f4a10c"
+}

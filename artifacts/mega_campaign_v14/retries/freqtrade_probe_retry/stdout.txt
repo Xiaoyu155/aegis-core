@@ -1,0 +1,19 @@
+AEGIS V14 | 21-REPOSITORY READ-ONLY MEGA CAMPAIGN
+account=Xiaoyu155 | requested_workorders=1 | parallel_autopilot_workers=1
+execution=real Git clones + detached worktrees + actual aegis batch/autopilot/replay commands
+remote_mutation=none (no push, no PR, no merge); all generated commits stay in temporary checkouts
+NOTICE repository_count=1 (account inventory is not exactly 21)
+REPO Xiaoyu155/okx-freqtrade-live | source_files=345 py=483 js_ts_html=4 symbols=4839 flows=4750 batch_tickets=0 analysis=44.7493s
+AUTOPILOT | launching detached worktree campaigns with shared SQLite WAL ledger
+AUTOPILOT Xiaoyu155/okx-freqtrade-live | status=succeeded winner=conservative_repair rounds=2 rejected=3 replay=replayed elapsed=31.3932s
+
+21-REPOSITORY CAMPAIGN DECISION TABLE
+REPOSITORY | LANG FILES | BATCH | AUTOPILOT | WINNER | REPLAY | HEAD CLEAN
+Xiaoyu155/okx-freqtrade-live | 345 | 0/2 | succeeded | conservative_repair | replayed | True
+
+CAMPAIGN TOTALS
+repositories=1/1 work_orders=1 (batch 0/0, autopilot 1/1)
+AST-covered files=345 | rejected candidates=3/0 (1.0) | L3 findings={}
+SQLite WAL=wal traces=372 traces/sec=4.571 peak_wal=61993672 bytes locks=0 experiences=21
+default_heads_clean=True worktree_residuals=0 elapsed=81.389s
+report=/tmp/aegis-v14-autopilot-retry/report.json

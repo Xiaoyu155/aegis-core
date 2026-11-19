@@ -1,0 +1,74 @@
+{
+  "schema_version": "aegis.cli.v1",
+  "ticket_id": "v14-batch-edu-typing-1",
+  "repo_root": "/tmp/aegis-v14-mega-ocjs05u7/repos/edu-typing",
+  "base_commit": "29cb50b069652bf2e4e965be82befa2fc555da14",
+  "compilation": {
+    "kind": "CompiledContract",
+    "ticket_id": "v14-batch-edu-typing-1",
+    "status": "COMPILED",
+    "target_files": [
+      "src/index.tsx"
+    ],
+    "contract_stub": "def document_audited_contract() -> None:\n    ...",
+    "constraints": {}
+  },
+  "fail_before_cmd": [
+    "/tmp/aegis-v13-test-env/bin/python",
+    "-B",
+    "-c",
+    "from pathlib import Path; p=Path('src/index.tsx'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_EDU-TYPING_DOC_CONTRACT' in s; assert len(s) > 0"
+  ],
+  "pass_after_cmd": [
+    "/tmp/aegis-v13-test-env/bin/python",
+    "-B",
+    "-c",
+    "from pathlib import Path; p=Path('src/index.tsx'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_EDU-TYPING_DOC_CONTRACT' in s; assert len(s) > 0"
+  ],
+  "probe_kind": "unit",
+  "probe_script_sha256": {},
+  "source_dirs": [
+    "."
+  ],
+  "tool_source_globs": [
+    "**/tools/**/*.py",
+    "**/tools/**/*.js",
+    "**/tools/**/*.jsx",
+    "**/tools/**/*.cjs",
+    "**/tools/**/*.mjs",
+    "**/tools/**/*.ts",
+    "**/tools/**/*.tsx",
+    "**/tools/**/*.mts",
+    "**/tools/**/*.cts",
+    "**/tools/**/*.html",
+    "**/tools/**/*.htm",
+    "**/tools/**/*.css"
+  ],
+  "patches": [
+    "/workspace/aegis-core/artifacts/mega_campaign_v14/workorders/edu-typing/v14-batch-edu-typing-1.patch"
+  ],
+  "models_path": null,
+  "probe_patch": "",
+  "context": {
+    "target": "src/index.tsx:handleResize",
+    "items": [
+      {
+        "symbol": "src/index.tsx:handleResize",
+        "file": "src/index.tsx",
+        "start_line": 32,
+        "end_line": 38,
+        "relation": "target",
+        "distance": 0,
+        "source": "    const handleResize = () => {\n      const isMobile = window.innerWidth <= 600\n      if (!isMobile) {\n        window.location.href = '/'\n      }\n      setIsMobile(isMobile)\n    }"
+      }
+    ],
+    "truncated": false,
+    "diagnostics": [],
+    "budget_unit": "utf8_bytes_upper_bound",
+    "token_upper_bound": 501
+  },
+  "allow_model": false,
+  "max_attempts": 3,
+  "timeout_sec": 120,
+  "contract_sha256": "6dc3c5bd079f0d82b997c60cfc1ea19292fd7ec0266202bc8563308cc62ab596"
+}

@@ -1,0 +1,180 @@
+{
+  "status": "succeeded",
+  "jobs": [
+    {
+      "id": "v14-batch-Checkpoint-2-batch-retry",
+      "priority": 1,
+      "repo_root": "/tmp/aegis-v14-mega-bfqqq2at/repos/Checkpoint",
+      "languages": {
+        "python": {
+          "files": 151,
+          "present": true
+        },
+        "javascript": {
+          "files": 0,
+          "present": false
+        },
+        "typescript": {
+          "files": 0,
+          "present": false
+        }
+      },
+      "result": {
+        "ticket_id": "v14-batch-Checkpoint-2-batch-retry",
+        "status": "succeeded",
+        "reason": "gate_passed",
+        "attempts": 1,
+        "results": [
+          {
+            "baseline_failed": true,
+            "after_passed": true,
+            "passed": true,
+            "cheat_detected": false,
+            "changed_files": [
+              "xiao/src/visual_agent/task_review.py"
+            ],
+            "diff_lines": 1,
+            "repeated_patch": false,
+            "patch_sha256": "122937f3cf3b6ad75638f4cc52ad26cc15bb20d0d5f0bf075deb6f30b5c997db",
+            "complexity": {
+              "level": "L2",
+              "tier": "L2_WORKER_POOL",
+              "impact_radius": 0,
+              "coupling": 4,
+              "impacted_files": [
+                "xiao/src/visual_agent/task_review.py"
+              ],
+              "risk_probability": null
+            },
+            "model_tier": null,
+            "probe_kind": "unit",
+            "probe_script_sha256": {},
+            "predicted_next_state": {
+              "outcome": "assertion_error",
+              "probabilities": {
+                "gate_passed": 0.3111091617641919,
+                "assertion_error": 0.677742068055108,
+                "cheat_detected": 0.003143373764853343,
+                "replay_blocked": 0.00592745024014445,
+                "missing_constraint": 0.0020779461757023917
+              },
+              "decision_source": "causal_world_net",
+              "high_risk_pre_block": false,
+              "pre_block_reason": null,
+              "changed_paths": [
+                "xiao/src/visual_agent/task_review.py"
+              ]
+            },
+            "predicted_reward": 0.4308130899697756,
+            "predicted_reward_interval": [
+              -0.1942334937293277,
+              1.0558596736688788
+            ],
+            "prediction_confidence": 0.677742068055108,
+            "risk_probability": 0.018061298531753523,
+            "world_model_version": "5c64ee2972cf103513d5a29ba6bb0bf61f0a6c621451618c292eb91f158ac8aa",
+            "baseline": {
+              "command": [
+                "/tmp/aegis-v13-test-env/bin/python",
+                "-B",
+                "-c",
+                "from pathlib import Path; p=Path('xiao/src/visual_agent/task_review.py'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_CHECKPOINT_DEPENDENCY_HANDOFF' in s; compile(s, 'xiao/src/visual_agent/task_review.py', 'exec')"
+              ],
+              "exit_code": 1,
+              "stdout": "",
+              "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\nAssertionError\n",
+              "before_hash": "ae2b01772863287fe8a7e86799b2ff8dc1061c5573eebfc5c3cfaa4790150ac2",
+              "after_hash": "ae2b01772863287fe8a7e86799b2ff8dc1061c5573eebfc5c3cfaa4790150ac2",
+              "changed": false,
+              "reward": -1.0,
+              "passed": false,
+              "probe_kind": "unit",
+              "probe_script_sha256": {},
+              "probe_runtime_sha256": {},
+              "failure_code": "ASSERTION_FAILED",
+              "timed_out": false,
+              "timeout_killed": false,
+              "termination_reason": null,
+              "killed_process_group": false
+            },
+            "final": {
+              "command": [
+                "/tmp/aegis-v13-test-env/bin/python",
+                "-B",
+                "-c",
+                "from pathlib import Path; p=Path('xiao/src/visual_agent/task_review.py'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_CHECKPOINT_DEPENDENCY_HANDOFF' in s; compile(s, 'xiao/src/visual_agent/task_review.py', 'exec')"
+              ],
+              "exit_code": 0,
+              "stdout": "",
+              "stderr": "",
+              "before_hash": "47aff18a430a74756c25522479d37ba89f6a3109ddfda1e52973342b6bfdfe88",
+              "after_hash": "47aff18a430a74756c25522479d37ba89f6a3109ddfda1e52973342b6bfdfe88",
+              "changed": false,
+              "reward": 1.0,
+              "passed": true,
+              "probe_kind": "unit",
+              "probe_script_sha256": {},
+              "probe_runtime_sha256": {},
+              "failure_code": null,
+              "timed_out": false,
+              "timeout_killed": false,
+              "termination_reason": null,
+              "killed_process_group": false
+            },
+            "timeout_killed": false,
+            "before_hash": "ae2b01772863287fe8a7e86799b2ff8dc1061c5573eebfc5c3cfaa4790150ac2",
+            "after_hash": "47aff18a430a74756c25522479d37ba89f6a3109ddfda1e52973342b6bfdfe88",
+            "reward": 1.4969625527333332,
+            "source_changed_lines": 1,
+            "protected_changed": [],
+            "termination_reason": null,
+            "elapsed_sec": 0.2796032339992962,
+            "world_model_outcome": "gate_passed",
+            "causal_prediction_error": {
+              "predicted_outcome": "assertion_error",
+              "actual_outcome": "gate_passed",
+              "state_mismatch": true,
+              "state_error": 1,
+              "reward_absolute_error": 1.066149462764,
+              "reward_interval_covered": false,
+              "composite_error": 2.066149462764
+            }
+          }
+        ],
+        "telemetry": {
+          "model_loaded": true,
+          "world_model_version": "5c64ee2972cf103513d5a29ba6bb0bf61f0a6c621451618c292eb91f158ac8aa",
+          "model_source": "bundled",
+          "model_mode": "observe",
+          "predictions_made": 1,
+          "no_prediction_count": 0,
+          "below_threshold_count": 0,
+          "scope": "repair_attempts"
+        },
+        "budget": {
+          "scope": "v14-batch-Checkpoint-2-batch-retry:a182ea1d960d468b921b91500729ed49",
+          "limits": {},
+          "token_consumption": 0,
+          "estimated_cost_usd": 0.0,
+          "estimated_usd_per_token": 1e-05,
+          "wall_clock_sec": 1.7067069370004901,
+          "reward": 1.4969625527333332,
+          "reward_per_1000_tokens": null,
+          "reward_per_usd": null,
+          "halted_by": null
+        }
+      },
+      "status": "succeeded",
+      "exit_code": 0
+    }
+  ],
+  "passed": 1,
+  "failed": 0,
+  "budget": {
+    "token_consumption": 0,
+    "estimated_cost_usd": 0.0,
+    "reward": 1.4969625527333332,
+    "wall_clock_sec": 1.7067069370004901,
+    "reward_per_usd": null
+  }
+}

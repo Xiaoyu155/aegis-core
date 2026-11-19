@@ -1,0 +1,1 @@
+{"target_files": ["tools/celestia_agent.py"], "contract_stub": "def document_audited_contract() -> None:\n    ..."}

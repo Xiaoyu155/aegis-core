@@ -27,6 +27,11 @@ COLLECTION = re.compile(
 )
 PROBE_NAMES = {".py": "tests/test_aegis_probe.py", ".js": "tests/test_aegis_probe.mjs",
                ".mjs": "tests/test_aegis_probe.mjs", ".cjs": "tests/test_aegis_probe.mjs"}
+def _new_file_patch(filename, source):
+    lines = source.splitlines()
+    return (f"diff --git a/{filename} b/{filename}\nnew file mode 100644\n"
+            f"--- /dev/null\n+++ b/{filename}\n@@ -0,0 +1,{len(lines)} @@\n"
+            + "".join(f"+{line}\n" for line in lines))
 
 
 def acceptance_rule(intent):
@@ -84,7 +89,8 @@ def test_aegis_acceptance(value, expected):
     result = function(value)
     assert type(result) is type(expected) and result == expected, "AEGIS_ACCEPTANCE"
 """
-        command = ["{python}", "-B", "-m", "pytest", "-p", "no:cacheprovider", "-q", filename]
+        command = ["{python}", "-B", "-m", "pytest", "--noconftest", "-o", "addopts=",
+                   "-p", "no:cacheprovider", "-q", filename]
     else:
         source = f"""import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -109,10 +115,7 @@ def compile_probe(spec, repo, base, *, timeout=60, budget=None):
         raise ValueError("acceptance rules must specify an executable target, input domain and expected behavior")
     root = Path(repo).resolve()
     filename, source, command = render_probe(rule, static_cases(rule))
-    lines = source.splitlines()
-    patch = (f"diff --git a/{filename} b/{filename}\nnew file mode 100644\n"
-             f"--- /dev/null\n+++ b/{filename}\n@@ -0,0 +1,{len(lines)} @@\n"
-             + "".join(f"+{line}\n" for line in lines))
+    patch = _new_file_patch(filename, source)
     hashes = {filename: hashlib.sha256(source.encode("utf-8")).hexdigest()}
     sandbox = Sandbox(root)
     ticket = "synth-" + uuid.uuid4().hex[:12]
@@ -405,7 +408,8 @@ def test_aegis_structured_acceptance(case):
     # math is imported only when executing the generated contract checks.
     source = source.replace("import json\nimport sys", "import json\nimport math\nimport sys")
     filename = PROBE_NAMES[".py"]
-    command = ["{python}", "-B", "-m", "pytest", "-p", "no:cacheprovider", "-q", filename]
+    command = ["{python}", "-B", "-m", "pytest", "--noconftest", "-o", "addopts=",
+               "-p", "no:cacheprovider", "-q", filename]
     return filename, source, command, cases
 
 
@@ -414,10 +418,7 @@ def compile_structured_probe(rule: dict, repo: str | Path, base: str, *, timeout
     canonical = validate_structured_rule(rule)
     root = Path(repo).resolve()
     filename, source, command, cases = render_structured_probe(canonical)
-    lines = source.splitlines()
-    patch = (f"diff --git a/{filename} b/{filename}\nnew file mode 100644\n"
-             f"--- /dev/null\n+++ b/{filename}\n@@ -0,0 +1,{len(lines)} @@\n"
-             + "".join(f"+{line}\n" for line in lines))
+    patch = _new_file_patch(filename, source)
     hashes = {filename: hashlib.sha256(source.encode("utf-8")).hexdigest()}
     sandbox = Sandbox(root)
     ticket = "synth-v2-" + uuid.uuid4().hex[:12]

@@ -1,0 +1,110 @@
+{
+  "schema_version": "aegis.cli.v1",
+  "ticket_id": "v14-batch-omni-eval-1",
+  "repo_root": "/tmp/aegis-v14-mega-ocjs05u7/repos/omni-eval",
+  "base_commit": "a9665f48422e30574db43677b90707f2cc0b55b3",
+  "compilation": {
+    "kind": "CompiledContract",
+    "ticket_id": "v14-batch-omni-eval-1",
+    "status": "COMPILED",
+    "target_files": [
+      "data/split_recording.py"
+    ],
+    "contract_stub": "def document_audited_contract() -> None:\n    ...",
+    "constraints": {}
+  },
+  "fail_before_cmd": [
+    "/tmp/aegis-v13-test-env/bin/python",
+    "-B",
+    "-c",
+    "from pathlib import Path; p=Path('data/split_recording.py'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_OMNI-EVAL_DOC_CONTRACT' in s; compile(s, 'data/split_recording.py', 'exec')"
+  ],
+  "pass_after_cmd": [
+    "/tmp/aegis-v13-test-env/bin/python",
+    "-B",
+    "-c",
+    "from pathlib import Path; p=Path('data/split_recording.py'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_OMNI-EVAL_DOC_CONTRACT' in s; compile(s, 'data/split_recording.py', 'exec')"
+  ],
+  "probe_kind": "unit",
+  "probe_script_sha256": {},
+  "source_dirs": [
+    "."
+  ],
+  "tool_source_globs": [
+    "**/tools/**/*.py",
+    "**/tools/**/*.js",
+    "**/tools/**/*.jsx",
+    "**/tools/**/*.cjs",
+    "**/tools/**/*.mjs",
+    "**/tools/**/*.ts",
+    "**/tools/**/*.tsx",
+    "**/tools/**/*.mts",
+    "**/tools/**/*.cts",
+    "**/tools/**/*.html",
+    "**/tools/**/*.htm",
+    "**/tools/**/*.css"
+  ],
+  "patches": [
+    "/workspace/aegis-core/artifacts/mega_campaign_v14/workorders/omni-eval/v14-batch-omni-eval-1.patch"
+  ],
+  "models_path": null,
+  "probe_patch": "",
+  "context": {
+    "target": "data.split_recording:load_any",
+    "items": [
+      {
+        "symbol": "data.split_recording:load_any",
+        "file": "data/split_recording.py",
+        "start_line": 39,
+        "end_line": 88,
+        "relation": "target",
+        "distance": 0,
+        "source": "def load_any(path: Path) -> bytes:\n    \"\"\"Read wav directly; decode anything else.\n\n    Phone recorders produce m4a, so this is the common case. PyAV is tried\n    before an ffmpeg subprocess because it bundles its own codecs - installing\n    ffmpeg separately meant a 30 MB download over a link running at 25 KB/s.\n    \"\"\"\n    if path.suffix.lower() == \".wav\":\n        frames, rate, channels, width = au.read_wav(path)\n        return au.normalize(frames, rate, channels, width)\n\n    try:\n        import av\n\n        with av.open(str(path)) as container:\n            stream = container.streams.audio[0]\n            resampler = av.AudioResampler(format=\"s16\", layout=\"mono\", rate=au.TARGET_RATE)\n            chunks = []\n            for frame in container.decode(stream):\n                for resampled in resampler.resample(frame):\n                    chunks.append(bytes(resampled.planes[0]))\n            for resampled in resampler.resample(None):\n                chunks.append(bytes(resampled.planes[0]))\n        if chunks:\n            return b\"\".join(chunks)\n        print(\"PyAV 解出空音频，改试 ffmpeg\", file=sys.stderr)\n    except ImportError:\n        pass\n    except Exception as exc:  # noqa: BLE001 - fall through to ffmpeg.\n        print(f\"PyAV 解码失败（{type(exc).__name__}: {exc}），改试 ffmpeg\", file=sys.stderr)\n\n    for exe in (\"ffmpeg\", r\"C:\\ffmpeg\\bin\\ffmpeg.exe\"):\n        try:\n            result = subprocess.run(\n                [exe, \"-i\", str(path), \"-f\", \"wav\", \"-ar\", str(au.TARGET_RATE),\n                 \"-ac\", \"1\", \"-acodec\", \"pcm_s16le\", \"-\"],\n                capture_output=True, timeout=300, check=True,\n            )\n            import io\n\n            with wave.open(io.BytesIO(result.stdout), \"rb\") as handle:\n                return handle.readframes(handle.getnframes())\n        except FileNotFoundError:\n            continue\n        except subprocess.CalledProcessError as exc:\n            print(f\"ffmpeg 解码失败: {exc.stderr[-300:].decode('utf-8', 'ignore')}\", file=sys.stderr)\n            raise SystemExit(2)\n    print(f\"无法解码 {path.suffix} 文件：PyAV 和 ffmpeg 都不可用。\", file=sys.stderr)\n    print(\"装法: pip install av   或把 wav 格式的录音给我。\", file=sys.stderr)\n    raise SystemExit(2)"
+      },
+      {
+        "symbol": "common.audio_utils:normalize",
+        "file": "common/audio_utils.py",
+        "start_line": 48,
+        "end_line": 57,
+        "relation": "callee",
+        "distance": 1,
+        "source": "def normalize(frames: bytes, rate: int, channels: int, width: int) -> bytes:\n    \"\"\"Bring any input to 16 kHz mono 16-bit.\"\"\"\n    ..."
+      },
+      {
+        "symbol": "common.audio_utils:read_wav",
+        "file": "common/audio_utils.py",
+        "start_line": 26,
+        "end_line": 34,
+        "relation": "callee",
+        "distance": 1,
+        "source": "def read_wav(path: str | Path) -> tuple[bytes, int, int, int]:\n    \"\"\"Return (frames, rate, channels, sample_width).\"\"\"\n    ..."
+      },
+      {
+        "symbol": "data.split_recording:main",
+        "file": "data/split_recording.py",
+        "start_line": 162,
+        "end_line": 247,
+        "relation": "caller",
+        "distance": 1,
+        "source": "def main() -> None:\n    ..."
+      },
+      {
+        "symbol": "common.audio_utils:iter_wavs",
+        "file": "common/audio_utils.py",
+        "start_line": 143,
+        "end_line": 147,
+        "relation": "caller",
+        "distance": 2,
+        "source": "def iter_wavs(directory: str | Path) -> Iterator[tuple[Path, bytes]]:\n    \"\"\"Stream every wav in a directory rather than loading them all.\"\"\"\n    ..."
+      }
+    ],
+    "truncated": true,
+    "diagnostics": [],
+    "budget_unit": "utf8_bytes_upper_bound",
+    "token_upper_bound": 3955
+  },
+  "allow_model": false,
+  "max_attempts": 3,
+  "timeout_sec": 120,
+  "contract_sha256": "3119769f40ebff5da7e4fba0cf3612b72cfdd54a8efe7dacc60ed3a7a44fd7e5"
+}

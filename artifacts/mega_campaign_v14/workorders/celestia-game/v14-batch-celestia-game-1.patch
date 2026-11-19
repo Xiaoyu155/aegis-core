@@ -1,0 +1,8 @@
+diff --git a/play/server.py b/play/server.py
+--- a/play/server.py
++++ b/play/server.py
+@@ -1252,3 +1252,4 @@
+     print("  停止：Ctrl+C")
+     print("=" * 54)
+     ThreadingHTTPServer(("127.0.0.1", PORT), H).serve_forever()
++# AEGIS_V14_CELESTIA-GAME_DOC_CONTRACT

@@ -1,0 +1,8 @@
+diff --git a/src/app.js b/src/app.js
+--- a/src/app.js
++++ b/src/app.js
+@@ -211,3 +211,4 @@
+
+ process.on('SIGINT', () => shutdown('SIGINT'));
+ process.on('SIGTERM', () => shutdown('SIGTERM'));
++// AEGIS_V14_PET-MINIAPP-BACKEND_DEPENDENCY_HANDOFF

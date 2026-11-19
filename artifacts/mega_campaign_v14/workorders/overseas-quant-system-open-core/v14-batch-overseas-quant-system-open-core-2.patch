@@ -1,0 +1,8 @@
+diff --git a/core_alpha_stub.py b/core_alpha_stub.py
+--- a/core_alpha_stub.py
++++ b/core_alpha_stub.py
+@@ -60,3 +60,4 @@
+ class RiskProfileProvider(Protocol):
+     def resolve(self, profile_id: str) -> Mapping[str, float]: ...
+
++# AEGIS_V14_OVERSEAS-QUANT-SYSTEM-OPEN-CORE_DEPENDENCY_HANDOFF

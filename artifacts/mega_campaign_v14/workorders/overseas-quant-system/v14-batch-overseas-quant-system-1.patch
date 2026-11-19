@@ -1,0 +1,8 @@
+diff --git a/test_compare_62_63.py b/test_compare_62_63.py
+--- a/test_compare_62_63.py
++++ b/test_compare_62_63.py
+@@ -186,3 +186,4 @@
+     }
+
+ print("Running original Exp 6.2 code to check tot_compound...")
++# AEGIS_V14_OVERSEAS-QUANT-SYSTEM_DOC_CONTRACT

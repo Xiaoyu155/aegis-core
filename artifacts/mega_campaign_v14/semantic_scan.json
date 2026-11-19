@@ -1,0 +1,1048 @@
+{
+  "account": "Xiaoyu155",
+  "autopilot": {
+    "purpose": "physically validate fail-red, tournament rejection, correct repair, WAL learning and aegis replay against each repository's Git object database",
+    "records": [],
+    "target_kind": "temporary tracked contract fixture inside each repository's detached worktree"
+  },
+  "limits": [
+    "Audit annotation batch patches and contract fixture commits are discarded after each isolated campaign."
+  ],
+  "repositories": [
+    {
+      "analysis": {
+        "impact_graph": {
+          "call_edges": 2183,
+          "files": 262,
+          "reference_edges": 2204,
+          "symbols": 1974,
+          "unresolved_references": 1363
+        },
+        "languages": {
+          "html_documents": 24,
+          "javascript_typescript_html": 88,
+          "python": 327,
+          "tracked_source_files": 427
+        },
+        "parse_diagnostics": 2,
+        "semantic_contracts": {
+          "callbacks_recognized": 149,
+          "contract_mismatches": 77,
+          "decorators_recognized": 3,
+          "dynamic_resolution_kinds": {
+            "typed_field": 1
+          },
+          "dynamic_resolution_rate": 0.25,
+          "dynamic_sites": 4,
+          "dynamic_unresolved_reduction_rate": 0.25,
+          "fields": 1687,
+          "flows": 2227,
+          "legacy_dynamic_unresolved_sites": 4,
+          "legacy_unresolved_references": 1363,
+          "resolved_dynamic_sites": 1,
+          "schema_count": 780,
+          "unresolved_dynamic_sites": 3
+        }
+      },
+      "analysis_elapsed_sec": 14.6689,
+      "attach_exit_code": null,
+      "checkout_branch": "",
+      "default_branch": "master",
+      "default_head_after": "7e1194cb3c18bdf38632112fc77df3890e1a300b",
+      "default_head_before": "7e1194cb3c18bdf38632112fc77df3890e1a300b",
+      "default_head_unchanged": true,
+      "private": true,
+      "registered_worktrees_after": 1,
+      "repo": "Xiaoyu155/celestia-game",
+      "tracked_diff_after": [],
+      "url": "https://github.com/Xiaoyu155/celestia-game",
+      "work_orders": []
+    },
+    {
+      "analysis": {
+        "impact_graph": {
+          "call_edges": 500,
+          "files": 78,
+          "reference_edges": 509,
+          "symbols": 503,
+          "unresolved_references": 33
+        },
+        "languages": {
+          "html_documents": 1,
+          "javascript_typescript_html": 1,
+          "python": 83,
+          "tracked_source_files": 40
+        },
+        "parse_diagnostics": 0,
+        "semantic_contracts": {
+          "callbacks_recognized": 7,
+          "contract_mismatches": 26,
+          "decorators_recognized": 1,
+          "dynamic_resolution_kinds": {},
+          "dynamic_resolution_rate": 1.0,
+          "dynamic_sites": 0,
+          "dynamic_unresolved_reduction_rate": 1.0,
+          "fields": 213,
+          "flows": 14513,
+          "legacy_dynamic_unresolved_sites": 0,
+          "legacy_unresolved_references": 33,
+          "resolved_dynamic_sites": 0,
+          "schema_count": 500,
+          "unresolved_dynamic_sites": 0
+        }
+      },
+      "analysis_elapsed_sec": 3.8876,
+      "attach_exit_code": null,
+      "checkout_branch": "",
+      "default_branch": "master",
+      "default_head_after": "4e548c28e1434ed89d6a4f0748c1373313ff9bfb",
+      "default_head_before": "4e548c28e1434ed89d6a4f0748c1373313ff9bfb",
+      "default_head_unchanged": true,
+      "private": true,
+      "registered_worktrees_after": 1,
+      "repo": "Xiaoyu155/celestia-openlab",
+      "tracked_diff_after": [],
+      "url": "https://github.com/Xiaoyu155/celestia-openlab",
+      "work_orders": []
+    },
+    {
+      "analysis": {
+        "impact_graph": {
+          "call_edges": 1935,
+          "files": 146,
+          "reference_edges": 2145,
+          "symbols": 2159,
+          "unresolved_references": 81
+        },
+        "languages": {
+          "html_documents": 0,
+          "javascript_typescript_html": 0,
+          "python": 151,
+          "tracked_source_files": 88
+        },
+        "parse_diagnostics": 0,
+        "semantic_contracts": {
+          "callbacks_recognized": 134,
+          "contract_mismatches": 415,
+          "decorators_recognized": 31,
+          "dynamic_resolution_kinds": {
+            "argparse_option": 18
+          },
+          "dynamic_resolution_rate": 0.24324324324324326,
+          "dynamic_sites": 74,
+          "dynamic_unresolved_reduction_rate": 0.24324324324324326,
+          "fields": 3337,
+          "flows": 2385,
+          "legacy_dynamic_unresolved_sites": 74,
+          "legacy_unresolved_references": 81,
+          "resolved_dynamic_sites": 18,
+          "schema_count": 2076,
+          "unresolved_dynamic_sites": 56
+        }
+      },
+      "analysis_elapsed_sec": 11.7052,
+      "attach_exit_code": null,
+      "checkout_branch": "",
+      "default_branch": "main",
+      "default_head_after": "e66a376b2f81dcdcf9a63a3d5ffe842a37f45406",
+      "default_head_before": "e66a376b2f81dcdcf9a63a3d5ffe842a37f45406",
+      "default_head_unchanged": true,
+      "private": false,
+      "registered_worktrees_after": 1,
+      "repo": "Xiaoyu155/Checkpoint",
+      "tracked_diff_after": [],
+      "url": "https://github.com/Xiaoyu155/Checkpoint",
+      "work_orders": []
+    },
+    {
+      "analysis": {
+        "impact_graph": {
+          "call_edges": 756,
+          "files": 58,
+          "reference_edges": 909,
+          "symbols": 552,
+          "unresolved_references": 5
+        },
+        "languages": {
+          "html_documents": 0,
+          "javascript_typescript_html": 0,
+          "python": 62,
+          "tracked_source_files": 44
+        },
+        "parse_diagnostics": 0,
+        "semantic_contracts": {
+          "callbacks_recognized": 20,
+          "contract_mismatches": 58,
+          "decorators_recognized": 34,
+          "dynamic_resolution_kinds": {},
+          "dynamic_resolution_rate": 1.0,
+          "dynamic_sites": 0,
+          "dynamic_unresolved_reduction_rate": 1.0,
+          "fields": 856,
+          "flows": 470,
+          "legacy_dynamic_unresolved_sites": 0,
+          "legacy_unresolved_references": 5,
+          "resolved_dynamic_sites": 0,
+          "schema_count": 545,
+          "unresolved_dynamic_sites": 0
+        }
+      },
+      "analysis_elapsed_sec": 2.1068,
+      "attach_exit_code": null,
+      "checkout_branch": "",
+      "default_branch": "experiment-harness",
+      "default_head_after": "d2cc408fa6abab2f8e2f26b7158427e7c6beb3a5",
+      "default_head_before": "d2cc408fa6abab2f8e2f26b7158427e7c6beb3a5",
+      "default_head_unchanged": true,
+      "private": true,
+      "registered_worktrees_after": 1,
+      "repo": "Xiaoyu155/crypto-quant-mvp",
+      "tracked_diff_after": [],
+      "url": "https://github.com/Xiaoyu155/crypto-quant-mvp",
+      "work_orders": []
+    },
+    {
+      "analysis": {
+        "impact_graph": {
+          "call_edges": 2798,
+          "files": 190,
+          "reference_edges": 2801,
+          "symbols": 2229,
+          "unresolved_references": 1258
+        },
+        "languages": {
+          "html_documents": 23,
+          "javascript_typescript_html": 216,
+          "python": 3,
+          "tracked_source_files": 219
+        },
+        "parse_diagnostics": 2,
+        "semantic_contracts": {
+          "callbacks_recognized": 0,
+          "contract_mismatches": 529,
+          "decorators_recognized": 0,
+          "dynamic_resolution_kinds": {},
+          "dynamic_resolution_rate": 1.0,
+          "dynamic_sites": 0,
+          "dynamic_unresolved_reduction_rate": 1.0,
+          "fields": 1655,
+          "flows": 7514,
+          "legacy_dynamic_unresolved_sites": 0,
+          "legacy_unresolved_references": 1258,
+          "resolved_dynamic_sites": 0,
+          "schema_count": 310,
+          "unresolved_dynamic_sites": 0
+        }
+      },
+      "analysis_elapsed_sec": 8.0229,
+      "attach_exit_code": null,
+      "checkout_branch": "",
+      "default_branch": "master",
+      "default_head_after": "1c00730f1902d847762e0e1a957efc775a5af384",
+      "default_head_before": "1c00730f1902d847762e0e1a957efc775a5af384",
+      "default_head_unchanged": true,
+      "private": true,
+      "registered_worktrees_after": 1,
+      "repo": "Xiaoyu155/douyin-kuaishou-alipay-miniapp",
+      "tracked_diff_after": [],
+      "url": "https://github.com/Xiaoyu155/douyin-kuaishou-alipay-miniapp",
+      "work_orders": []
+    },
+    {
+      "analysis": {
+        "impact_graph": {
+          "call_edges": 6853,
+          "files": 2433,
+          "reference_edges": 6953,
+          "symbols": 11925,
+          "unresolved_references": 12930
+        },
+        "languages": {
+          "html_documents": 10,
+          "javascript_typescript_html": 2943,
+          "python": 40,
+          "tracked_source_files": 1917
+        },
+        "parse_diagnostics": 0,
+        "semantic_contracts": {
+          "callbacks_recognized": 34,
+          "contract_mismatches": 432,
+          "decorators_recognized": 0,
+          "dynamic_resolution_kinds": {},
+          "dynamic_resolution_rate": 0.0,
+          "dynamic_sites": 1,
+          "dynamic_unresolved_reduction_rate": 0.0,
+          "fields": 11459,
+          "flows": 11316,
+          "legacy_dynamic_unresolved_sites": 1,
+          "legacy_unresolved_references": 12930,
+          "resolved_dynamic_sites": 0,
+          "schema_count": 2865,
+          "unresolved_dynamic_sites": 1
+        }
+      },
+      "analysis_elapsed_sec": 66.296,
+      "attach_exit_code": null,
+      "checkout_branch": "",
+      "default_branch": "main",
+      "default_head_after": "062eca44468bcc1af5795eefd4c3d910bbd832a5",
+      "default_head_before": "062eca44468bcc1af5795eefd4c3d910bbd832a5",
+      "default_head_unchanged": true,
+      "private": true,
+      "registered_worktrees_after": 1,
+      "repo": "Xiaoyu155/edu-ai",
+      "tracked_diff_after": [],
+      "url": "https://github.com/Xiaoyu155/edu-ai",
+      "work_orders": []
+    },
+    {
+      "analysis": {
+        "impact_graph": {
+          "call_edges": 52,
+          "files": 108,
+          "reference_edges": 61,
+          "symbols": 214,
+          "unresolved_references": 476
+        },
+        "languages": {
+          "html_documents": 6,
+          "javascript_typescript_html": 168,
+          "python": 0,
+          "tracked_source_files": 167
+        },
+        "parse_diagnostics": 0,
+        "semantic_contracts": {
+          "callbacks_recognized": 0,
+          "contract_mismatches": 0,
+          "decorators_recognized": 0,
+          "dynamic_resolution_kinds": {},
+          "dynamic_resolution_rate": 1.0,
+          "dynamic_sites": 0,
+          "dynamic_unresolved_reduction_rate": 1.0,
+          "fields": 266,
+          "flows": 22,
+          "legacy_dynamic_unresolved_sites": 0,
+          "legacy_unresolved_references": 476,
+          "resolved_dynamic_sites": 0,
+          "schema_count": 79,
+          "unresolved_dynamic_sites": 0
+        }
+      },
+      "analysis_elapsed_sec": 1.5513,
+      "attach_exit_code": null,
+      "checkout_branch": "",
+      "default_branch": "main",
+      "default_head_after": "29cb50b069652bf2e4e965be82befa2fc555da14",
+      "default_head_before": "29cb50b069652bf2e4e965be82befa2fc555da14",
+      "default_head_unchanged": true,
+      "private": true,
+      "registered_worktrees_after": 1,
+      "repo": "Xiaoyu155/edu-typing",
+      "tracked_diff_after": [],
+      "url": "https://github.com/Xiaoyu155/edu-typing",
+      "work_orders": []
+    },
+    {
+      "analysis": {
+        "impact_graph": {
+          "call_edges": 767,
+          "files": 114,
+          "reference_edges": 880,
+          "symbols": 770,
+          "unresolved_references": 29
+        },
+        "languages": {
+          "html_documents": 1,
+          "javascript_typescript_html": 1,
+          "python": 124,
+          "tracked_source_files": 100
+        },
+        "parse_diagnostics": 0,
+        "semantic_contracts": {
+          "callbacks_recognized": 70,
+          "contract_mismatches": 30,
+          "decorators_recognized": 15,
+          "dynamic_resolution_kinds": {
+            "unique_callable": 2
+          },
+          "dynamic_resolution_rate": 0.044444444444444446,
+          "dynamic_sites": 45,
+          "dynamic_unresolved_reduction_rate": 0.044444444444444446,
+          "fields": 700,
+          "flows": 195,
+          "legacy_dynamic_unresolved_sites": 45,
+          "legacy_unresolved_references": 29,
+          "resolved_dynamic_sites": 2,
+          "schema_count": 722,
+          "unresolved_dynamic_sites": 43
+        }
+      },
+      "analysis_elapsed_sec": 2.6847,
+      "attach_exit_code": null,
+      "checkout_branch": "",
+      "default_branch": "main",
+      "default_head_after": "ba1c12ea4e8ad4725882b3c6546f9e34da995dd5",
+      "default_head_before": "ba1c12ea4e8ad4725882b3c6546f9e34da995dd5",
+      "default_head_unchanged": true,
+      "private": true,
+      "registered_worktrees_after": 1,
+      "repo": "Xiaoyu155/nova-agent",
+      "tracked_diff_after": [],
+      "url": "https://github.com/Xiaoyu155/nova-agent",
+      "work_orders": []
+    },
+    {
+      "analysis": {
+        "impact_graph": {
+          "call_edges": 6887,
+          "files": 430,
+          "reference_edges": 9862,
+          "symbols": 4839,
+          "unresolved_references": 769
+        },
+        "languages": {
+          "html_documents": 3,
+          "javascript_typescript_html": 4,
+          "python": 483,
+          "tracked_source_files": 345
+        },
+        "parse_diagnostics": 0,
+        "semantic_contracts": {
+          "callbacks_recognized": 174,
+          "contract_mismatches": 71,
+          "decorators_recognized": 387,
+          "dynamic_resolution_kinds": {
+            "typed_field": 11,
+            "unique_callable": 2
+          },
+          "dynamic_resolution_rate": 0.3939393939393939,
+          "dynamic_sites": 33,
+          "dynamic_unresolved_reduction_rate": 0.3939393939393939,
+          "fields": 4384,
+          "flows": 5747,
+          "legacy_dynamic_unresolved_sites": 33,
+          "legacy_unresolved_references": 769,
+          "resolved_dynamic_sites": 13,
+          "schema_count": 4524,
+          "unresolved_dynamic_sites": 20
+        }
+      },
+      "analysis_elapsed_sec": 46.4419,
+      "attach_exit_code": null,
+      "checkout_branch": "",
+      "default_branch": "develop",
+      "default_head_after": "3d31927c8232830729e37ce9c36f230ab8d9c7c2",
+      "default_head_before": "3d31927c8232830729e37ce9c36f230ab8d9c7c2",
+      "default_head_unchanged": true,
+      "private": true,
+      "registered_worktrees_after": 1,
+      "repo": "Xiaoyu155/okx-freqtrade-live",
+      "tracked_diff_after": [],
+      "url": "https://github.com/Xiaoyu155/okx-freqtrade-live",
+      "work_orders": []
+    },
+    {
+      "analysis": {
+        "impact_graph": {
+          "call_edges": 74,
+          "files": 13,
+          "reference_edges": 79,
+          "symbols": 81,
+          "unresolved_references": 15
+        },
+        "languages": {
+          "html_documents": 0,
+          "javascript_typescript_html": 0,
+          "python": 15,
+          "tracked_source_files": 15
+        },
+        "parse_diagnostics": 0,
+        "semantic_contracts": {
+          "callbacks_recognized": 8,
+          "contract_mismatches": 10,
+          "decorators_recognized": 3,
+          "dynamic_resolution_kinds": {},
+          "dynamic_resolution_rate": 0.0,
+          "dynamic_sites": 1,
+          "dynamic_unresolved_reduction_rate": 0.0,
+          "fields": 163,
+          "flows": 18,
+          "legacy_dynamic_unresolved_sites": 1,
+          "legacy_unresolved_references": 15,
+          "resolved_dynamic_sites": 0,
+          "schema_count": 86,
+          "unresolved_dynamic_sites": 1
+        }
+      },
+      "analysis_elapsed_sec": 0.2994,
+      "attach_exit_code": null,
+      "checkout_branch": "",
+      "default_branch": "master",
+      "default_head_after": "a9665f48422e30574db43677b90707f2cc0b55b3",
+      "default_head_before": "a9665f48422e30574db43677b90707f2cc0b55b3",
+      "default_head_unchanged": true,
+      "private": true,
+      "registered_worktrees_after": 1,
+      "repo": "Xiaoyu155/omni-eval",
+      "tracked_diff_after": [],
+      "url": "https://github.com/Xiaoyu155/omni-eval",
+      "work_orders": []
+    },
+    {
+      "analysis": {
+        "impact_graph": {
+          "call_edges": 1169,
+          "files": 184,
+          "reference_edges": 1201,
+          "symbols": 1491,
+          "unresolved_references": 806
+        },
+        "languages": {
+          "html_documents": 1,
+          "javascript_typescript_html": 1,
+          "python": 193,
+          "tracked_source_files": 205
+        },
+        "parse_diagnostics": 2,
+        "semantic_contracts": {
+          "callbacks_recognized": 207,
+          "contract_mismatches": 246,
+          "decorators_recognized": 18,
+          "dynamic_resolution_kinds": {},
+          "dynamic_resolution_rate": 0.0,
+          "dynamic_sites": 60,
+          "dynamic_unresolved_reduction_rate": 0.0,
+          "fields": 2901,
+          "flows": 3402,
+          "legacy_dynamic_unresolved_sites": 60,
+          "legacy_unresolved_references": 806,
+          "resolved_dynamic_sites": 0,
+          "schema_count": 1547,
+          "unresolved_dynamic_sites": 60
+        }
+      },
+      "analysis_elapsed_sec": 20.1262,
+      "attach_exit_code": null,
+      "checkout_branch": "",
+      "default_branch": "main",
+      "default_head_after": "f7faac007e007d308908feaa130e9b07c15dc6fb",
+      "default_head_before": "f7faac007e007d308908feaa130e9b07c15dc6fb",
+      "default_head_unchanged": true,
+      "private": true,
+      "registered_worktrees_after": 1,
+      "repo": "Xiaoyu155/overseas-quant-system",
+      "tracked_diff_after": [],
+      "url": "https://github.com/Xiaoyu155/overseas-quant-system",
+      "work_orders": []
+    },
+    {
+      "analysis": {
+        "impact_graph": {
+          "call_edges": 6,
+          "files": 7,
+          "reference_edges": 15,
+          "symbols": 34,
+          "unresolved_references": 37
+        },
+        "languages": {
+          "html_documents": 4,
+          "javascript_typescript_html": 6,
+          "python": 1,
+          "tracked_source_files": 7
+        },
+        "parse_diagnostics": 0,
+        "semantic_contracts": {
+          "callbacks_recognized": 0,
+          "contract_mismatches": 0,
+          "decorators_recognized": 0,
+          "dynamic_resolution_kinds": {},
+          "dynamic_resolution_rate": 1.0,
+          "dynamic_sites": 0,
+          "dynamic_unresolved_reduction_rate": 1.0,
+          "fields": 10,
+          "flows": 25,
+          "legacy_dynamic_unresolved_sites": 0,
+          "legacy_unresolved_references": 37,
+          "resolved_dynamic_sites": 0,
+          "schema_count": 10,
+          "unresolved_dynamic_sites": 0
+        }
+      },
+      "analysis_elapsed_sec": 0.1068,
+      "attach_exit_code": null,
+      "checkout_branch": "",
+      "default_branch": "main",
+      "default_head_after": "66ce315f2f0f990254f26698eaae4f2f87f9c051",
+      "default_head_before": "66ce315f2f0f990254f26698eaae4f2f87f9c051",
+      "default_head_unchanged": true,
+      "private": false,
+      "registered_worktrees_after": 1,
+      "repo": "Xiaoyu155/overseas-quant-system-open-core",
+      "tracked_diff_after": [],
+      "url": "https://github.com/Xiaoyu155/overseas-quant-system-open-core",
+      "work_orders": []
+    },
+    {
+      "analysis": {
+        "impact_graph": {
+          "call_edges": 2722,
+          "files": 218,
+          "reference_edges": 3027,
+          "symbols": 3279,
+          "unresolved_references": 166
+        },
+        "languages": {
+          "html_documents": 3,
+          "javascript_typescript_html": 8,
+          "python": 218,
+          "tracked_source_files": 121
+        },
+        "parse_diagnostics": 0,
+        "semantic_contracts": {
+          "callbacks_recognized": 178,
+          "contract_mismatches": 720,
+          "decorators_recognized": 42,
+          "dynamic_resolution_kinds": {
+            "argparse_option": 21,
+            "typed_field": 1
+          },
+          "dynamic_resolution_rate": 0.1375,
+          "dynamic_sites": 160,
+          "dynamic_unresolved_reduction_rate": 0.1375,
+          "fields": 4585,
+          "flows": 3774,
+          "legacy_dynamic_unresolved_sites": 160,
+          "legacy_unresolved_references": 166,
+          "resolved_dynamic_sites": 22,
+          "schema_count": 3125,
+          "unresolved_dynamic_sites": 138
+        }
+      },
+      "analysis_elapsed_sec": 18.725,
+      "attach_exit_code": null,
+      "checkout_branch": "",
+      "default_branch": "main",
+      "default_head_after": "c2dc21106d5aa8f25e8a98be1ad622007e221030",
+      "default_head_before": "c2dc21106d5aa8f25e8a98be1ad622007e221030",
+      "default_head_unchanged": true,
+      "private": true,
+      "registered_worktrees_after": 1,
+      "repo": "Xiaoyu155/pacer-recovery",
+      "tracked_diff_after": [],
+      "url": "https://github.com/Xiaoyu155/pacer-recovery",
+      "work_orders": []
+    },
+    {
+      "analysis": {
+        "impact_graph": {
+          "call_edges": 3683,
+          "files": 266,
+          "reference_edges": 3689,
+          "symbols": 3100,
+          "unresolved_references": 3199
+        },
+        "languages": {
+          "html_documents": 48,
+          "javascript_typescript_html": 133,
+          "python": 283,
+          "tracked_source_files": 413
+        },
+        "parse_diagnostics": 8,
+        "semantic_contracts": {
+          "callbacks_recognized": 9,
+          "contract_mismatches": 853,
+          "decorators_recognized": 0,
+          "dynamic_resolution_kinds": {},
+          "dynamic_resolution_rate": 1.0,
+          "dynamic_sites": 0,
+          "dynamic_unresolved_reduction_rate": 1.0,
+          "fields": 502,
+          "flows": 11197,
+          "legacy_dynamic_unresolved_sites": 0,
+          "legacy_unresolved_references": 3199,
+          "resolved_dynamic_sites": 0,
+          "schema_count": 444,
+          "unresolved_dynamic_sites": 0
+        }
+      },
+      "analysis_elapsed_sec": 12.8877,
+      "attach_exit_code": null,
+      "checkout_branch": "",
+      "default_branch": "main",
+      "default_head_after": "22000d36ade5ee0166c96237834fd61179180568",
+      "default_head_before": "22000d36ade5ee0166c96237834fd61179180568",
+      "default_head_unchanged": true,
+      "private": true,
+      "registered_worktrees_after": 1,
+      "repo": "Xiaoyu155/palm-cat-cafe",
+      "tracked_diff_after": [],
+      "url": "https://github.com/Xiaoyu155/palm-cat-cafe",
+      "work_orders": []
+    },
+    {
+      "analysis": {
+        "impact_graph": {
+          "call_edges": 72,
+          "files": 16,
+          "reference_edges": 72,
+          "symbols": 106,
+          "unresolved_references": 31
+        },
+        "languages": {
+          "html_documents": 0,
+          "javascript_typescript_html": 12,
+          "python": 5,
+          "tracked_source_files": 22
+        },
+        "parse_diagnostics": 0,
+        "semantic_contracts": {
+          "callbacks_recognized": 4,
+          "contract_mismatches": 8,
+          "decorators_recognized": 0,
+          "dynamic_resolution_kinds": {},
+          "dynamic_resolution_rate": 1.0,
+          "dynamic_sites": 0,
+          "dynamic_unresolved_reduction_rate": 1.0,
+          "fields": 95,
+          "flows": 257,
+          "legacy_dynamic_unresolved_sites": 0,
+          "legacy_unresolved_references": 31,
+          "resolved_dynamic_sites": 0,
+          "schema_count": 84,
+          "unresolved_dynamic_sites": 0
+        }
+      },
+      "analysis_elapsed_sec": 0.5556,
+      "attach_exit_code": null,
+      "checkout_branch": "",
+      "default_branch": "master",
+      "default_head_after": "09fca25ed3f65fc3c0a00854ff0db650a9427a93",
+      "default_head_before": "09fca25ed3f65fc3c0a00854ff0db650a9427a93",
+      "default_head_unchanged": true,
+      "private": true,
+      "registered_worktrees_after": 1,
+      "repo": "Xiaoyu155/pet-miniapp",
+      "tracked_diff_after": [],
+      "url": "https://github.com/Xiaoyu155/pet-miniapp",
+      "work_orders": []
+    },
+    {
+      "analysis": {
+        "impact_graph": {
+          "call_edges": 309,
+          "files": 82,
+          "reference_edges": 321,
+          "symbols": 514,
+          "unresolved_references": 343
+        },
+        "languages": {
+          "html_documents": 0,
+          "javascript_typescript_html": 112,
+          "python": 2,
+          "tracked_source_files": 67
+        },
+        "parse_diagnostics": 0,
+        "semantic_contracts": {
+          "callbacks_recognized": 4,
+          "contract_mismatches": 12,
+          "decorators_recognized": 0,
+          "dynamic_resolution_kinds": {},
+          "dynamic_resolution_rate": 1.0,
+          "dynamic_sites": 0,
+          "dynamic_unresolved_reduction_rate": 1.0,
+          "fields": 434,
+          "flows": 196,
+          "legacy_dynamic_unresolved_sites": 0,
+          "legacy_unresolved_references": 343,
+          "resolved_dynamic_sites": 0,
+          "schema_count": 76,
+          "unresolved_dynamic_sites": 0
+        }
+      },
+      "analysis_elapsed_sec": 1.6165,
+      "attach_exit_code": null,
+      "checkout_branch": "",
+      "default_branch": "master",
+      "default_head_after": "904ad484b8d351c7711b2eb6ecd2c3433fff87c6",
+      "default_head_before": "904ad484b8d351c7711b2eb6ecd2c3433fff87c6",
+      "default_head_unchanged": true,
+      "private": true,
+      "registered_worktrees_after": 1,
+      "repo": "Xiaoyu155/pet-miniapp-backend",
+      "tracked_diff_after": [],
+      "url": "https://github.com/Xiaoyu155/pet-miniapp-backend",
+      "work_orders": []
+    },
+    {
+      "analysis": {
+        "impact_graph": {
+          "call_edges": 221,
+          "files": 45,
+          "reference_edges": 221,
+          "symbols": 270,
+          "unresolved_references": 141
+        },
+        "languages": {
+          "html_documents": 3,
+          "javascript_typescript_html": 56,
+          "python": 1,
+          "tracked_source_files": 74
+        },
+        "parse_diagnostics": 0,
+        "semantic_contracts": {
+          "callbacks_recognized": 0,
+          "contract_mismatches": 0,
+          "decorators_recognized": 0,
+          "dynamic_resolution_kinds": {},
+          "dynamic_resolution_rate": 1.0,
+          "dynamic_sites": 0,
+          "dynamic_unresolved_reduction_rate": 1.0,
+          "fields": 88,
+          "flows": 227,
+          "legacy_dynamic_unresolved_sites": 0,
+          "legacy_unresolved_references": 141,
+          "resolved_dynamic_sites": 0,
+          "schema_count": 25,
+          "unresolved_dynamic_sites": 0
+        }
+      },
+      "analysis_elapsed_sec": 0.7834,
+      "attach_exit_code": null,
+      "checkout_branch": "",
+      "default_branch": "master",
+      "default_head_after": "b8719738e2f54c4f292fb78703a908dad076684f",
+      "default_head_before": "b8719738e2f54c4f292fb78703a908dad076684f",
+      "default_head_unchanged": true,
+      "private": true,
+      "registered_worktrees_after": 1,
+      "repo": "Xiaoyu155/pet-miniapp-frontend",
+      "tracked_diff_after": [],
+      "url": "https://github.com/Xiaoyu155/pet-miniapp-frontend",
+      "work_orders": []
+    },
+    {
+      "analysis": {
+        "impact_graph": {
+          "call_edges": 567,
+          "files": 44,
+          "reference_edges": 610,
+          "symbols": 554,
+          "unresolved_references": 39
+        },
+        "languages": {
+          "html_documents": 0,
+          "javascript_typescript_html": 2,
+          "python": 46,
+          "tracked_source_files": 49
+        },
+        "parse_diagnostics": 0,
+        "semantic_contracts": {
+          "callbacks_recognized": 33,
+          "contract_mismatches": 97,
+          "decorators_recognized": 20,
+          "dynamic_resolution_kinds": {
+            "argparse_option": 8
+          },
+          "dynamic_resolution_rate": 0.4,
+          "dynamic_sites": 20,
+          "dynamic_unresolved_reduction_rate": 0.4,
+          "fields": 544,
+          "flows": 710,
+          "legacy_dynamic_unresolved_sites": 20,
+          "legacy_unresolved_references": 39,
+          "resolved_dynamic_sites": 8,
+          "schema_count": 558,
+          "unresolved_dynamic_sites": 12
+        }
+      },
+      "analysis_elapsed_sec": 3.7877,
+      "attach_exit_code": null,
+      "checkout_branch": "",
+      "default_branch": "master",
+      "default_head_after": "592888391a1298361cc6eae3b31c4add50c5a656",
+      "default_head_before": "592888391a1298361cc6eae3b31c4add50c5a656",
+      "default_head_unchanged": true,
+      "private": true,
+      "registered_worktrees_after": 1,
+      "repo": "Xiaoyu155/promo-videos",
+      "tracked_diff_after": [],
+      "url": "https://github.com/Xiaoyu155/promo-videos",
+      "work_orders": []
+    },
+    {
+      "analysis": {
+        "impact_graph": {
+          "call_edges": 56,
+          "files": 22,
+          "reference_edges": 56,
+          "symbols": 83,
+          "unresolved_references": 29
+        },
+        "languages": {
+          "html_documents": 0,
+          "javascript_typescript_html": 19,
+          "python": 13,
+          "tracked_source_files": 41
+        },
+        "parse_diagnostics": 0,
+        "semantic_contracts": {
+          "callbacks_recognized": 8,
+          "contract_mismatches": 6,
+          "decorators_recognized": 0,
+          "dynamic_resolution_kinds": {},
+          "dynamic_resolution_rate": 1.0,
+          "dynamic_sites": 0,
+          "dynamic_unresolved_reduction_rate": 1.0,
+          "fields": 98,
+          "flows": 78,
+          "legacy_dynamic_unresolved_sites": 0,
+          "legacy_unresolved_references": 29,
+          "resolved_dynamic_sites": 0,
+          "schema_count": 57,
+          "unresolved_dynamic_sites": 0
+        }
+      },
+      "analysis_elapsed_sec": 0.3053,
+      "attach_exit_code": null,
+      "checkout_branch": "",
+      "default_branch": "master",
+      "default_head_after": "fd53804383f8d79cc0a84fe930414896cce8e1c5",
+      "default_head_before": "fd53804383f8d79cc0a84fe930414896cce8e1c5",
+      "default_head_unchanged": true,
+      "private": true,
+      "registered_worktrees_after": 1,
+      "repo": "Xiaoyu155/weixin-miniprogram",
+      "tracked_diff_after": [],
+      "url": "https://github.com/Xiaoyu155/weixin-miniprogram",
+      "work_orders": []
+    },
+    {
+      "analysis": {
+        "impact_graph": {
+          "call_edges": 85,
+          "files": 32,
+          "reference_edges": 86,
+          "symbols": 144,
+          "unresolved_references": 74
+        },
+        "languages": {
+          "html_documents": 12,
+          "javascript_typescript_html": 28,
+          "python": 9,
+          "tracked_source_files": 48
+        },
+        "parse_diagnostics": 3,
+        "semantic_contracts": {
+          "callbacks_recognized": 6,
+          "contract_mismatches": 16,
+          "decorators_recognized": 0,
+          "dynamic_resolution_kinds": {},
+          "dynamic_resolution_rate": 1.0,
+          "dynamic_sites": 0,
+          "dynamic_unresolved_reduction_rate": 1.0,
+          "fields": 137,
+          "flows": 82,
+          "legacy_dynamic_unresolved_sites": 0,
+          "legacy_unresolved_references": 74,
+          "resolved_dynamic_sites": 0,
+          "schema_count": 72,
+          "unresolved_dynamic_sites": 0
+        }
+      },
+      "analysis_elapsed_sec": 0.9565,
+      "attach_exit_code": null,
+      "checkout_branch": "",
+      "default_branch": "main",
+      "default_head_after": "72582ba215c8658d52caed01939a7a58aabbf9e2",
+      "default_head_before": "72582ba215c8658d52caed01939a7a58aabbf9e2",
+      "default_head_unchanged": true,
+      "private": true,
+      "registered_worktrees_after": 1,
+      "repo": "Xiaoyu155/yuansi-miniapp",
+      "tracked_diff_after": [],
+      "url": "https://github.com/Xiaoyu155/yuansi-miniapp",
+      "work_orders": []
+    },
+    {
+      "analysis": {
+        "impact_graph": {
+          "call_edges": 5363,
+          "files": 679,
+          "reference_edges": 6168,
+          "symbols": 8098,
+          "unresolved_references": 443
+        },
+        "languages": {
+          "html_documents": 10,
+          "javascript_typescript_html": 31,
+          "python": 678,
+          "tracked_source_files": 511
+        },
+        "parse_diagnostics": 0,
+        "semantic_contracts": {
+          "callbacks_recognized": 575,
+          "contract_mismatches": 848,
+          "decorators_recognized": 520,
+          "dynamic_resolution_kinds": {
+            "typed_field": 5,
+            "typed_method": 1,
+            "unique_callable": 20
+          },
+          "dynamic_resolution_rate": 0.06806282722513089,
+          "dynamic_sites": 382,
+          "dynamic_unresolved_reduction_rate": 0.06806282722513089,
+          "fields": 9495,
+          "flows": 8036,
+          "legacy_dynamic_unresolved_sites": 382,
+          "legacy_unresolved_references": 443,
+          "resolved_dynamic_sites": 26,
+          "schema_count": 7477,
+          "unresolved_dynamic_sites": 356
+        }
+      },
+      "analysis_elapsed_sec": 53.9778,
+      "attach_exit_code": null,
+      "checkout_branch": "",
+      "default_branch": "master",
+      "default_head_after": "8418afe2e41496efb4b8f7144ee168076dd6ba5d",
+      "default_head_before": "8418afe2e41496efb4b8f7144ee168076dd6ba5d",
+      "default_head_unchanged": true,
+      "private": true,
+      "registered_worktrees_after": 1,
+      "repo": "Xiaoyu155/yuansi_app",
+      "tracked_diff_after": [],
+      "url": "https://github.com/Xiaoyu155/yuansi_app",
+      "work_orders": []
+    }
+  ],
+  "schema_version": "aegis.mega_campaign.v14",
+  "summary": {
+    "all_remote_default_heads_unchanged": true,
+    "autopilot_candidate_evaluations": 0,
+    "autopilot_rejected_candidates": 0,
+    "autopilot_succeeded": 0,
+    "autopilot_winners": 0,
+    "autopilot_work_orders": 0,
+    "batch_work_orders": 0,
+    "campaign_elapsed_sec": 305.393,
+    "candidate_red_light_interception_rate": null,
+    "cross_language_ast_coverage_files": 4920,
+    "experience_bank_new_records": 0,
+    "external_write_policy": "all source edits confined to temporary git worktrees; no push, merge or default-branch edit",
+    "high_risk_l3_findings": {},
+    "intentionally_invalid_candidates": 0,
+    "repositories_cloned_and_analyzed": 21,
+    "repositories_requested": 21,
+    "sqlite": {
+      "causal_traces": 0,
+      "database_lock_errors": 0,
+      "experience_records": 0,
+      "journal_mode": null,
+      "tickets": 0,
+      "trace_throughput_per_sec": 0.0,
+      "wal_peak_bytes": 0
+    },
+    "tracked_worktree_residuals": [],
+    "work_orders": 0
+  }
+}

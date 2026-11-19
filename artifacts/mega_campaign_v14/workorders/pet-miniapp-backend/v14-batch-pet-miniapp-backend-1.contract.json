@@ -1,0 +1,74 @@
+{
+  "schema_version": "aegis.cli.v1",
+  "ticket_id": "v14-batch-pet-miniapp-backend-1",
+  "repo_root": "/tmp/aegis-v14-mega-ocjs05u7/repos/pet-miniapp-backend",
+  "base_commit": "904ad484b8d351c7711b2eb6ecd2c3433fff87c6",
+  "compilation": {
+    "kind": "CompiledContract",
+    "ticket_id": "v14-batch-pet-miniapp-backend-1",
+    "status": "COMPILED",
+    "target_files": [
+      "src/app.js"
+    ],
+    "contract_stub": "def document_audited_contract() -> None:\n    ...",
+    "constraints": {}
+  },
+  "fail_before_cmd": [
+    "/tmp/aegis-v13-test-env/bin/python",
+    "-B",
+    "-c",
+    "from pathlib import Path; p=Path('src/app.js'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_PET-MINIAPP-BACKEND_DOC_CONTRACT' in s; assert len(s) > 0"
+  ],
+  "pass_after_cmd": [
+    "/tmp/aegis-v13-test-env/bin/python",
+    "-B",
+    "-c",
+    "from pathlib import Path; p=Path('src/app.js'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_PET-MINIAPP-BACKEND_DOC_CONTRACT' in s; assert len(s) > 0"
+  ],
+  "probe_kind": "unit",
+  "probe_script_sha256": {},
+  "source_dirs": [
+    "."
+  ],
+  "tool_source_globs": [
+    "**/tools/**/*.py",
+    "**/tools/**/*.js",
+    "**/tools/**/*.jsx",
+    "**/tools/**/*.cjs",
+    "**/tools/**/*.mjs",
+    "**/tools/**/*.ts",
+    "**/tools/**/*.tsx",
+    "**/tools/**/*.mts",
+    "**/tools/**/*.cts",
+    "**/tools/**/*.html",
+    "**/tools/**/*.htm",
+    "**/tools/**/*.css"
+  ],
+  "patches": [
+    "/workspace/aegis-core/artifacts/mega_campaign_v14/workorders/pet-miniapp-backend/v14-batch-pet-miniapp-backend-1.patch"
+  ],
+  "models_path": null,
+  "probe_patch": "",
+  "context": {
+    "target": "src/app.js:corsOrigin",
+    "items": [
+      {
+        "symbol": "src/app.js:corsOrigin",
+        "file": "src/app.js",
+        "start_line": 42,
+        "end_line": 47,
+        "relation": "target",
+        "distance": 0,
+        "source": "function corsOrigin(origin, callback) {\n  if (!origin) return callback(null, true);\n  if (config.env !== 'production') return callback(null, true);\n  if (config.cors.origins.includes(origin)) return callback(null, true);\n  return callback(new Error('CORS_ORIGIN_NOT_ALLOWED'));\n}"
+      }
+    ],
+    "truncated": false,
+    "diagnostics": [],
+    "budget_unit": "utf8_bytes_upper_bound",
+    "token_upper_bound": 586
+  },
+  "allow_model": false,
+  "max_attempts": 3,
+  "timeout_sec": 120,
+  "contract_sha256": "cc0c4d0311c0ed65d1973625a68c33e54690d93c9db4e311b047e426494e2f42"
+}

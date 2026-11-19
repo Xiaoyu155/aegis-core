@@ -1,0 +1,8 @@
+diff --git a/app/main.py b/app/main.py
+--- a/app/main.py
++++ b/app/main.py
+@@ -1097,3 +1097,4 @@
+     data["trades"] = data["trades"][-20:]
+     data["equity_curve"] = data["equity_curve"][-200:]
+     return data
++# AEGIS_V14_CRYPTO-QUANT-MVP_DEPENDENCY_HANDOFF

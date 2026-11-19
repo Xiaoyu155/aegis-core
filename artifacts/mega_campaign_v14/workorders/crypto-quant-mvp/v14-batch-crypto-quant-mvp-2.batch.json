@@ -1,0 +1,188 @@
+{
+  "status": "succeeded",
+  "jobs": [
+    {
+      "id": "v14-batch-crypto-quant-mvp-2",
+      "priority": 1,
+      "repo_root": "/tmp/aegis-v14-mega-ocjs05u7/repos/crypto-quant-mvp",
+      "languages": {
+        "python": {
+          "files": 62,
+          "present": true
+        },
+        "javascript": {
+          "files": 0,
+          "present": false
+        },
+        "typescript": {
+          "files": 0,
+          "present": false
+        }
+      },
+      "result": {
+        "ticket_id": "v14-batch-crypto-quant-mvp-2",
+        "status": "succeeded",
+        "reason": "gate_passed",
+        "attempts": 1,
+        "results": [
+          {
+            "baseline_failed": true,
+            "after_passed": true,
+            "passed": true,
+            "cheat_detected": false,
+            "changed_files": [
+              "app/main.py"
+            ],
+            "diff_lines": 1,
+            "repeated_patch": false,
+            "patch_sha256": "470944ada2f8272cdabc614c511e2f615727c034653ebcf0c204bfc8ada0d78d",
+            "complexity": {
+              "level": "L3",
+              "tier": "L3_ARCHITECT_AND_DIRECT",
+              "impact_radius": 0,
+              "coupling": 8,
+              "impacted_files": [
+                "app/main.py"
+              ],
+              "risk_probability": null
+            },
+            "model_tier": null,
+            "probe_kind": "unit",
+            "probe_script_sha256": {},
+            "predicted_next_state": {
+              "outcome": "assertion_error",
+              "probabilities": {
+                "gate_passed": 0.0013477152949777163,
+                "assertion_error": 0.9224027583039143,
+                "cheat_detected": 0.009758847045385785,
+                "replay_blocked": 0.004737082688531308,
+                "missing_constraint": 0.06175359666719092
+              },
+              "decision_source": "causal_world_net",
+              "high_risk_pre_block": false,
+              "pre_block_reason": null,
+              "changed_paths": [
+                "app/main.py"
+              ]
+            },
+            "predicted_reward": -0.6236828975144273,
+            "predicted_reward_interval": [
+              -1.2487294812135306,
+              0.0013636861846759718
+            ],
+            "prediction_confidence": 0.9224027583039143,
+            "risk_probability": 0.2003555575431375,
+            "world_model_version": "5c64ee2972cf103513d5a29ba6bb0bf61f0a6c621451618c292eb91f158ac8aa",
+            "baseline": {
+              "command": [
+                "/tmp/aegis-v13-test-env/bin/python",
+                "-B",
+                "-c",
+                "from pathlib import Path; p=Path('app/main.py'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_CRYPTO-QUANT-MVP_DEPENDENCY_HANDOFF' in s; compile(s, 'app/main.py', 'exec')"
+              ],
+              "exit_code": 1,
+              "stdout": "",
+              "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\nAssertionError\n",
+              "before_hash": "4c9c364867b7555ad27611cb2d438993507fcfc637575be68e269e62d20306af",
+              "after_hash": "4c9c364867b7555ad27611cb2d438993507fcfc637575be68e269e62d20306af",
+              "changed": false,
+              "reward": -1.0,
+              "passed": false,
+              "probe_kind": "unit",
+              "probe_script_sha256": {},
+              "probe_runtime_sha256": {},
+              "failure_code": "ASSERTION_FAILED",
+              "timed_out": false,
+              "timeout_killed": false,
+              "termination_reason": null,
+              "killed_process_group": false
+            },
+            "final": {
+              "command": [
+                "/tmp/aegis-v13-test-env/bin/python",
+                "-B",
+                "-c",
+                "from pathlib import Path; p=Path('app/main.py'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_CRYPTO-QUANT-MVP_DEPENDENCY_HANDOFF' in s; compile(s, 'app/main.py', 'exec')"
+              ],
+              "exit_code": 0,
+              "stdout": "",
+              "stderr": "",
+              "before_hash": "31350f8c047eee98fe9e97027a328470b99b93be7f17a399c5e39cc2370d3783",
+              "after_hash": "31350f8c047eee98fe9e97027a328470b99b93be7f17a399c5e39cc2370d3783",
+              "changed": false,
+              "reward": 1.0,
+              "passed": true,
+              "probe_kind": "unit",
+              "probe_script_sha256": {},
+              "probe_runtime_sha256": {},
+              "failure_code": null,
+              "timed_out": false,
+              "timeout_killed": false,
+              "termination_reason": null,
+              "killed_process_group": false
+            },
+            "timeout_killed": false,
+            "before_hash": "4c9c364867b7555ad27611cb2d438993507fcfc637575be68e269e62d20306af",
+            "after_hash": "31350f8c047eee98fe9e97027a328470b99b93be7f17a399c5e39cc2370d3783",
+            "reward": 1.497066099466668,
+            "source_changed_lines": 1,
+            "protected_changed": [],
+            "termination_reason": null,
+            "review": {
+              "reviewer": "independent_static_semantic",
+              "passed": true,
+              "audited_files": [
+                "app/main.py"
+              ],
+              "findings": []
+            },
+            "elapsed_sec": 0.23285189499983971,
+            "world_model_outcome": "gate_passed",
+            "causal_prediction_error": {
+              "predicted_outcome": "assertion_error",
+              "actual_outcome": "gate_passed",
+              "state_mismatch": true,
+              "state_error": 1,
+              "reward_absolute_error": 2.120748996981,
+              "reward_interval_covered": false,
+              "composite_error": 3.120748996981
+            }
+          }
+        ],
+        "telemetry": {
+          "model_loaded": true,
+          "world_model_version": "5c64ee2972cf103513d5a29ba6bb0bf61f0a6c621451618c292eb91f158ac8aa",
+          "model_source": "bundled",
+          "model_mode": "observe",
+          "predictions_made": 1,
+          "no_prediction_count": 0,
+          "below_threshold_count": 0,
+          "scope": "repair_attempts"
+        },
+        "budget": {
+          "scope": "v14-batch-crypto-quant-mvp-2:94022c7d119244e09bf52879f07c9698",
+          "limits": {},
+          "token_consumption": 0,
+          "estimated_cost_usd": 0.0,
+          "estimated_usd_per_token": 1e-05,
+          "wall_clock_sec": 0.45616046500072116,
+          "reward": 1.497066099466668,
+          "reward_per_1000_tokens": null,
+          "reward_per_usd": null,
+          "halted_by": null
+        }
+      },
+      "status": "succeeded",
+      "exit_code": 0
+    }
+  ],
+  "passed": 1,
+  "failed": 0,
+  "budget": {
+    "token_consumption": 0,
+    "estimated_cost_usd": 0.0,
+    "reward": 1.497066099466668,
+    "wall_clock_sec": 0.45616046500072116,
+    "reward_per_usd": null
+  }
+}

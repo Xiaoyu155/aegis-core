@@ -1,0 +1,1 @@
+{"target_files": ["test_complete_system_suite.py"], "contract_stub": "def document_audited_contract() -> None:\n    ..."}

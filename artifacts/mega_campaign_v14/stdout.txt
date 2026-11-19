@@ -1,0 +1,171 @@
+AEGIS V14 | 21-REPOSITORY READ-ONLY MEGA CAMPAIGN
+account=Xiaoyu155 | requested_workorders=63 | parallel_autopilot_workers=4
+execution=real Git clones + detached worktrees + actual aegis batch/autopilot/replay commands
+remote_mutation=none (no push, no PR, no merge); all generated commits stay in temporary checkouts
+REPO Xiaoyu155/celestia-game | source_files=427 py=327 js_ts_html=88 symbols=1974 flows=2080 batch_tickets=2 analysis=25.7153s
+REPO Xiaoyu155/celestia-openlab | source_files=40 py=83 js_ts_html=1 symbols=503 flows=14439 batch_tickets=2 analysis=7.0723s
+REPO Xiaoyu155/Checkpoint | source_files=88 py=151 js_ts_html=0 symbols=2159 flows=2070 batch_tickets=0 analysis=10.6878s
+REPO Xiaoyu155/crypto-quant-mvp | source_files=44 py=62 js_ts_html=0 symbols=552 flows=364 batch_tickets=2 analysis=4.252s
+REPO Xiaoyu155/douyin-kuaishou-alipay-miniapp | source_files=219 py=3 js_ts_html=216 symbols=2229 flows=7514 batch_tickets=2 analysis=14.5938s
+REPO Xiaoyu155/edu-ai | source_files=1917 py=40 js_ts_html=2943 symbols=11925 flows=11276 batch_tickets=2 analysis=124.5603s
+REPO Xiaoyu155/edu-typing | source_files=167 py=0 js_ts_html=168 symbols=214 flows=22 batch_tickets=2 analysis=4.5337s
+REPO Xiaoyu155/nova-agent | source_files=100 py=124 js_ts_html=1 symbols=770 flows=165 batch_tickets=2 analysis=5.8779s
+REPO Xiaoyu155/okx-freqtrade-live | source_files=345 py=483 js_ts_html=4 symbols=4839 flows=4750 batch_tickets=2 analysis=76.091s
+REPO Xiaoyu155/omni-eval | source_files=15 py=15 js_ts_html=0 symbols=81 flows=16 batch_tickets=2 analysis=1.966s
+REPO Xiaoyu155/overseas-quant-system | source_files=205 py=193 js_ts_html=1 symbols=1491 flows=2720 batch_tickets=0 analysis=19.5749s
+REPO Xiaoyu155/overseas-quant-system-open-core | source_files=7 py=1 js_ts_html=6 symbols=34 flows=25 batch_tickets=2 analysis=1.4052s
+REPO Xiaoyu155/pacer-recovery | source_files=121 py=218 js_ts_html=8 symbols=3279 flows=3282 batch_tickets=2 analysis=30.9337s
+REPO Xiaoyu155/palm-cat-cafe | source_files=413 py=283 js_ts_html=133 symbols=3100 flows=11183 batch_tickets=2 analysis=24.3983s
+REPO Xiaoyu155/pet-miniapp | source_files=22 py=5 js_ts_html=12 symbols=106 flows=257 batch_tickets=0 analysis=0.8056s
+REPO Xiaoyu155/pet-miniapp-backend | source_files=67 py=2 js_ts_html=112 symbols=514 flows=196 batch_tickets=2 analysis=4.4736s
+REPO Xiaoyu155/pet-miniapp-frontend | source_files=74 py=1 js_ts_html=56 symbols=270 flows=227 batch_tickets=2 analysis=2.6243s
+REPO Xiaoyu155/promo-videos | source_files=49 py=46 js_ts_html=2 symbols=554 flows=626 batch_tickets=0 analysis=3.7661s
+REPO Xiaoyu155/weixin-miniprogram | source_files=41 py=13 js_ts_html=19 symbols=83 flows=63 batch_tickets=2 analysis=1.9972s
+REPO Xiaoyu155/yuansi-miniapp | source_files=48 py=9 js_ts_html=28 symbols=144 flows=64 batch_tickets=2 analysis=3.2609s
+REPO Xiaoyu155/yuansi_app | source_files=511 py=678 js_ts_html=31 symbols=8098 flows=6604 batch_tickets=0 analysis=50.7372s
+AUTOPILOT | launching detached worktree campaigns with shared SQLite WAL ledger
+AUTOPILOT Xiaoyu155/celestia-game | status=succeeded winner=conservative_repair rounds=2 rejected=3 replay=replayed elapsed=70.1995s
+AUTOPILOT Xiaoyu155/celestia-openlab | status=succeeded winner=conservative_repair rounds=2 rejected=3 replay=replayed elapsed=45.4906s
+AUTOPILOT Xiaoyu155/Checkpoint | status=succeeded winner=conservative_repair rounds=2 rejected=3 replay=replayed elapsed=32.573s
+AUTOPILOT Xiaoyu155/crypto-quant-mvp | status=succeeded winner=conservative_repair rounds=2 rejected=3 replay=replayed elapsed=17.4156s
+AUTOPILOT Xiaoyu155/douyin-kuaishou-alipay-miniapp | status=succeeded winner=conservative_repair rounds=2 rejected=3 replay=replayed elapsed=29.2947s
+AUTOPILOT Xiaoyu155/edu-ai | status=succeeded winner=conservative_repair rounds=2 rejected=3 replay=replayed elapsed=118.4604s
+AUTOPILOT Xiaoyu155/edu-typing | status=succeeded winner=conservative_repair rounds=2 rejected=3 replay=replayed elapsed=21.3612s
+AUTOPILOT Xiaoyu155/nova-agent | status=succeeded winner=conservative_repair rounds=2 rejected=3 replay=replayed elapsed=23.4647s
+AUTOPILOT Xiaoyu155/okx-freqtrade-live | status=command_failed winner=None rounds=None rejected=None replay=None elapsed=52.0363s
+AUTOPILOT Xiaoyu155/omni-eval | status=succeeded winner=conservative_repair rounds=2 rejected=3 replay=replayed elapsed=18.9422s
+AUTOPILOT Xiaoyu155/overseas-quant-system | status=succeeded winner=conservative_repair rounds=2 rejected=3 replay=replayed elapsed=62.8305s
+AUTOPILOT Xiaoyu155/overseas-quant-system-open-core | status=succeeded winner=conservative_repair rounds=2 rejected=3 replay=replayed elapsed=16.021s
+AUTOPILOT Xiaoyu155/pacer-recovery | status=succeeded winner=conservative_repair rounds=2 rejected=3 replay=replayed elapsed=33.9483s
+AUTOPILOT Xiaoyu155/palm-cat-cafe | status=succeeded winner=conservative_repair rounds=2 rejected=3 replay=replayed elapsed=69.4068s
+AUTOPILOT Xiaoyu155/pet-miniapp | status=succeeded winner=conservative_repair rounds=2 rejected=3 replay=replayed elapsed=17.8898s
+AUTOPILOT Xiaoyu155/pet-miniapp-backend | status=succeeded winner=conservative_repair rounds=2 rejected=3 replay=replayed elapsed=25.4403s
+AUTOPILOT Xiaoyu155/pet-miniapp-frontend | status=succeeded winner=conservative_repair rounds=2 rejected=3 replay=replayed elapsed=25.9107s
+AUTOPILOT Xiaoyu155/promo-videos | status=succeeded winner=conservative_repair rounds=2 rejected=3 replay=replayed elapsed=29.9392s
+AUTOPILOT Xiaoyu155/weixin-miniprogram | status=succeeded winner=conservative_repair rounds=2 rejected=3 replay=replayed elapsed=24.5935s
+AUTOPILOT Xiaoyu155/yuansi-miniapp | status=succeeded winner=conservative_repair rounds=2 rejected=3 replay=replayed elapsed=21.9995s
+AUTOPILOT Xiaoyu155/yuansi_app | status=succeeded winner=conservative_repair rounds=2 rejected=3 replay=replayed elapsed=43.9594s
+
+21-REPOSITORY CAMPAIGN DECISION TABLE
+REPOSITORY | LANG FILES | BATCH | AUTOPILOT | WINNER | REPLAY | HEAD CLEAN
+Xiaoyu155/celestia-game | 427 | 2/2 | succeeded | conservative_repair | replayed | True
+Xiaoyu155/celestia-openlab | 40 | 2/2 | succeeded | conservative_repair | replayed | True
+Xiaoyu155/Checkpoint | 88 | 0/2 | succeeded | conservative_repair | replayed | True
+Xiaoyu155/crypto-quant-mvp | 44 | 2/2 | succeeded | conservative_repair | replayed | True
+Xiaoyu155/douyin-kuaishou-alipay-miniapp | 219 | 2/2 | succeeded | conservative_repair | replayed | True
+Xiaoyu155/edu-ai | 1917 | 2/2 | succeeded | conservative_repair | replayed | True
+Xiaoyu155/edu-typing | 167 | 2/2 | succeeded | conservative_repair | replayed | True
+Xiaoyu155/nova-agent | 100 | 2/2 | succeeded | conservative_repair | replayed | True
+Xiaoyu155/okx-freqtrade-live | 345 | 2/2 | command_failed | - | - | True
+Xiaoyu155/omni-eval | 15 | 2/2 | succeeded | conservative_repair | replayed | True
+Xiaoyu155/overseas-quant-system | 205 | 0/2 | succeeded | conservative_repair | replayed | True
+Xiaoyu155/overseas-quant-system-open-core | 7 | 2/2 | succeeded | conservative_repair | replayed | True
+Xiaoyu155/pacer-recovery | 121 | 2/2 | succeeded | conservative_repair | replayed | True
+Xiaoyu155/palm-cat-cafe | 413 | 2/2 | succeeded | conservative_repair | replayed | True
+Xiaoyu155/pet-miniapp | 22 | 0/2 | succeeded | conservative_repair | replayed | True
+Xiaoyu155/pet-miniapp-backend | 67 | 2/2 | succeeded | conservative_repair | replayed | True
+Xiaoyu155/pet-miniapp-frontend | 74 | 2/2 | succeeded | conservative_repair | replayed | True
+Xiaoyu155/promo-videos | 49 | 0/2 | succeeded | conservative_repair | replayed | True
+Xiaoyu155/weixin-miniprogram | 41 | 2/2 | succeeded | conservative_repair | replayed | True
+Xiaoyu155/yuansi-miniapp | 48 | 2/2 | succeeded | conservative_repair | replayed | True
+Xiaoyu155/yuansi_app | 511 | 0/2 | succeeded | conservative_repair | replayed | True
+
+CAMPAIGN TOTALS
+repositories=21/21 work_orders=53 (batch 32/32, autopilot 20/21)
+AST-covered files=4920 | rejected candidates=60/0 (0.9523809523809523) | L3 findings={}
+SQLite WAL=wal traces=312 traces/sec=0.439 peak_wal=588537912 bytes locks=0 experiences=20
+default_heads_clean=True worktree_residuals=0 elapsed=711.39s
+report=/workspace/aegis-core/artifacts/mega_campaign_v14/report.json
+
+
+SUPPLEMENTAL TARGETED RETRY RUNS (full stdout is also saved under retries/)
+
+--- batch_target_retries ---
+AEGIS V14 | 21-REPOSITORY READ-ONLY MEGA CAMPAIGN
+account=Xiaoyu155 | requested_workorders=10 | parallel_autopilot_workers=4
+execution=real Git clones + detached worktrees + actual aegis batch/autopilot/replay commands
+remote_mutation=none (no push, no PR, no merge); all generated commits stay in temporary checkouts
+NOTICE repository_count=5 (account inventory is not exactly 21)
+REPO Xiaoyu155/Checkpoint | source_files=88 py=151 js_ts_html=0 symbols=2159 flows=2070 batch_tickets=2 analysis=21.5664s
+REPO Xiaoyu155/overseas-quant-system | source_files=205 py=193 js_ts_html=1 symbols=1491 flows=2720 batch_tickets=2 analysis=32.7628s
+REPO Xiaoyu155/pet-miniapp | source_files=22 py=5 js_ts_html=12 symbols=106 flows=257 batch_tickets=0 analysis=0.7381s
+REPO Xiaoyu155/promo-videos | source_files=49 py=46 js_ts_html=2 symbols=554 flows=626 batch_tickets=2 analysis=7.0051s
+REPO Xiaoyu155/yuansi_app | source_files=511 py=678 js_ts_html=31 symbols=8098 flows=6604 batch_tickets=2 analysis=99.1276s
+AUTOPILOT | launching detached worktree campaigns with shared SQLite WAL ledger
+
+21-REPOSITORY CAMPAIGN DECISION TABLE
+REPOSITORY | LANG FILES | BATCH | AUTOPILOT | WINNER | REPLAY | HEAD CLEAN
+Xiaoyu155/Checkpoint | 88 | 2/2 | n/a | - | - | True
+Xiaoyu155/overseas-quant-system | 205 | 2/2 | n/a | - | - | True
+Xiaoyu155/pet-miniapp | 22 | 0/2 | n/a | - | - | True
+Xiaoyu155/promo-videos | 49 | 2/2 | n/a | - | - | True
+Xiaoyu155/yuansi_app | 511 | 2/2 | n/a | - | - | True
+
+CAMPAIGN TOTALS
+repositories=5/5 work_orders=8 (batch 8/8, autopilot 0/0)
+AST-covered files=875 | rejected candidates=0/0 (None) | L3 findings={}
+SQLite WAL=wal traces=368 traces/sec=2.143 peak_wal=32992 bytes locks=0 experiences=20
+default_heads_clean=True worktree_residuals=0 elapsed=171.704s
+report=/tmp/aegis-v14-batch-retry/report.json
+
+--- freqtrade_probe_retry ---
+AEGIS V14 | 21-REPOSITORY READ-ONLY MEGA CAMPAIGN
+account=Xiaoyu155 | requested_workorders=1 | parallel_autopilot_workers=1
+execution=real Git clones + detached worktrees + actual aegis batch/autopilot/replay commands
+remote_mutation=none (no push, no PR, no merge); all generated commits stay in temporary checkouts
+NOTICE repository_count=1 (account inventory is not exactly 21)
+REPO Xiaoyu155/okx-freqtrade-live | source_files=345 py=483 js_ts_html=4 symbols=4839 flows=4750 batch_tickets=0 analysis=44.7493s
+AUTOPILOT | launching detached worktree campaigns with shared SQLite WAL ledger
+AUTOPILOT Xiaoyu155/okx-freqtrade-live | status=succeeded winner=conservative_repair rounds=2 rejected=3 replay=replayed elapsed=31.3932s
+
+21-REPOSITORY CAMPAIGN DECISION TABLE
+REPOSITORY | LANG FILES | BATCH | AUTOPILOT | WINNER | REPLAY | HEAD CLEAN
+Xiaoyu155/okx-freqtrade-live | 345 | 0/2 | succeeded | conservative_repair | replayed | True
+
+CAMPAIGN TOTALS
+repositories=1/1 work_orders=1 (batch 0/0, autopilot 1/1)
+AST-covered files=345 | rejected candidates=3/0 (1.0) | L3 findings={}
+SQLite WAL=wal traces=372 traces/sec=4.571 peak_wal=61993672 bytes locks=0 experiences=21
+default_heads_clean=True worktree_residuals=0 elapsed=81.389s
+report=/tmp/aegis-v14-autopilot-retry/report.json
+
+CONSOLIDATED CAMPAIGN RECONCILIATION
+repositories=21/21 | AST-covered files=4920
+work-order attempts=72 (initial=63, retries=9) | successful final gates=61
+batch passed=40/50 attempts | source-ineligible repositories=1
+autopilot final success=21/21 | candidates rejected=63/63 invalid (100%) | evaluations=84
+SQLite tickets=69 traces=372 throughput=0.386/s peak_wal=588537912 bytes locks=0 experiences=21
+remote default heads clean=True worktree residuals=0 elapsed=964.483s
+
+AUTHORITATIVE CONSOLIDATED FINAL DECISION TABLE (after documented retries)
+REPOSITORY | LANG FILES | BATCH FINAL | AUTOPILOT INITIAL -> FINAL | RETRY | DEFAULT HEAD CLEAN
+Xiaoyu155/celestia-game | 427 | 2/2 | succeeded -> succeeded | no | True
+Xiaoyu155/celestia-openlab | 40 | 2/2 | succeeded -> succeeded | no | True
+Xiaoyu155/Checkpoint | 88 | 2/2 | succeeded -> succeeded | yes | True
+Xiaoyu155/crypto-quant-mvp | 44 | 2/2 | succeeded -> succeeded | no | True
+Xiaoyu155/douyin-kuaishou-alipay-miniapp | 219 | 2/2 | succeeded -> succeeded | no | True
+Xiaoyu155/edu-ai | 1917 | 2/2 | succeeded -> succeeded | no | True
+Xiaoyu155/edu-typing | 167 | 2/2 | succeeded -> succeeded | no | True
+Xiaoyu155/nova-agent | 100 | 2/2 | succeeded -> succeeded | no | True
+Xiaoyu155/okx-freqtrade-live | 345 | 2/2 | command_failed -> succeeded | yes | True
+Xiaoyu155/omni-eval | 15 | 2/2 | succeeded -> succeeded | no | True
+Xiaoyu155/overseas-quant-system | 205 | 2/2 | succeeded -> succeeded | yes | True
+Xiaoyu155/overseas-quant-system-open-core | 7 | 2/2 | succeeded -> succeeded | no | True
+Xiaoyu155/pacer-recovery | 121 | 2/2 | succeeded -> succeeded | no | True
+Xiaoyu155/palm-cat-cafe | 413 | 2/2 | succeeded -> succeeded | no | True
+Xiaoyu155/pet-miniapp | 22 | ineligible | succeeded -> succeeded | no | True
+Xiaoyu155/pet-miniapp-backend | 67 | 2/2 | succeeded -> succeeded | no | True
+Xiaoyu155/pet-miniapp-frontend | 74 | 2/2 | succeeded -> succeeded | no | True
+Xiaoyu155/promo-videos | 49 | 2/2 | succeeded -> succeeded | yes | True
+Xiaoyu155/weixin-miniprogram | 41 | 2/2 | succeeded -> succeeded | no | True
+Xiaoyu155/yuansi-miniapp | 48 | 2/2 | succeeded -> succeeded | no | True
+Xiaoyu155/yuansi_app | 511 | 2/2 | succeeded -> succeeded | yes | True
+
+AUTHORITATIVE RECONCILED TOTALS
+repositories=21/21 | AST-covered files=4920 | attempted work orders=72 (63 initial + 9 retries)
+final physical gate passes=61 | batch=40/50 attempts (8 initial compile failures recovered; pet-miniapp source target ineligible)
+autopilot=21/21 final success | invalid candidates rejected=63/63 | candidate evaluations=84
+SQLite WAL tickets=69 traces=372 throughput=0.386/s peak_wal=588537912 bytes database_locked=0 ExperienceBank_new=21
+remote default heads unchanged=True | residual worktrees=0 | campaign_elapsed=964.483s
+semantic scan: files=4920 dynamic_sites=780 resolved=90 unresolved=690 resolution_rate=11.5385% target_70_percent_met=False
+scope: batch changed only temporary audit comment markers; autopilot changes were temporary tracked contract fixtures, not external application bug fixes.

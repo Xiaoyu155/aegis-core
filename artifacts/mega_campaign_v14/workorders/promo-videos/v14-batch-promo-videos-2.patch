@@ -1,0 +1,8 @@
+diff --git a/scripts/marketing-video/product_video.py b/scripts/marketing-video/product_video.py
+--- a/scripts/marketing-video/product_video.py
++++ b/scripts/marketing-video/product_video.py
+@@ -1779,3 +1779,4 @@
+
+ if __name__ == "__main__":
+     main()
++# AEGIS_V14_PROMO-VIDEOS_DEPENDENCY_HANDOFF

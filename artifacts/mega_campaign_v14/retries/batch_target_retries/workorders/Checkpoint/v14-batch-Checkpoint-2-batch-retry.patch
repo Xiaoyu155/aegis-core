@@ -1,0 +1,8 @@
+diff --git a/xiao/src/visual_agent/task_review.py b/xiao/src/visual_agent/task_review.py
+--- a/xiao/src/visual_agent/task_review.py
++++ b/xiao/src/visual_agent/task_review.py
+@@ -2197,3 +2197,4 @@
+         seen.add(identity)
+         result.append(item)
+     return result
++# AEGIS_V14_CHECKPOINT_DEPENDENCY_HANDOFF

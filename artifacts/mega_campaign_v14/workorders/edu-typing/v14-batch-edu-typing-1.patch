@@ -1,0 +1,8 @@
+diff --git a/src/index.tsx b/src/index.tsx
+--- a/src/index.tsx
++++ b/src/index.tsx
+@@ -69,3 +69,4 @@
+ const container = document.getElementById('root')
+
+ container && createRoot(container).render(<Root />)
++// AEGIS_V14_EDU-TYPING_DOC_CONTRACT

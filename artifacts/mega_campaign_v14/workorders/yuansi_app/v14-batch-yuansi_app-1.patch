@@ -1,0 +1,8 @@
+diff --git a/test_complete_system_suite.py b/test_complete_system_suite.py
+--- a/test_complete_system_suite.py
++++ b/test_complete_system_suite.py
+@@ -268,3 +268,4 @@
+
+ if __name__ == "__main__":
+     pytest.main([__file__, "-v", "-s"])
++# AEGIS_V14_YUANSI_APP_DOC_CONTRACT

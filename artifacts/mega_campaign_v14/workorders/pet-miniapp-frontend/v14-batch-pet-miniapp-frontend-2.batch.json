@@ -1,0 +1,181 @@
+{
+  "status": "succeeded",
+  "jobs": [
+    {
+      "id": "v14-batch-pet-miniapp-frontend-2",
+      "priority": 1,
+      "repo_root": "/tmp/aegis-v14-mega-ocjs05u7/repos/pet-miniapp-frontend",
+      "languages": {
+        "python": {
+          "files": 1,
+          "present": true
+        },
+        "javascript": {
+          "files": 51,
+          "present": true
+        },
+        "typescript": {
+          "files": 2,
+          "present": true
+        }
+      },
+      "result": {
+        "ticket_id": "v14-batch-pet-miniapp-frontend-2",
+        "status": "succeeded",
+        "reason": "gate_passed",
+        "attempts": 1,
+        "results": [
+          {
+            "baseline_failed": true,
+            "after_passed": true,
+            "passed": true,
+            "cheat_detected": false,
+            "changed_files": [
+              "src/main.js"
+            ],
+            "diff_lines": 1,
+            "repeated_patch": false,
+            "patch_sha256": "623609ee8dea09216d3aadd7f702676b56b506a36c66b2abad331ac9de381bc4",
+            "complexity": {
+              "level": "L2",
+              "tier": "L2_WORKER_POOL",
+              "impact_radius": 1,
+              "coupling": 1,
+              "impacted_files": [
+                "index.html",
+                "src/main.js"
+              ],
+              "risk_probability": null
+            },
+            "model_tier": null,
+            "probe_kind": "unit",
+            "probe_script_sha256": {},
+            "predicted_next_state": {
+              "outcome": "assertion_error",
+              "probabilities": {
+                "gate_passed": 0.0010913437958999306,
+                "assertion_error": 0.9249122128566535,
+                "cheat_detected": 0.008213463178109826,
+                "replay_blocked": 0.004767831028497837,
+                "missing_constraint": 0.06101514914083901
+              },
+              "decision_source": "causal_world_net",
+              "high_risk_pre_block": false,
+              "pre_block_reason": null,
+              "changed_paths": [
+                "src/main.js"
+              ]
+            },
+            "predicted_reward": -0.6798319424715349,
+            "predicted_reward_interval": [
+              -1.3048785261706382,
+              -0.054785358772431625
+            ],
+            "prediction_confidence": 0.9249122128566535,
+            "risk_probability": 0.2006907008291799,
+            "world_model_version": "5c64ee2972cf103513d5a29ba6bb0bf61f0a6c621451618c292eb91f158ac8aa",
+            "baseline": {
+              "command": [
+                "/tmp/aegis-v13-test-env/bin/python",
+                "-B",
+                "-c",
+                "from pathlib import Path; p=Path('src/main.js'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_PET-MINIAPP-FRONTEND_DEPENDENCY_HANDOFF' in s; assert len(s) > 0"
+              ],
+              "exit_code": 1,
+              "stdout": "",
+              "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\nAssertionError\n",
+              "before_hash": "1287ce3831c167bf7adc2ed768b52203142dfd9771ae3f8a428a4e806e54d22b",
+              "after_hash": "1287ce3831c167bf7adc2ed768b52203142dfd9771ae3f8a428a4e806e54d22b",
+              "changed": false,
+              "reward": -1.0,
+              "passed": false,
+              "probe_kind": "unit",
+              "probe_script_sha256": {},
+              "probe_runtime_sha256": {},
+              "failure_code": "ASSERTION_FAILED",
+              "timed_out": false,
+              "timeout_killed": false,
+              "termination_reason": null,
+              "killed_process_group": false
+            },
+            "final": {
+              "command": [
+                "/tmp/aegis-v13-test-env/bin/python",
+                "-B",
+                "-c",
+                "from pathlib import Path; p=Path('src/main.js'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_PET-MINIAPP-FRONTEND_DEPENDENCY_HANDOFF' in s; assert len(s) > 0"
+              ],
+              "exit_code": 0,
+              "stdout": "",
+              "stderr": "",
+              "before_hash": "a6baa645067683396890613ac62ab749959f2cad6d9093eacd2da437e151ea16",
+              "after_hash": "a6baa645067683396890613ac62ab749959f2cad6d9093eacd2da437e151ea16",
+              "changed": false,
+              "reward": 1.0,
+              "passed": true,
+              "probe_kind": "unit",
+              "probe_script_sha256": {},
+              "probe_runtime_sha256": {},
+              "failure_code": null,
+              "timed_out": false,
+              "timeout_killed": false,
+              "termination_reason": null,
+              "killed_process_group": false
+            },
+            "timeout_killed": false,
+            "before_hash": "1287ce3831c167bf7adc2ed768b52203142dfd9771ae3f8a428a4e806e54d22b",
+            "after_hash": "a6baa645067683396890613ac62ab749959f2cad6d9093eacd2da437e151ea16",
+            "reward": 1.4971050860000015,
+            "source_changed_lines": 1,
+            "protected_changed": [],
+            "termination_reason": null,
+            "elapsed_sec": 0.20383079999919573,
+            "world_model_outcome": "gate_passed",
+            "causal_prediction_error": {
+              "predicted_outcome": "assertion_error",
+              "actual_outcome": "gate_passed",
+              "state_mismatch": true,
+              "state_error": 1,
+              "reward_absolute_error": 2.176937028472,
+              "reward_interval_covered": false,
+              "composite_error": 3.176937028472
+            }
+          }
+        ],
+        "telemetry": {
+          "model_loaded": true,
+          "world_model_version": "5c64ee2972cf103513d5a29ba6bb0bf61f0a6c621451618c292eb91f158ac8aa",
+          "model_source": "bundled",
+          "model_mode": "observe",
+          "predictions_made": 1,
+          "no_prediction_count": 0,
+          "below_threshold_count": 0,
+          "scope": "repair_attempts"
+        },
+        "budget": {
+          "scope": "v14-batch-pet-miniapp-frontend-2:5137a26c984142049ce2f297a4ce2895",
+          "limits": {},
+          "token_consumption": 0,
+          "estimated_cost_usd": 0.0,
+          "estimated_usd_per_token": 1e-05,
+          "wall_clock_sec": 0.3879921280004055,
+          "reward": 1.4971050860000015,
+          "reward_per_1000_tokens": null,
+          "reward_per_usd": null,
+          "halted_by": null
+        }
+      },
+      "status": "succeeded",
+      "exit_code": 0
+    }
+  ],
+  "passed": 1,
+  "failed": 0,
+  "budget": {
+    "token_consumption": 0,
+    "estimated_cost_usd": 0.0,
+    "reward": 1.4971050860000015,
+    "wall_clock_sec": 0.3879921280004055,
+    "reward_per_usd": null
+  }
+}

@@ -1,0 +1,1 @@
+{"target_files": ["core_alpha_stub.py"], "contract_stub": "def document_audited_contract() -> None:\n    ..."}

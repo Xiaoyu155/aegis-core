@@ -1,0 +1,74 @@
+{
+  "schema_version": "aegis.cli.v1",
+  "ticket_id": "v14-batch-celestia-openlab-1",
+  "repo_root": "/tmp/aegis-v14-mega-ocjs05u7/repos/celestia-openlab",
+  "base_commit": "4e548c28e1434ed89d6a4f0748c1373313ff9bfb",
+  "compilation": {
+    "kind": "CompiledContract",
+    "ticket_id": "v14-batch-celestia-openlab-1",
+    "status": "COMPILED",
+    "target_files": [
+      "tools/celestia_agent.py"
+    ],
+    "contract_stub": "def document_audited_contract() -> None:\n    ...",
+    "constraints": {}
+  },
+  "fail_before_cmd": [
+    "/tmp/aegis-v13-test-env/bin/python",
+    "-B",
+    "-c",
+    "from pathlib import Path; p=Path('tools/celestia_agent.py'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_CELESTIA-OPENLAB_DOC_CONTRACT' in s; compile(s, 'tools/celestia_agent.py', 'exec')"
+  ],
+  "pass_after_cmd": [
+    "/tmp/aegis-v13-test-env/bin/python",
+    "-B",
+    "-c",
+    "from pathlib import Path; p=Path('tools/celestia_agent.py'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_CELESTIA-OPENLAB_DOC_CONTRACT' in s; compile(s, 'tools/celestia_agent.py', 'exec')"
+  ],
+  "probe_kind": "unit",
+  "probe_script_sha256": {},
+  "source_dirs": [
+    "."
+  ],
+  "tool_source_globs": [
+    "**/tools/**/*.py",
+    "**/tools/**/*.js",
+    "**/tools/**/*.jsx",
+    "**/tools/**/*.cjs",
+    "**/tools/**/*.mjs",
+    "**/tools/**/*.ts",
+    "**/tools/**/*.tsx",
+    "**/tools/**/*.mts",
+    "**/tools/**/*.cts",
+    "**/tools/**/*.html",
+    "**/tools/**/*.htm",
+    "**/tools/**/*.css"
+  ],
+  "patches": [
+    "/workspace/aegis-core/artifacts/mega_campaign_v14/workorders/celestia-openlab/v14-batch-celestia-openlab-1.patch"
+  ],
+  "models_path": null,
+  "probe_patch": "",
+  "context": {
+    "target": "tools.celestia_agent:with_deadline.run",
+    "items": [
+      {
+        "symbol": "tools.celestia_agent:with_deadline.run",
+        "file": "tools/celestia_agent.py",
+        "start_line": 97,
+        "end_line": 101,
+        "relation": "target",
+        "distance": 0,
+        "source": "    def run():\n        try:\n            box[\"v\"] = fn()\n        except Exception as e:  # noqa: BLE001\n            box[\"e\"] = e"
+      }
+    ],
+    "truncated": false,
+    "diagnostics": [],
+    "budget_unit": "utf8_bytes_upper_bound",
+    "token_upper_bound": 485
+  },
+  "allow_model": false,
+  "max_attempts": 3,
+  "timeout_sec": 120,
+  "contract_sha256": "6b3f74c65f67ed95fad6de3ed38002a3ed6d13455eb66fe81a9bd94e97070d66"
+}

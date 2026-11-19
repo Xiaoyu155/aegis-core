@@ -1,0 +1,1 @@
+{"target_files": ["src/index.tsx"], "contract_stub": "def document_audited_contract() -> None:\n    ..."}

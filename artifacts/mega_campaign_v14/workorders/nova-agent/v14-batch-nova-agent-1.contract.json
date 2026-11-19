@@ -1,0 +1,164 @@
+{
+  "schema_version": "aegis.cli.v1",
+  "ticket_id": "v14-batch-nova-agent-1",
+  "repo_root": "/tmp/aegis-v14-mega-ocjs05u7/repos/nova-agent",
+  "base_commit": "ba1c12ea4e8ad4725882b3c6546f9e34da995dd5",
+  "compilation": {
+    "kind": "CompiledContract",
+    "ticket_id": "v14-batch-nova-agent-1",
+    "status": "COMPILED",
+    "target_files": [
+      "agent/personas.py"
+    ],
+    "contract_stub": "def document_audited_contract() -> None:\n    ...",
+    "constraints": {}
+  },
+  "fail_before_cmd": [
+    "/tmp/aegis-v13-test-env/bin/python",
+    "-B",
+    "-c",
+    "from pathlib import Path; p=Path('agent/personas.py'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_NOVA-AGENT_DOC_CONTRACT' in s; compile(s, 'agent/personas.py', 'exec')"
+  ],
+  "pass_after_cmd": [
+    "/tmp/aegis-v13-test-env/bin/python",
+    "-B",
+    "-c",
+    "from pathlib import Path; p=Path('agent/personas.py'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_NOVA-AGENT_DOC_CONTRACT' in s; compile(s, 'agent/personas.py', 'exec')"
+  ],
+  "probe_kind": "unit",
+  "probe_script_sha256": {},
+  "source_dirs": [
+    "."
+  ],
+  "tool_source_globs": [
+    "**/tools/**/*.py",
+    "**/tools/**/*.js",
+    "**/tools/**/*.jsx",
+    "**/tools/**/*.cjs",
+    "**/tools/**/*.mjs",
+    "**/tools/**/*.ts",
+    "**/tools/**/*.tsx",
+    "**/tools/**/*.mts",
+    "**/tools/**/*.cts",
+    "**/tools/**/*.html",
+    "**/tools/**/*.htm",
+    "**/tools/**/*.css"
+  ],
+  "patches": [
+    "/workspace/aegis-core/artifacts/mega_campaign_v14/workorders/nova-agent/v14-batch-nova-agent-1.patch"
+  ],
+  "models_path": null,
+  "probe_patch": "",
+  "context": {
+    "target": "agent.personas:build_system_prompt",
+    "items": [
+      {
+        "symbol": "agent.personas:build_system_prompt",
+        "file": "agent/personas.py",
+        "start_line": 433,
+        "end_line": 435,
+        "relation": "target",
+        "distance": 0,
+        "source": "def build_system_prompt(name: str = \"nova_default\") -> str:\n    \"\"\"Full system prompt for Agent ``instructions=``.\"\"\"\n    return get_persona(name).build_system_prompt()"
+      },
+      {
+        "symbol": "agent.personas:get_persona",
+        "file": "agent/personas.py",
+        "start_line": 427,
+        "end_line": 430,
+        "relation": "callee",
+        "distance": 1,
+        "source": "def get_persona(name: str='nova_default') -> NovaPersona:\n    \"\"\"Retrieve a registered persona by name; unknown keys fall back to ``nova_default``.\"\"\"\n    ..."
+      },
+      {
+        "symbol": "agent.livekit_entry:entrypoint",
+        "file": "agent/livekit_entry.py",
+        "start_line": 266,
+        "end_line": 436,
+        "relation": "caller",
+        "distance": 1,
+        "source": "async def entrypoint(ctx: JobContext) -> None:\n    ..."
+      },
+      {
+        "symbol": "tests.test_presenter_repo_acceptance:test_persona_presenter_aliases",
+        "file": "tests/test_presenter_repo_acceptance.py",
+        "start_line": 176,
+        "end_line": 179,
+        "relation": "caller",
+        "distance": 1,
+        "source": "def test_persona_presenter_aliases() -> None:\n    ..."
+      },
+      {
+        "symbol": "agent.personas:_resolve_registry_key",
+        "file": "agent/personas.py",
+        "start_line": 370,
+        "end_line": 372,
+        "relation": "callee",
+        "distance": 2,
+        "source": "def _resolve_registry_key(name: str) -> str:\n    ..."
+      },
+      {
+        "symbol": "agent.personas:NovaPersona",
+        "file": "agent/personas.py",
+        "start_line": 126,
+        "end_line": 146,
+        "relation": "type",
+        "distance": 2,
+        "source": "class NovaPersona:\n\n    def build_system_prompt(self) -> str:\n        ...\n    ..."
+      },
+      {
+        "symbol": "agent.intent_router_hooks:attach_intent_router_transcript_listener",
+        "file": "agent/intent_router_hooks.py",
+        "start_line": 106,
+        "end_line": 156,
+        "relation": "callee",
+        "distance": 2,
+        "source": "def attach_intent_router_transcript_listener(session: Any, room: Any, router: IntentRouter, *, publisher: UISyncPublisher | None=None, finals_only: bool=True) -> Callable[[], None]:\n    \"\"\"\n    Register ``user_input_transcribed`` on ``session``. Returns ``unregister`` callable.\n    \"\"\"\n    ..."
+      },
+      {
+        "symbol": "agent.intent_router_hooks:build_intent_router_for_livekit",
+        "file": "agent/intent_router_hooks.py",
+        "start_line": 59,
+        "end_line": 87,
+        "relation": "callee",
+        "distance": 2,
+        "source": "def build_intent_router_for_livekit(*, publisher: UISyncPublisher, room_ref: weakref.ReferenceType[Any], user_id: str | None) -> IntentRouter | None:\n    \"\"\"\n    Worker entry: log + optional auto deck when ``NOVA_INTENT_ROUTER_AUTO_PRESENTATION=1``.\n    \"\"\"\n    ..."
+      },
+      {
+        "symbol": "agent.livekit_entry:_env_flag",
+        "file": "agent/livekit_entry.py",
+        "start_line": 84,
+        "end_line": 87,
+        "relation": "callee",
+        "distance": 2,
+        "source": "def _env_flag(name: str) -> bool:\n    \"\"\"Unset → False; explicit truthy tokens → True.\"\"\"\n    ..."
+      },
+      {
+        "symbol": "agent.livekit_entry:_env_truthy",
+        "file": "agent/livekit_entry.py",
+        "start_line": 77,
+        "end_line": 81,
+        "relation": "callee",
+        "distance": 2,
+        "source": "def _env_truthy(name: str, default: bool=True) -> bool:\n    ..."
+      },
+      {
+        "symbol": "agent.livekit_entry:build_nova_function_tools",
+        "file": "agent/livekit_entry.py",
+        "start_line": 121,
+        "end_line": 263,
+        "relation": "callee",
+        "distance": 2,
+        "source": "def build_nova_function_tools(publisher: UISyncPublisher, room_ref: weakref.ReferenceType[Any], session_holder: list[Any] | None=None) -> list[Any]:\n    \"\"\"\n    ``generate_presentation`` (debate → Planner deck) + ``roi_calculator``.\n    ``session_holder`` is a 1-element list filled after AgentSession is created;\n    tools use it to inject bridge TTS audio via session.say() during long operations.\n    \"\"\"\n    ..."
+      }
+    ],
+    "truncated": true,
+    "diagnostics": [],
+    "budget_unit": "utf8_bytes_upper_bound",
+    "token_upper_bound": 3906
+  },
+  "allow_model": false,
+  "max_attempts": 3,
+  "timeout_sec": 120,
+  "contract_sha256": "645265fdeb260b2e76f5920018d751c36cd299767466adcf1c52648d40204436"
+}

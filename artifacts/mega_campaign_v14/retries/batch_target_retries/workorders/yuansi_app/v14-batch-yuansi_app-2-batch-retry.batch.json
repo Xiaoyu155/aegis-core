@@ -1,0 +1,180 @@
+{
+  "status": "succeeded",
+  "jobs": [
+    {
+      "id": "v14-batch-yuansi_app-2-batch-retry",
+      "priority": 1,
+      "repo_root": "/tmp/aegis-v14-mega-bfqqq2at/repos/yuansi_app",
+      "languages": {
+        "python": {
+          "files": 678,
+          "present": true
+        },
+        "javascript": {
+          "files": 7,
+          "present": true
+        },
+        "typescript": {
+          "files": 14,
+          "present": true
+        }
+      },
+      "result": {
+        "ticket_id": "v14-batch-yuansi_app-2-batch-retry",
+        "status": "succeeded",
+        "reason": "gate_passed",
+        "attempts": 1,
+        "results": [
+          {
+            "baseline_failed": true,
+            "after_passed": true,
+            "passed": true,
+            "cheat_detected": false,
+            "changed_files": [
+              "prod_wechat_youyou_isolated/youyou_courier.py"
+            ],
+            "diff_lines": 1,
+            "repeated_patch": false,
+            "patch_sha256": "fd25821328da2986c5048344850536d238d5621ecee538e0e540771ba0ffdfae",
+            "complexity": {
+              "level": "L1",
+              "tier": "L1_LOCAL_CAUSAL",
+              "impact_radius": 0,
+              "coupling": 0,
+              "impacted_files": [
+                "prod_wechat_youyou_isolated/youyou_courier.py"
+              ],
+              "risk_probability": null
+            },
+            "model_tier": null,
+            "probe_kind": "unit",
+            "probe_script_sha256": {},
+            "predicted_next_state": {
+              "outcome": "assertion_error",
+              "probabilities": {
+                "gate_passed": 0.3446063735867587,
+                "assertion_error": 0.6472688477784577,
+                "cheat_detected": 0.0026874921739114418,
+                "replay_blocked": 0.003907460379610859,
+                "missing_constraint": 0.0015298260812612566
+              },
+              "decision_source": "causal_world_net",
+              "high_risk_pre_block": false,
+              "pre_block_reason": null,
+              "changed_paths": [
+                "prod_wechat_youyou_isolated/youyou_courier.py"
+              ]
+            },
+            "predicted_reward": 0.4750590464263349,
+            "predicted_reward_interval": [
+              -0.14998753727276837,
+              1.1001056301254382
+            ],
+            "prediction_confidence": 0.6472688477784577,
+            "risk_probability": 0.013328613822162844,
+            "world_model_version": "5c64ee2972cf103513d5a29ba6bb0bf61f0a6c621451618c292eb91f158ac8aa",
+            "baseline": {
+              "command": [
+                "/tmp/aegis-v13-test-env/bin/python",
+                "-B",
+                "-c",
+                "from pathlib import Path; p=Path('prod_wechat_youyou_isolated/youyou_courier.py'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_YUANSI_APP_DEPENDENCY_HANDOFF' in s; compile(s, 'prod_wechat_youyou_isolated/youyou_courier.py', 'exec')"
+              ],
+              "exit_code": 1,
+              "stdout": "",
+              "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\nAssertionError\n",
+              "before_hash": "dba7bbb95404bc23a27991f59bd5607634befa403ce6547bb2c7c980c6d1c88a",
+              "after_hash": "dba7bbb95404bc23a27991f59bd5607634befa403ce6547bb2c7c980c6d1c88a",
+              "changed": false,
+              "reward": -1.0,
+              "passed": false,
+              "probe_kind": "unit",
+              "probe_script_sha256": {},
+              "probe_runtime_sha256": {},
+              "failure_code": "ASSERTION_FAILED",
+              "timed_out": false,
+              "timeout_killed": false,
+              "termination_reason": null,
+              "killed_process_group": false
+            },
+            "final": {
+              "command": [
+                "/tmp/aegis-v13-test-env/bin/python",
+                "-B",
+                "-c",
+                "from pathlib import Path; p=Path('prod_wechat_youyou_isolated/youyou_courier.py'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_YUANSI_APP_DEPENDENCY_HANDOFF' in s; compile(s, 'prod_wechat_youyou_isolated/youyou_courier.py', 'exec')"
+              ],
+              "exit_code": 0,
+              "stdout": "",
+              "stderr": "",
+              "before_hash": "fc35807b2bc3007209ac3c0f2406b8a40658b4f7813977a9eaa1a7b8274d7430",
+              "after_hash": "fc35807b2bc3007209ac3c0f2406b8a40658b4f7813977a9eaa1a7b8274d7430",
+              "changed": false,
+              "reward": 1.0,
+              "passed": true,
+              "probe_kind": "unit",
+              "probe_script_sha256": {},
+              "probe_runtime_sha256": {},
+              "failure_code": null,
+              "timed_out": false,
+              "timeout_killed": false,
+              "termination_reason": null,
+              "killed_process_group": false
+            },
+            "timeout_killed": false,
+            "before_hash": "dba7bbb95404bc23a27991f59bd5607634befa403ce6547bb2c7c980c6d1c88a",
+            "after_hash": "fc35807b2bc3007209ac3c0f2406b8a40658b4f7813977a9eaa1a7b8274d7430",
+            "reward": 1.4963090061433346,
+            "source_changed_lines": 1,
+            "protected_changed": [],
+            "termination_reason": null,
+            "elapsed_sec": 0.558302025001467,
+            "world_model_outcome": "gate_passed",
+            "causal_prediction_error": {
+              "predicted_outcome": "assertion_error",
+              "actual_outcome": "gate_passed",
+              "state_mismatch": true,
+              "state_error": 1,
+              "reward_absolute_error": 1.021249959717,
+              "reward_interval_covered": false,
+              "composite_error": 2.021249959717
+            }
+          }
+        ],
+        "telemetry": {
+          "model_loaded": true,
+          "world_model_version": "5c64ee2972cf103513d5a29ba6bb0bf61f0a6c621451618c292eb91f158ac8aa",
+          "model_source": "bundled",
+          "model_mode": "observe",
+          "predictions_made": 1,
+          "no_prediction_count": 0,
+          "below_threshold_count": 0,
+          "scope": "repair_attempts"
+        },
+        "budget": {
+          "scope": "v14-batch-yuansi_app-2-batch-retry:252570c29a6f47bebd49e8a4fe1ac474",
+          "limits": {},
+          "token_consumption": 0,
+          "estimated_cost_usd": 0.0,
+          "estimated_usd_per_token": 1e-05,
+          "wall_clock_sec": 9.604098125999371,
+          "reward": 1.4963090061433346,
+          "reward_per_1000_tokens": null,
+          "reward_per_usd": null,
+          "halted_by": null
+        }
+      },
+      "status": "succeeded",
+      "exit_code": 0
+    }
+  ],
+  "passed": 1,
+  "failed": 0,
+  "budget": {
+    "token_consumption": 0,
+    "estimated_cost_usd": 0.0,
+    "reward": 1.4963090061433346,
+    "wall_clock_sec": 9.604098125999371,
+    "reward_per_usd": null
+  }
+}

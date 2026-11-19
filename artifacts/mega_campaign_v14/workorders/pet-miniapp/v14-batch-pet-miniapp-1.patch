@@ -1,0 +1,8 @@
+diff --git a/scripts/ui-deep-e2e.py b/scripts/ui-deep-e2e.py
+--- a/scripts/ui-deep-e2e.py
++++ b/scripts/ui-deep-e2e.py
+@@ -384,3 +384,4 @@
+
+ if __name__ == "__main__":
+     raise SystemExit(main())
++# AEGIS_V14_PET-MINIAPP_DOC_CONTRACT

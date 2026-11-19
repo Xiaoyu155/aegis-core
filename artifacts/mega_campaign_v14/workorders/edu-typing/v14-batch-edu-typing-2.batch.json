@@ -1,0 +1,189 @@
+{
+  "status": "succeeded",
+  "jobs": [
+    {
+      "id": "v14-batch-edu-typing-2",
+      "priority": 1,
+      "repo_root": "/tmp/aegis-v14-mega-ocjs05u7/repos/edu-typing",
+      "languages": {
+        "python": {
+          "files": 0,
+          "present": false
+        },
+        "javascript": {
+          "files": 5,
+          "present": true
+        },
+        "typescript": {
+          "files": 157,
+          "present": true
+        }
+      },
+      "result": {
+        "ticket_id": "v14-batch-edu-typing-2",
+        "status": "succeeded",
+        "reason": "gate_passed",
+        "attempts": 1,
+        "results": [
+          {
+            "baseline_failed": true,
+            "after_passed": true,
+            "passed": true,
+            "cheat_detected": false,
+            "changed_files": [
+              "src/index.tsx"
+            ],
+            "diff_lines": 1,
+            "repeated_patch": false,
+            "patch_sha256": "c6bd64f20ac8f90f60d4abed49e7a4047a2bcffb41d47ad2adb53026fef65a10",
+            "complexity": {
+              "level": "L3",
+              "tier": "L3_ARCHITECT_AND_DIRECT",
+              "impact_radius": 1,
+              "coupling": 9,
+              "impacted_files": [
+                "index.html",
+                "src/index.tsx"
+              ],
+              "risk_probability": null
+            },
+            "model_tier": null,
+            "probe_kind": "unit",
+            "probe_script_sha256": {},
+            "predicted_next_state": {
+              "outcome": "assertion_error",
+              "probabilities": {
+                "gate_passed": 0.009644955911673758,
+                "assertion_error": 0.8280762930912917,
+                "cheat_detected": 0.020177057210320724,
+                "replay_blocked": 0.010574043987432407,
+                "missing_constraint": 0.13152764979928133
+              },
+              "decision_source": "causal_world_net",
+              "high_risk_pre_block": false,
+              "pre_block_reason": null,
+              "changed_paths": [
+                "src/index.tsx"
+              ]
+            },
+            "predicted_reward": -0.18624635878339413,
+            "predicted_reward_interval": [
+              -0.8112929424824974,
+              0.43880022491570914
+            ],
+            "prediction_confidence": 0.8280762930912917,
+            "risk_probability": 0.18887315077116743,
+            "world_model_version": "5c64ee2972cf103513d5a29ba6bb0bf61f0a6c621451618c292eb91f158ac8aa",
+            "baseline": {
+              "command": [
+                "/tmp/aegis-v13-test-env/bin/python",
+                "-B",
+                "-c",
+                "from pathlib import Path; p=Path('src/index.tsx'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_EDU-TYPING_DEPENDENCY_HANDOFF' in s; assert len(s) > 0"
+              ],
+              "exit_code": 1,
+              "stdout": "",
+              "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\nAssertionError\n",
+              "before_hash": "f8f07badea3c1f4f1acc9709206bac1a5da4103e02807a484450eb7f1f1e2ca4",
+              "after_hash": "f8f07badea3c1f4f1acc9709206bac1a5da4103e02807a484450eb7f1f1e2ca4",
+              "changed": false,
+              "reward": -1.0,
+              "passed": false,
+              "probe_kind": "unit",
+              "probe_script_sha256": {},
+              "probe_runtime_sha256": {},
+              "failure_code": "ASSERTION_FAILED",
+              "timed_out": false,
+              "timeout_killed": false,
+              "termination_reason": null,
+              "killed_process_group": false
+            },
+            "final": {
+              "command": [
+                "/tmp/aegis-v13-test-env/bin/python",
+                "-B",
+                "-c",
+                "from pathlib import Path; p=Path('src/index.tsx'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_EDU-TYPING_DEPENDENCY_HANDOFF' in s; assert len(s) > 0"
+              ],
+              "exit_code": 0,
+              "stdout": "",
+              "stderr": "",
+              "before_hash": "30851dc01694fb15b55ea3b3c5cb32ec0af900a6de54a380e819e695e65343b4",
+              "after_hash": "30851dc01694fb15b55ea3b3c5cb32ec0af900a6de54a380e819e695e65343b4",
+              "changed": false,
+              "reward": 1.0,
+              "passed": true,
+              "probe_kind": "unit",
+              "probe_script_sha256": {},
+              "probe_runtime_sha256": {},
+              "failure_code": null,
+              "timed_out": false,
+              "timeout_killed": false,
+              "termination_reason": null,
+              "killed_process_group": false
+            },
+            "timeout_killed": false,
+            "before_hash": "f8f07badea3c1f4f1acc9709206bac1a5da4103e02807a484450eb7f1f1e2ca4",
+            "after_hash": "30851dc01694fb15b55ea3b3c5cb32ec0af900a6de54a380e819e695e65343b4",
+            "reward": 1.4970001239333337,
+            "source_changed_lines": 1,
+            "protected_changed": [],
+            "termination_reason": null,
+            "review": {
+              "reviewer": "independent_static_semantic",
+              "passed": true,
+              "audited_files": [
+                "src/index.tsx"
+              ],
+              "findings": []
+            },
+            "elapsed_sec": 0.2522277309999481,
+            "world_model_outcome": "gate_passed",
+            "causal_prediction_error": {
+              "predicted_outcome": "assertion_error",
+              "actual_outcome": "gate_passed",
+              "state_mismatch": true,
+              "state_error": 1,
+              "reward_absolute_error": 1.683246482717,
+              "reward_interval_covered": false,
+              "composite_error": 2.683246482717
+            }
+          }
+        ],
+        "telemetry": {
+          "model_loaded": true,
+          "world_model_version": "5c64ee2972cf103513d5a29ba6bb0bf61f0a6c621451618c292eb91f158ac8aa",
+          "model_source": "bundled",
+          "model_mode": "observe",
+          "predictions_made": 1,
+          "no_prediction_count": 0,
+          "below_threshold_count": 0,
+          "scope": "repair_attempts"
+        },
+        "budget": {
+          "scope": "v14-batch-edu-typing-2:7d9e971c2c7940c3b7436be5d55fa719",
+          "limits": {},
+          "token_consumption": 0,
+          "estimated_cost_usd": 0.0,
+          "estimated_usd_per_token": 1e-05,
+          "wall_clock_sec": 0.6533730760002072,
+          "reward": 1.4970001239333337,
+          "reward_per_1000_tokens": null,
+          "reward_per_usd": null,
+          "halted_by": null
+        }
+      },
+      "status": "succeeded",
+      "exit_code": 0
+    }
+  ],
+  "passed": 1,
+  "failed": 0,
+  "budget": {
+    "token_consumption": 0,
+    "estimated_cost_usd": 0.0,
+    "reward": 1.4970001239333337,
+    "wall_clock_sec": 0.6533730760002072,
+    "reward_per_usd": null
+  }
+}

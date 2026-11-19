@@ -1,0 +1,74 @@
+{
+  "schema_version": "aegis.cli.v1",
+  "ticket_id": "v14-batch-edu-ai-2",
+  "repo_root": "/tmp/aegis-v14-mega-ocjs05u7/repos/edu-ai",
+  "base_commit": "062eca44468bcc1af5795eefd4c3d910bbd832a5",
+  "compilation": {
+    "kind": "CompiledContract",
+    "ticket_id": "v14-batch-edu-ai-2",
+    "status": "COMPILED",
+    "target_files": [
+      "app/page.tsx"
+    ],
+    "contract_stub": "def document_audited_contract() -> None:\n    ...",
+    "constraints": {}
+  },
+  "fail_before_cmd": [
+    "/tmp/aegis-v13-test-env/bin/python",
+    "-B",
+    "-c",
+    "from pathlib import Path; p=Path('app/page.tsx'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_EDU-AI_DEPENDENCY_HANDOFF' in s; assert len(s) > 0"
+  ],
+  "pass_after_cmd": [
+    "/tmp/aegis-v13-test-env/bin/python",
+    "-B",
+    "-c",
+    "from pathlib import Path; p=Path('app/page.tsx'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_EDU-AI_DEPENDENCY_HANDOFF' in s; assert len(s) > 0"
+  ],
+  "probe_kind": "unit",
+  "probe_script_sha256": {},
+  "source_dirs": [
+    "."
+  ],
+  "tool_source_globs": [
+    "**/tools/**/*.py",
+    "**/tools/**/*.js",
+    "**/tools/**/*.jsx",
+    "**/tools/**/*.cjs",
+    "**/tools/**/*.mjs",
+    "**/tools/**/*.ts",
+    "**/tools/**/*.tsx",
+    "**/tools/**/*.mts",
+    "**/tools/**/*.cts",
+    "**/tools/**/*.html",
+    "**/tools/**/*.htm",
+    "**/tools/**/*.css"
+  ],
+  "patches": [
+    "/workspace/aegis-core/artifacts/mega_campaign_v14/workorders/edu-ai/v14-batch-edu-ai-2.patch"
+  ],
+  "models_path": null,
+  "probe_patch": "",
+  "context": {
+    "target": "app/page.tsx:Page",
+    "items": [
+      {
+        "symbol": "app/page.tsx:Page",
+        "file": "app/page.tsx",
+        "start_line": 1885,
+        "end_line": 1887,
+        "relation": "target",
+        "distance": 0,
+        "source": "export default function Page() {\n  return <HomePage />;\n}"
+      }
+    ],
+    "truncated": false,
+    "diagnostics": [],
+    "budget_unit": "utf8_bytes_upper_bound",
+    "token_upper_bound": 359
+  },
+  "allow_model": false,
+  "max_attempts": 3,
+  "timeout_sec": 120,
+  "contract_sha256": "d16bc38c9eff5927aa4fe9e0b73c59366a48edc5de5f1e3aa5cb339a0eb1d816"
+}

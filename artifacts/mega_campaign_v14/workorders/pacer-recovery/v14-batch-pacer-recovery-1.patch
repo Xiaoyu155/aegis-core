@@ -1,0 +1,8 @@
+diff --git a/src/visual_agent/subagent_orchestrator.py b/src/visual_agent/subagent_orchestrator.py
+--- a/src/visual_agent/subagent_orchestrator.py
++++ b/src/visual_agent/subagent_orchestrator.py
+@@ -3795,3 +3795,4 @@
+
+ def shutil_which(cmd: str) -> str | None:
+     return shutil.which(cmd) or shutil.which(f"{cmd}.cmd") or shutil.which(f"{cmd}.exe")
++# AEGIS_V14_PACER-RECOVERY_DOC_CONTRACT

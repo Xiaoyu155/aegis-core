@@ -1,0 +1,8 @@
+diff --git a/capture-prototype/capture.mjs b/capture-prototype/capture.mjs
+--- a/capture-prototype/capture.mjs
++++ b/capture-prototype/capture.mjs
+@@ -248,3 +248,4 @@
+ };
+
+ run().catch((e) => { console.error('采集失败:', e); process.exit(1); });
++// AEGIS_V14_PROMO-VIDEOS_DOC_CONTRACT

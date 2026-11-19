@@ -1,0 +1,1 @@
+{"target_files": ["scripts/ui-deep-e2e.py"], "contract_stub": "def document_audited_contract() -> None:\n    ..."}

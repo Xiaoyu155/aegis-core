@@ -1,0 +1,155 @@
+{
+  "schema_version": "aegis.cli.v1",
+  "ticket_id": "v14-batch-Checkpoint-2-batch-retry",
+  "repo_root": "/tmp/aegis-v14-mega-bfqqq2at/repos/Checkpoint",
+  "base_commit": "e66a376b2f81dcdcf9a63a3d5ffe842a37f45406",
+  "compilation": {
+    "kind": "CompiledContract",
+    "ticket_id": "v14-batch-Checkpoint-2-batch-retry",
+    "status": "COMPILED",
+    "target_files": [
+      "xiao/src/visual_agent/task_review.py"
+    ],
+    "contract_stub": "def document_audited_contract() -> None:\n    ...",
+    "constraints": {}
+  },
+  "fail_before_cmd": [
+    "/tmp/aegis-v13-test-env/bin/python",
+    "-B",
+    "-c",
+    "from pathlib import Path; p=Path('xiao/src/visual_agent/task_review.py'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_CHECKPOINT_DEPENDENCY_HANDOFF' in s; compile(s, 'xiao/src/visual_agent/task_review.py', 'exec')"
+  ],
+  "pass_after_cmd": [
+    "/tmp/aegis-v13-test-env/bin/python",
+    "-B",
+    "-c",
+    "from pathlib import Path; p=Path('xiao/src/visual_agent/task_review.py'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_CHECKPOINT_DEPENDENCY_HANDOFF' in s; compile(s, 'xiao/src/visual_agent/task_review.py', 'exec')"
+  ],
+  "probe_kind": "unit",
+  "probe_script_sha256": {},
+  "source_dirs": [
+    "."
+  ],
+  "tool_source_globs": [
+    "**/tools/**/*.py",
+    "**/tools/**/*.js",
+    "**/tools/**/*.jsx",
+    "**/tools/**/*.cjs",
+    "**/tools/**/*.mjs",
+    "**/tools/**/*.ts",
+    "**/tools/**/*.tsx",
+    "**/tools/**/*.mts",
+    "**/tools/**/*.cts",
+    "**/tools/**/*.html",
+    "**/tools/**/*.htm",
+    "**/tools/**/*.css"
+  ],
+  "patches": [
+    "/tmp/aegis-v14-batch-retry/workorders/Checkpoint/v14-batch-Checkpoint-2-batch-retry.patch"
+  ],
+  "models_path": null,
+  "probe_patch": "",
+  "context": {
+    "target": "xiao.src.visual_agent.task_review:_relevance_terms",
+    "items": [
+      {
+        "symbol": "xiao.src.visual_agent.task_review:_relevance_terms",
+        "file": "xiao/src/visual_agent/task_review.py",
+        "start_line": 1770,
+        "end_line": 1782,
+        "relation": "target",
+        "distance": 0,
+        "source": "def _relevance_terms(values: list[str]) -> set[str]:\n    ignored = {\n        \"app\", \"build\", \"check\", \"dart\", \"go\", \"lib\", \"main\", \"package\", \"project\", \"py\",\n        \"pytest\", \"src\", \"test\", \"tests\", \"testing\", \"unittest\", \"verify\", \"verification\",\n    }\n    terms: set[str] = set()\n    for value in values:\n        normalized = unicodedata.normalize(\"NFKC\", str(value or \"\")).casefold()\n        for token in re.findall(r\"[a-z0-9]+|[\\u3400-\\u9fff]{2,}\", normalized):\n            if token in ignored or token.isdigit() or len(token) < 2:\n                continue\n            terms.add(token)\n    return terms"
+      },
+      {
+        "symbol": "xiao.src.visual_agent.task_review:_verification_step_covers_claim",
+        "file": "xiao/src/visual_agent/task_review.py",
+        "start_line": 1720,
+        "end_line": 1767,
+        "relation": "caller",
+        "distance": 1,
+        "source": "def _verification_step_covers_claim(step: dict[str, Any], *, locked_requirement: str, files: list[str]) -> bool:\n    ..."
+      },
+      {
+        "symbol": "xiao.src.visual_agent.task_review:audit_task_completion",
+        "file": "xiao/src/visual_agent/task_review.py",
+        "start_line": 950,
+        "end_line": 1565,
+        "relation": "caller",
+        "distance": 2,
+        "source": "def audit_task_completion(*, launch_goal: str, submitted_goal: str, summary: str, completion_evidence: Any, requested_steps: Any, repo_root: str | Path, task_contract: Any=None, source_baseline: Any=None, verification: dict[str, Any] | None=None) -> dict[str, Any]:\n    \"\"\"Build a deterministic review that binds claims to files and verification.\"\"\"\n    ..."
+      },
+      {
+        "symbol": "xiao.src.visual_agent.acceptance_contract:assess_acceptance_contract",
+        "file": "xiao/src/visual_agent/acceptance_contract.py",
+        "start_line": 73,
+        "end_line": 132,
+        "relation": "callee",
+        "distance": 3,
+        "source": "def assess_acceptance_contract(contract: Any, *, requested_steps: Any, final_phase: bool) -> dict[str, Any]:\n    ..."
+      },
+      {
+        "symbol": "xiao.src.visual_agent.task_review:_artifact_role_for_path",
+        "file": "xiao/src/visual_agent/task_review.py",
+        "start_line": 485,
+        "end_line": 507,
+        "relation": "callee",
+        "distance": 3,
+        "source": "def _artifact_role_for_path(path: str) -> str:\n    ..."
+      },
+      {
+        "symbol": "xiao.src.visual_agent.task_review:_artifact_role_label",
+        "file": "xiao/src/visual_agent/task_review.py",
+        "start_line": 2177,
+        "end_line": 2183,
+        "relation": "callee",
+        "distance": 3,
+        "source": "def _artifact_role_label(role: str) -> str:\n    ..."
+      },
+      {
+        "symbol": "xiao.src.visual_agent.task_review:_baseline_matches_repo",
+        "file": "xiao/src/visual_agent/task_review.py",
+        "start_line": 1819,
+        "end_line": 1831,
+        "relation": "callee",
+        "distance": 3,
+        "source": "def _baseline_matches_repo(baseline: dict[str, Any], repo: Path) -> bool:\n    ..."
+      },
+      {
+        "symbol": "xiao.src.visual_agent.task_review:_bounded_strings",
+        "file": "xiao/src/visual_agent/task_review.py",
+        "start_line": 2138,
+        "end_line": 2141,
+        "relation": "callee",
+        "distance": 3,
+        "source": "def _bounded_strings(value: Any, *, limit: int, chars: int) -> list[str]:\n    ..."
+      },
+      {
+        "symbol": "xiao.src.visual_agent.task_review:_dedupe_issues",
+        "file": "xiao/src/visual_agent/task_review.py",
+        "start_line": 2190,
+        "end_line": 2199,
+        "relation": "callee",
+        "distance": 3,
+        "source": "def _dedupe_issues(items: list[dict[str, Any]]) -> list[dict[str, Any]]:\n    ..."
+      },
+      {
+        "symbol": "xiao.src.visual_agent.task_review:_normalize_text",
+        "file": "xiao/src/visual_agent/task_review.py",
+        "start_line": 2127,
+        "end_line": 2129,
+        "relation": "callee",
+        "distance": 3,
+        "source": "def _normalize_text(value: str) -> str:\n    ..."
+      }
+    ],
+    "truncated": true,
+    "diagnostics": [],
+    "budget_unit": "utf8_bytes_upper_bound",
+    "token_upper_bound": 3937
+  },
+  "allow_model": false,
+  "max_attempts": 3,
+  "timeout_sec": 120,
+  "contract_sha256": "861b05caf63e42862635e8bd1d9ee3a1ea2262b13e8b53428c0a42061768a592"
+}

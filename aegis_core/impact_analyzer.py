@@ -439,10 +439,12 @@ def _python_dynamic_references(node: ast.AST) -> set[str]:
 
 
 def _resolve_local_file(filename: str, specifier: str, dependencies: dict[str, list[str]]) -> str | None:
+    # ImportGraph already resolved extensions, index files and HTML script paths.
+    # Prefer those concrete repository-relative paths and never return a synthetic
+    # extensionless base (which would silently drop a cross-file call edge).
     candidates = set(dependencies.get(filename, ()))
     path = Path(filename)
     base = (path.parent / specifier).as_posix()
-    candidates.update({base, *(base + suffix for suffix in (".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx", ".mts", ".cts"))})
     for candidate in sorted(candidates):
         if candidate == base or candidate.startswith(base + ".") or candidate.startswith(base + "/"):
             if candidate != filename:

@@ -1,0 +1,8 @@
+diff --git a/src/main.js b/src/main.js
+--- a/src/main.js
++++ b/src/main.js
+@@ -7,3 +7,4 @@
+   app.use(createPinia());
+   return { app };
+ }
++// AEGIS_V14_PET-MINIAPP-FRONTEND_DEPENDENCY_HANDOFF

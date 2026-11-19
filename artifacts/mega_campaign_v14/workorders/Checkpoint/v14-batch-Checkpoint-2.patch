@@ -1,0 +1,8 @@
+diff --git a/xiao/scripts/run_grok_audit.py b/xiao/scripts/run_grok_audit.py
+--- a/xiao/scripts/run_grok_audit.py
++++ b/xiao/scripts/run_grok_audit.py
+@@ -55,3 +55,4 @@
+     print(res.response)
+ else:
+     print("Error:", res.error)
++# AEGIS_V14_CHECKPOINT_DEPENDENCY_HANDOFF

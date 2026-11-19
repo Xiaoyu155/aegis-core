@@ -1,0 +1,8 @@
+diff --git a/prod_wechat_youyou_isolated/youyou_courier.py b/prod_wechat_youyou_isolated/youyou_courier.py
+--- a/prod_wechat_youyou_isolated/youyou_courier.py
++++ b/prod_wechat_youyou_isolated/youyou_courier.py
+@@ -4290,3 +4290,4 @@
+         f"WECHAT_HANDLE_DONE route={route} openid={openid} elapsed={time.time() - t0:.3f} chars={len(reply)}",
+         flush=True,
+     )
++# AEGIS_V14_YUANSI_APP_DEPENDENCY_HANDOFF

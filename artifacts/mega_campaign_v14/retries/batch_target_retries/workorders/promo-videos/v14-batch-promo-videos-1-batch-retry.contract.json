@@ -1,0 +1,74 @@
+{
+  "schema_version": "aegis.cli.v1",
+  "ticket_id": "v14-batch-promo-videos-1-batch-retry",
+  "repo_root": "/tmp/aegis-v14-mega-bfqqq2at/repos/promo-videos",
+  "base_commit": "592888391a1298361cc6eae3b31c4add50c5a656",
+  "compilation": {
+    "kind": "CompiledContract",
+    "ticket_id": "v14-batch-promo-videos-1-batch-retry",
+    "status": "COMPILED",
+    "target_files": [
+      "capture-prototype/capture.mjs"
+    ],
+    "contract_stub": "def document_audited_contract() -> None:\n    ...",
+    "constraints": {}
+  },
+  "fail_before_cmd": [
+    "/tmp/aegis-v13-test-env/bin/python",
+    "-B",
+    "-c",
+    "from pathlib import Path; p=Path('capture-prototype/capture.mjs'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_PROMO-VIDEOS_DOC_CONTRACT' in s; assert len(s) > 0"
+  ],
+  "pass_after_cmd": [
+    "/tmp/aegis-v13-test-env/bin/python",
+    "-B",
+    "-c",
+    "from pathlib import Path; p=Path('capture-prototype/capture.mjs'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_PROMO-VIDEOS_DOC_CONTRACT' in s; assert len(s) > 0"
+  ],
+  "probe_kind": "unit",
+  "probe_script_sha256": {},
+  "source_dirs": [
+    "."
+  ],
+  "tool_source_globs": [
+    "**/tools/**/*.py",
+    "**/tools/**/*.js",
+    "**/tools/**/*.jsx",
+    "**/tools/**/*.cjs",
+    "**/tools/**/*.mjs",
+    "**/tools/**/*.ts",
+    "**/tools/**/*.tsx",
+    "**/tools/**/*.mts",
+    "**/tools/**/*.cts",
+    "**/tools/**/*.html",
+    "**/tools/**/*.htm",
+    "**/tools/**/*.css"
+  ],
+  "patches": [
+    "/tmp/aegis-v14-batch-retry/workorders/promo-videos/v14-batch-promo-videos-1-batch-retry.patch"
+  ],
+  "models_path": null,
+  "probe_patch": "",
+  "context": {
+    "target": "capture-prototype/capture.mjs:now",
+    "items": [
+      {
+        "symbol": "capture-prototype/capture.mjs:now",
+        "file": "capture-prototype/capture.mjs",
+        "start_line": 34,
+        "end_line": 34,
+        "relation": "target",
+        "distance": 0,
+        "source": "const now = () => (Date.now() - t0) / 1000;"
+      }
+    ],
+    "truncated": false,
+    "diagnostics": [],
+    "budget_unit": "utf8_bytes_upper_bound",
+    "token_upper_bound": 388
+  },
+  "allow_model": false,
+  "max_attempts": 3,
+  "timeout_sec": 120,
+  "contract_sha256": "bc1202a7602225a8e1bdff8898041bb1b2805355bf443797e806932e58743bb5"
+}

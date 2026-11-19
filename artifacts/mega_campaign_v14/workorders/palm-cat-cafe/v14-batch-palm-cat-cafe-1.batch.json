@@ -1,0 +1,180 @@
+{
+  "status": "succeeded",
+  "jobs": [
+    {
+      "id": "v14-batch-palm-cat-cafe-1",
+      "priority": 1,
+      "repo_root": "/tmp/aegis-v14-mega-ocjs05u7/repos/palm-cat-cafe",
+      "languages": {
+        "python": {
+          "files": 283,
+          "present": true
+        },
+        "javascript": {
+          "files": 238,
+          "present": true
+        },
+        "typescript": {
+          "files": 0,
+          "present": false
+        }
+      },
+      "result": {
+        "ticket_id": "v14-batch-palm-cat-cafe-1",
+        "status": "succeeded",
+        "reason": "gate_passed",
+        "attempts": 1,
+        "results": [
+          {
+            "baseline_failed": true,
+            "after_passed": true,
+            "passed": true,
+            "cheat_detected": false,
+            "changed_files": [
+              "package_v4_for_ai_review.py"
+            ],
+            "diff_lines": 1,
+            "repeated_patch": false,
+            "patch_sha256": "42863a7dd112cf7553c493e55ecba332278c01808e62999a477dc0113fe05361",
+            "complexity": {
+              "level": "L1",
+              "tier": "L1_LOCAL_CAUSAL",
+              "impact_radius": 0,
+              "coupling": 0,
+              "impacted_files": [
+                "package_v4_for_ai_review.py"
+              ],
+              "risk_probability": null
+            },
+            "model_tier": null,
+            "probe_kind": "unit",
+            "probe_script_sha256": {},
+            "predicted_next_state": {
+              "outcome": "assertion_error",
+              "probabilities": {
+                "gate_passed": 0.0008155331282064089,
+                "assertion_error": 0.9584437326046779,
+                "cheat_detected": 0.005279844908039332,
+                "replay_blocked": 0.0051782384335354375,
+                "missing_constraint": 0.030282650925540923
+              },
+              "decision_source": "causal_world_net",
+              "high_risk_pre_block": false,
+              "pre_block_reason": null,
+              "changed_paths": [
+                "package_v4_for_ai_review.py"
+              ]
+            },
+            "predicted_reward": -0.7529122340780232,
+            "predicted_reward_interval": [
+              -1.3779588177771265,
+              -0.12786565037891995
+            ],
+            "prediction_confidence": 0.9584437326046779,
+            "risk_probability": 0.19779221150242973,
+            "world_model_version": "5c64ee2972cf103513d5a29ba6bb0bf61f0a6c621451618c292eb91f158ac8aa",
+            "baseline": {
+              "command": [
+                "/tmp/aegis-v13-test-env/bin/python",
+                "-B",
+                "-c",
+                "from pathlib import Path; p=Path('package_v4_for_ai_review.py'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_PALM-CAT-CAFE_DOC_CONTRACT' in s; compile(s, 'package_v4_for_ai_review.py', 'exec')"
+              ],
+              "exit_code": 1,
+              "stdout": "",
+              "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\nAssertionError\n",
+              "before_hash": "63a979b131d2c2c9bdae61aa53d0664a3a3cebe25ea6aebc4db1d1b02c5109e7",
+              "after_hash": "63a979b131d2c2c9bdae61aa53d0664a3a3cebe25ea6aebc4db1d1b02c5109e7",
+              "changed": false,
+              "reward": -1.0,
+              "passed": false,
+              "probe_kind": "unit",
+              "probe_script_sha256": {},
+              "probe_runtime_sha256": {},
+              "failure_code": "ASSERTION_FAILED",
+              "timed_out": false,
+              "timeout_killed": false,
+              "termination_reason": null,
+              "killed_process_group": false
+            },
+            "final": {
+              "command": [
+                "/tmp/aegis-v13-test-env/bin/python",
+                "-B",
+                "-c",
+                "from pathlib import Path; p=Path('package_v4_for_ai_review.py'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_PALM-CAT-CAFE_DOC_CONTRACT' in s; compile(s, 'package_v4_for_ai_review.py', 'exec')"
+              ],
+              "exit_code": 0,
+              "stdout": "",
+              "stderr": "",
+              "before_hash": "38a567287247cf68e6949e9f5c2d2252ade1e745568747652ba402c2c5f3e9f9",
+              "after_hash": "38a567287247cf68e6949e9f5c2d2252ade1e745568747652ba402c2c5f3e9f9",
+              "changed": false,
+              "reward": 1.0,
+              "passed": true,
+              "probe_kind": "unit",
+              "probe_script_sha256": {},
+              "probe_runtime_sha256": {},
+              "failure_code": null,
+              "timed_out": false,
+              "timeout_killed": false,
+              "termination_reason": null,
+              "killed_process_group": false
+            },
+            "timeout_killed": false,
+            "before_hash": "63a979b131d2c2c9bdae61aa53d0664a3a3cebe25ea6aebc4db1d1b02c5109e7",
+            "after_hash": "38a567287247cf68e6949e9f5c2d2252ade1e745568747652ba402c2c5f3e9f9",
+            "reward": 1.4950218320733348,
+            "source_changed_lines": 1,
+            "protected_changed": [],
+            "termination_reason": null,
+            "elapsed_sec": 0.639447908000875,
+            "world_model_outcome": "gate_passed",
+            "causal_prediction_error": {
+              "predicted_outcome": "assertion_error",
+              "actual_outcome": "gate_passed",
+              "state_mismatch": true,
+              "state_error": 1,
+              "reward_absolute_error": 2.247934066151,
+              "reward_interval_covered": false,
+              "composite_error": 3.247934066151
+            }
+          }
+        ],
+        "telemetry": {
+          "model_loaded": true,
+          "world_model_version": "5c64ee2972cf103513d5a29ba6bb0bf61f0a6c621451618c292eb91f158ac8aa",
+          "model_source": "bundled",
+          "model_mode": "observe",
+          "predictions_made": 1,
+          "no_prediction_count": 0,
+          "below_threshold_count": 0,
+          "scope": "repair_attempts"
+        },
+        "budget": {
+          "scope": "v14-batch-palm-cat-cafe-1:e56a4320678943cdaf55ba060e36bd3d",
+          "limits": {},
+          "token_consumption": 0,
+          "estimated_cost_usd": 0.0,
+          "estimated_usd_per_token": 1e-05,
+          "wall_clock_sec": 3.53151972500018,
+          "reward": 1.4950218320733348,
+          "reward_per_1000_tokens": null,
+          "reward_per_usd": null,
+          "halted_by": null
+        }
+      },
+      "status": "succeeded",
+      "exit_code": 0
+    }
+  ],
+  "passed": 1,
+  "failed": 0,
+  "budget": {
+    "token_consumption": 0,
+    "estimated_cost_usd": 0.0,
+    "reward": 1.4950218320733348,
+    "wall_clock_sec": 3.53151972500018,
+    "reward_per_usd": null
+  }
+}

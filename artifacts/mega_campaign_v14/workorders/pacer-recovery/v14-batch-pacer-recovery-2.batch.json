@@ -1,0 +1,189 @@
+{
+  "status": "succeeded",
+  "jobs": [
+    {
+      "id": "v14-batch-pacer-recovery-2",
+      "priority": 1,
+      "repo_root": "/tmp/aegis-v14-mega-ocjs05u7/repos/pacer-recovery",
+      "languages": {
+        "python": {
+          "files": 218,
+          "present": true
+        },
+        "javascript": {
+          "files": 5,
+          "present": true
+        },
+        "typescript": {
+          "files": 0,
+          "present": false
+        }
+      },
+      "result": {
+        "ticket_id": "v14-batch-pacer-recovery-2",
+        "status": "succeeded",
+        "reason": "gate_passed",
+        "attempts": 1,
+        "results": [
+          {
+            "baseline_failed": true,
+            "after_passed": true,
+            "passed": true,
+            "cheat_detected": false,
+            "changed_files": [
+              "src/visual_agent/subagent_orchestrator.py"
+            ],
+            "diff_lines": 1,
+            "repeated_patch": false,
+            "patch_sha256": "84587be79e0a2e8f9ad8654ee7385b5e4f389bec17d001dd78a26305be409f15",
+            "complexity": {
+              "level": "L3",
+              "tier": "L3_ARCHITECT_AND_DIRECT",
+              "impact_radius": 1,
+              "coupling": 25,
+              "impacted_files": [
+                "src/visual_agent/subagent_orchestrator.py",
+                "src/visual_agent/wish_intake.py"
+              ],
+              "risk_probability": null
+            },
+            "model_tier": null,
+            "probe_kind": "unit",
+            "probe_script_sha256": {},
+            "predicted_next_state": {
+              "outcome": "assertion_error",
+              "probabilities": {
+                "gate_passed": 0.009979713492197556,
+                "assertion_error": 0.8251589031119119,
+                "cheat_detected": 0.023594283864430687,
+                "replay_blocked": 0.009676927984319409,
+                "missing_constraint": 0.13159017154714048
+              },
+              "decision_source": "causal_world_net",
+              "high_risk_pre_block": false,
+              "pre_block_reason": null,
+              "changed_paths": [
+                "src/visual_agent/subagent_orchestrator.py"
+              ]
+            },
+            "predicted_reward": -0.1786254538804274,
+            "predicted_reward_interval": [
+              -0.8036720375795307,
+              0.4464211298186759
+            ],
+            "prediction_confidence": 0.8251589031119119,
+            "risk_probability": 0.19047386362350757,
+            "world_model_version": "5c64ee2972cf103513d5a29ba6bb0bf61f0a6c621451618c292eb91f158ac8aa",
+            "baseline": {
+              "command": [
+                "/tmp/aegis-v13-test-env/bin/python",
+                "-B",
+                "-c",
+                "from pathlib import Path; p=Path('src/visual_agent/subagent_orchestrator.py'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_PACER-RECOVERY_DEPENDENCY_HANDOFF' in s; compile(s, 'src/visual_agent/subagent_orchestrator.py', 'exec')"
+              ],
+              "exit_code": 1,
+              "stdout": "",
+              "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\nAssertionError\n",
+              "before_hash": "5819e2f4946946de3153356145d6643c8334e6c149009e5e4709278d763c0f3c",
+              "after_hash": "5819e2f4946946de3153356145d6643c8334e6c149009e5e4709278d763c0f3c",
+              "changed": false,
+              "reward": -1.0,
+              "passed": false,
+              "probe_kind": "unit",
+              "probe_script_sha256": {},
+              "probe_runtime_sha256": {},
+              "failure_code": "ASSERTION_FAILED",
+              "timed_out": false,
+              "timeout_killed": false,
+              "termination_reason": null,
+              "killed_process_group": false
+            },
+            "final": {
+              "command": [
+                "/tmp/aegis-v13-test-env/bin/python",
+                "-B",
+                "-c",
+                "from pathlib import Path; p=Path('src/visual_agent/subagent_orchestrator.py'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_PACER-RECOVERY_DEPENDENCY_HANDOFF' in s; compile(s, 'src/visual_agent/subagent_orchestrator.py', 'exec')"
+              ],
+              "exit_code": 0,
+              "stdout": "",
+              "stderr": "",
+              "before_hash": "131e3f466145b3371a0cc18be5ffc5792040c25c468281bc59567bf279954746",
+              "after_hash": "131e3f466145b3371a0cc18be5ffc5792040c25c468281bc59567bf279954746",
+              "changed": false,
+              "reward": 1.0,
+              "passed": true,
+              "probe_kind": "unit",
+              "probe_script_sha256": {},
+              "probe_runtime_sha256": {},
+              "failure_code": null,
+              "timed_out": false,
+              "timeout_killed": false,
+              "termination_reason": null,
+              "killed_process_group": false
+            },
+            "timeout_killed": false,
+            "before_hash": "5819e2f4946946de3153356145d6643c8334e6c149009e5e4709278d763c0f3c",
+            "after_hash": "131e3f466145b3371a0cc18be5ffc5792040c25c468281bc59567bf279954746",
+            "reward": 1.4965907549833355,
+            "source_changed_lines": 1,
+            "protected_changed": [],
+            "termination_reason": null,
+            "review": {
+              "reviewer": "independent_static_semantic",
+              "passed": true,
+              "audited_files": [
+                "src/visual_agent/subagent_orchestrator.py"
+              ],
+              "findings": []
+            },
+            "elapsed_sec": 0.4895932819999871,
+            "world_model_outcome": "gate_passed",
+            "causal_prediction_error": {
+              "predicted_outcome": "assertion_error",
+              "actual_outcome": "gate_passed",
+              "state_mismatch": true,
+              "state_error": 1,
+              "reward_absolute_error": 1.675216208864,
+              "reward_interval_covered": false,
+              "composite_error": 2.6752162088639997
+            }
+          }
+        ],
+        "telemetry": {
+          "model_loaded": true,
+          "world_model_version": "5c64ee2972cf103513d5a29ba6bb0bf61f0a6c621451618c292eb91f158ac8aa",
+          "model_source": "bundled",
+          "model_mode": "observe",
+          "predictions_made": 1,
+          "no_prediction_count": 0,
+          "below_threshold_count": 0,
+          "scope": "repair_attempts"
+        },
+        "budget": {
+          "scope": "v14-batch-pacer-recovery-2:58a27681203f4f8aadd1c4de6070b403",
+          "limits": {},
+          "token_consumption": 0,
+          "estimated_cost_usd": 0.0,
+          "estimated_usd_per_token": 1e-05,
+          "wall_clock_sec": 2.647296187999018,
+          "reward": 1.4965907549833355,
+          "reward_per_1000_tokens": null,
+          "reward_per_usd": null,
+          "halted_by": null
+        }
+      },
+      "status": "succeeded",
+      "exit_code": 0
+    }
+  ],
+  "passed": 1,
+  "failed": 0,
+  "budget": {
+    "token_consumption": 0,
+    "estimated_cost_usd": 0.0,
+    "reward": 1.4965907549833355,
+    "wall_clock_sec": 2.647296187999018,
+    "reward_per_usd": null
+  }
+}

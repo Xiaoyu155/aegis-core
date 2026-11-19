@@ -1,0 +1,8 @@
+diff --git a/freqtrade/freqtradebot.py b/freqtrade/freqtradebot.py
+--- a/freqtrade/freqtradebot.py
++++ b/freqtrade/freqtradebot.py
+@@ -2693,3 +2693,4 @@
+             )
+
+         return final_price
++# AEGIS_V14_OKX-FREQTRADE-LIVE_DEPENDENCY_HANDOFF

@@ -1,0 +1,74 @@
+{
+  "schema_version": "aegis.cli.v1",
+  "ticket_id": "v14-batch-crypto-quant-mvp-2",
+  "repo_root": "/tmp/aegis-v14-mega-ocjs05u7/repos/crypto-quant-mvp",
+  "base_commit": "d2cc408fa6abab2f8e2f26b7158427e7c6beb3a5",
+  "compilation": {
+    "kind": "CompiledContract",
+    "ticket_id": "v14-batch-crypto-quant-mvp-2",
+    "status": "COMPILED",
+    "target_files": [
+      "app/main.py"
+    ],
+    "contract_stub": "def document_audited_contract() -> None:\n    ...",
+    "constraints": {}
+  },
+  "fail_before_cmd": [
+    "/tmp/aegis-v13-test-env/bin/python",
+    "-B",
+    "-c",
+    "from pathlib import Path; p=Path('app/main.py'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_CRYPTO-QUANT-MVP_DEPENDENCY_HANDOFF' in s; compile(s, 'app/main.py', 'exec')"
+  ],
+  "pass_after_cmd": [
+    "/tmp/aegis-v13-test-env/bin/python",
+    "-B",
+    "-c",
+    "from pathlib import Path; p=Path('app/main.py'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_CRYPTO-QUANT-MVP_DEPENDENCY_HANDOFF' in s; compile(s, 'app/main.py', 'exec')"
+  ],
+  "probe_kind": "unit",
+  "probe_script_sha256": {},
+  "source_dirs": [
+    "."
+  ],
+  "tool_source_globs": [
+    "**/tools/**/*.py",
+    "**/tools/**/*.js",
+    "**/tools/**/*.jsx",
+    "**/tools/**/*.cjs",
+    "**/tools/**/*.mjs",
+    "**/tools/**/*.ts",
+    "**/tools/**/*.tsx",
+    "**/tools/**/*.mts",
+    "**/tools/**/*.cts",
+    "**/tools/**/*.html",
+    "**/tools/**/*.htm",
+    "**/tools/**/*.css"
+  ],
+  "patches": [
+    "/workspace/aegis-core/artifacts/mega_campaign_v14/workorders/crypto-quant-mvp/v14-batch-crypto-quant-mvp-2.patch"
+  ],
+  "models_path": null,
+  "probe_patch": "",
+  "context": {
+    "target": "app.main:virtual_reset",
+    "items": [
+      {
+        "symbol": "app.main:virtual_reset",
+        "file": "app/main.py",
+        "start_line": 915,
+        "end_line": 917,
+        "relation": "target",
+        "distance": 0,
+        "source": "@app.post(\"/virtual/reset\")\ndef virtual_reset() -> dict:\n    return virtual_service.reset()"
+      }
+    ],
+    "truncated": false,
+    "diagnostics": [],
+    "budget_unit": "utf8_bytes_upper_bound",
+    "token_upper_bound": 402
+  },
+  "allow_model": false,
+  "max_attempts": 3,
+  "timeout_sec": 120,
+  "contract_sha256": "c229657fe6fc92d0fba5a810ae14ef5c6c2b854baf07c380ae351b42f59a6b00"
+}

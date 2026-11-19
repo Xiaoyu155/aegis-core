@@ -1,0 +1,83 @@
+{
+  "schema_version": "aegis.cli.v1",
+  "ticket_id": "v14-batch-celestia-game-2",
+  "repo_root": "/tmp/aegis-v14-mega-ocjs05u7/repos/celestia-game",
+  "base_commit": "7e1194cb3c18bdf38632112fc77df3890e1a300b",
+  "compilation": {
+    "kind": "CompiledContract",
+    "ticket_id": "v14-batch-celestia-game-2",
+    "status": "COMPILED",
+    "target_files": [
+      "play/server.py"
+    ],
+    "contract_stub": "def document_audited_contract() -> None:\n    ...",
+    "constraints": {}
+  },
+  "fail_before_cmd": [
+    "/tmp/aegis-v13-test-env/bin/python",
+    "-B",
+    "-c",
+    "from pathlib import Path; p=Path('play/server.py'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_CELESTIA-GAME_DEPENDENCY_HANDOFF' in s; compile(s, 'play/server.py', 'exec')"
+  ],
+  "pass_after_cmd": [
+    "/tmp/aegis-v13-test-env/bin/python",
+    "-B",
+    "-c",
+    "from pathlib import Path; p=Path('play/server.py'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_CELESTIA-GAME_DEPENDENCY_HANDOFF' in s; compile(s, 'play/server.py', 'exec')"
+  ],
+  "probe_kind": "unit",
+  "probe_script_sha256": {},
+  "source_dirs": [
+    "."
+  ],
+  "tool_source_globs": [
+    "**/tools/**/*.py",
+    "**/tools/**/*.js",
+    "**/tools/**/*.jsx",
+    "**/tools/**/*.cjs",
+    "**/tools/**/*.mjs",
+    "**/tools/**/*.ts",
+    "**/tools/**/*.tsx",
+    "**/tools/**/*.mts",
+    "**/tools/**/*.cts",
+    "**/tools/**/*.html",
+    "**/tools/**/*.htm",
+    "**/tools/**/*.css"
+  ],
+  "patches": [
+    "/workspace/aegis-core/artifacts/mega_campaign_v14/workorders/celestia-game/v14-batch-celestia-game-2.patch"
+  ],
+  "models_path": null,
+  "probe_patch": "",
+  "context": {
+    "target": "play.server:H.log_message",
+    "items": [
+      {
+        "symbol": "play.server:H.log_message",
+        "file": "play/server.py",
+        "start_line": 707,
+        "end_line": 708,
+        "relation": "target",
+        "distance": 0,
+        "source": "    def log_message(self, *a):\n        pass"
+      }
+    ],
+    "truncated": false,
+    "diagnostics": [
+      {
+        "file": "play/3d/lib/three.module.js",
+        "error": "SourceTooLarge"
+      },
+      {
+        "file": "starfall/play/lib/three.module.js",
+        "error": "SourceTooLarge"
+      }
+    ],
+    "budget_unit": "utf8_bytes_upper_bound",
+    "token_upper_bound": 500
+  },
+  "allow_model": false,
+  "max_attempts": 3,
+  "timeout_sec": 120,
+  "contract_sha256": "4f3e0bbf409150eafe2d5218040202791bf961e55931a425fff0517c9e4b0054"
+}

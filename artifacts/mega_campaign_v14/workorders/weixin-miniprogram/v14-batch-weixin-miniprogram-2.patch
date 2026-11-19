@@ -1,0 +1,8 @@
+diff --git a/server/src/app.js b/server/src/app.js
+--- a/server/src/app.js
++++ b/server/src/app.js
+@@ -45,3 +45,4 @@
+ });
+
+ module.exports = app;
++// AEGIS_V14_WEIXIN-MINIPROGRAM_DEPENDENCY_HANDOFF

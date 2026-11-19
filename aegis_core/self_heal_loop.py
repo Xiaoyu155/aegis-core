@@ -6,6 +6,7 @@ import json
 import math
 from pathlib import Path
 import re
+import sys
 import time
 import uuid
 
@@ -99,6 +100,7 @@ class SelfHealLoop:
                                      "probe_sha256": probe["hashes"]},
                           actual_state_s1={"status": "running", "phase": "contract_expand_synth"}, reward=0)
         history, token_spend, terminal, reason, final_winner = [], 0, "failed", "no_candidate_passed", None
+        replay_patch = ""
         previous_diagnosis = None
         rounds = min(max_rounds, len(candidate_rounds)) if candidate_provider is None else max_rounds
         try:
@@ -142,6 +144,7 @@ class SelfHealLoop:
                 if winner_candidate and not (wall_exceeded or tokens_exceeded):
                     best_result = next(item for item in result["evaluations"] if item["candidate_id"] == result["winner"])
                     terminal, reason, final_winner = "succeeded", "all_candidate_gates_passed", winner_candidate
+                    replay_patch = winner_candidate.patch
                     actual = {"status": "succeeded", "baseline_failed": True, "after_passed": True,
                               "passed": True, "gate_failure": None, "cheat_detected": False,
                               "final": _success_receipt(best_result),
@@ -157,6 +160,7 @@ class SelfHealLoop:
                 has_next = index + 1 < rounds and reason not in {"BUDGET_EXCEEDED_WALL_CLOCK", "BUDGET_EXCEEDED_TOKENS"}
                 best_eval = max(result["evaluations"], key=lambda item: (item.get("score", 0), item["candidate_id"]))
                 best_candidate = next((item for item in candidates if item.candidate_id == best_eval["candidate_id"]), candidates[0])
+                replay_patch = best_candidate.patch
                 actual = {"status": "running" if has_next else "failed", "baseline_failed": True,
                           "after_passed": False, "passed": False,
                           "gate_failure": previous_diagnosis["failure_code"], "cheat_detected": False,
@@ -199,6 +203,15 @@ class SelfHealLoop:
         selected, recoveries, learning_counts = ledger.learning_selection(0, limit=1000)
         memory = bank.ingest_verified_recoveries(recoveries)
         retrieved = bank.search(contract, top_k=10, min_similarity=.05)
+        from .probe_synth import render_structured_probe
+        from .time_travel import TimeTravelReplay
+        probe_path, probe_source, probe_command, _ = render_structured_probe(probe["rule"])
+        frozen_command = [sys.executable if item == "{python}" else item for item in probe_command]
+        replay_snapshot = TimeTravelReplay(self.root, ledger.path).capture(
+            ticket, commit=base, probe=probe_source, probe_path=probe_path, probe_command=frozen_command,
+            mutation_seeds=[probe["random_seed"]], candidate_patch=replay_patch,
+            world_context={"contract": expanded_document, "impact": context,
+                           "failure_diagnosis": previous_diagnosis, "terminal_status": terminal})
         dataset_digest = hashlib.sha256(self.dataset_path.read_bytes()).hexdigest() if self.dataset_path.is_file() else None
         return {"schema_version": "aegis.autopilot.v1", "status": terminal, "reason": reason,
                 "ticket_id": ticket, "base_commit": base, "phases": ["contract", "expand", "synth_probe",
@@ -215,6 +228,9 @@ class SelfHealLoop:
                             "patch": final_winner.patch,
                             "patch_sha256": _sha(final_winner.patch)} if final_winner else None),
                 "diagnosis": previous_diagnosis, "experience_hints": retrieved,
+                "time_travel_snapshot": {key: replay_snapshot[key] for key in
+                                         ("ticket_id", "commit_oid", "archive_sha256", "probe_sha256",
+                                          "candidate_patch_sha256", "mutation_seeds")},
                 "learning": {"verified_recoveries": len(recoveries), "selected_model_traces": len(selected),
                              "selection_counts": learning_counts, "experience_ingest": memory,
                              "experience_bank": bank.status(), "replayed_hints": retrieved,

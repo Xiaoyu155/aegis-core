@@ -1,0 +1,107 @@
+{
+  "schema_version": "aegis.cli.v1",
+  "ticket_id": "v14-batch-palm-cat-cafe-1",
+  "repo_root": "/tmp/aegis-v14-mega-ocjs05u7/repos/palm-cat-cafe",
+  "base_commit": "22000d36ade5ee0166c96237834fd61179180568",
+  "compilation": {
+    "kind": "CompiledContract",
+    "ticket_id": "v14-batch-palm-cat-cafe-1",
+    "status": "COMPILED",
+    "target_files": [
+      "package_v4_for_ai_review.py"
+    ],
+    "contract_stub": "def document_audited_contract() -> None:\n    ...",
+    "constraints": {}
+  },
+  "fail_before_cmd": [
+    "/tmp/aegis-v13-test-env/bin/python",
+    "-B",
+    "-c",
+    "from pathlib import Path; p=Path('package_v4_for_ai_review.py'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_PALM-CAT-CAFE_DOC_CONTRACT' in s; compile(s, 'package_v4_for_ai_review.py', 'exec')"
+  ],
+  "pass_after_cmd": [
+    "/tmp/aegis-v13-test-env/bin/python",
+    "-B",
+    "-c",
+    "from pathlib import Path; p=Path('package_v4_for_ai_review.py'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_PALM-CAT-CAFE_DOC_CONTRACT' in s; compile(s, 'package_v4_for_ai_review.py', 'exec')"
+  ],
+  "probe_kind": "unit",
+  "probe_script_sha256": {},
+  "source_dirs": [
+    "."
+  ],
+  "tool_source_globs": [
+    "**/tools/**/*.py",
+    "**/tools/**/*.js",
+    "**/tools/**/*.jsx",
+    "**/tools/**/*.cjs",
+    "**/tools/**/*.mjs",
+    "**/tools/**/*.ts",
+    "**/tools/**/*.tsx",
+    "**/tools/**/*.mts",
+    "**/tools/**/*.cts",
+    "**/tools/**/*.html",
+    "**/tools/**/*.htm",
+    "**/tools/**/*.css"
+  ],
+  "patches": [
+    "/workspace/aegis-core/artifacts/mega_campaign_v14/workorders/palm-cat-cafe/v14-batch-palm-cat-cafe-1.patch"
+  ],
+  "models_path": null,
+  "probe_patch": "",
+  "context": {
+    "target": "game/catcafe/src/web/cartoon-fight-rig.js:k",
+    "items": [
+      {
+        "symbol": "game/catcafe/src/web/cartoon-fight-rig.js:k",
+        "file": "game/catcafe/src/web/cartoon-fight-rig.js",
+        "start_line": 2,
+        "end_line": 2,
+        "relation": "target",
+        "distance": 0,
+        "source": "'use strict';const k=(t,rows)=>base.keys(t,rows)[0],V=()=>new T.Vector3();"
+      }
+    ],
+    "truncated": false,
+    "diagnostics": [
+      {
+        "file": "game/cat_ragdoll_brawler/three.min.js",
+        "error": "SourceTooLarge"
+      },
+      {
+        "file": "game/catcafe/src/three.js",
+        "error": "SourceTooLarge"
+      },
+      {
+        "file": "game/catroom2d/assets/three.min.js",
+        "error": "SourceTooLarge"
+      },
+      {
+        "file": "miniprogram/game/assets_inline.js",
+        "error": "SourceTooLarge"
+      },
+      {
+        "file": "miniprogram/game/three.js",
+        "error": "SourceTooLarge"
+      },
+      {
+        "file": "宠物小程序/test_preview_script.js",
+        "error": "SourceTooLarge"
+      },
+      {
+        "file": "宠物小程序/miniprogram/game/assets_inline.js",
+        "error": "SourceTooLarge"
+      },
+      {
+        "file": "宠物小程序/miniprogram/game/three.js",
+        "error": "SourceTooLarge"
+      }
+    ],
+    "budget_unit": "utf8_bytes_upper_bound",
+    "token_upper_bound": 1057
+  },
+  "allow_model": false,
+  "max_attempts": 3,
+  "timeout_sec": 120,
+  "contract_sha256": "228a79fffbbf71ab8115de3f962c3dd0d5a341b9d5fdf17c002df9ba2a2f74ac"
+}

@@ -1,0 +1,1 @@
+{"target_files": ["xiao/src/visual_agent/task_review.py"], "contract_stub": "def document_audited_contract() -> None:\n    ..."}

@@ -1,0 +1,1 @@
+{"target_files": ["scripts/marketing-video/product_video.py"], "contract_stub": "def document_audited_contract() -> None:\n    ..."}

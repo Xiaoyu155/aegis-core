@@ -1,0 +1,8 @@
+diff --git a/agent/personas.py b/agent/personas.py
+--- a/agent/personas.py
++++ b/agent/personas.py
+@@ -460,3 +460,4 @@
+     if custom is not None:
+         return custom
+     return _nova_to_legacy_persona(NOVA_DEFAULT)
++# AEGIS_V14_NOVA-AGENT_DOC_CONTRACT

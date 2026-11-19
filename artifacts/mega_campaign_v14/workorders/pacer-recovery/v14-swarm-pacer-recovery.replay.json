@@ -1,0 +1,347 @@
+{
+  "schema_version": "aegis.replay.v1",
+  "status": "replayed",
+  "ticket_id": "v14-swarm-pacer-recovery",
+  "commit_oid": "85ed84328b178f955f0cfc6e625c2336e266b0fe",
+  "archive_sha256": "8bb2bc03d577b48b0e901647d8e5d7ccf7e7e2fb0e2702dd051f65c01ba45782",
+  "probe_sha256": "00231544fcdcce2190eb8347df56726a50e6ba5df6092799498eafdcf091e3bd",
+  "candidate_patch_sha256": "d27875be664a5f0da1d0979ba33b98fb4d6793adc90e5e1e5d9e18bfee8705b3",
+  "mutation_seeds": [
+    1419
+  ],
+  "world_context": {
+    "contract": {
+      "acceptance_criteria": [
+        {
+          "expected": "At src/visual_agent/pacer_launch_context.py::rebind_completed_active_task, demonstrate the requested result for a representative valid input (Clamp the campaign contract value to the inclusive range [0, 10] in Xiaoyu155/pacer-recovery.).",
+          "kind": "normal"
+        },
+        {
+          "expected": "At src/visual_agent/pacer_launch_context.py::rebind_completed_active_task, verify empty/minimum input and exercise both sides of each stated or existing limit.",
+          "kind": "boundary"
+        },
+        {
+          "expected": "At src/visual_agent/pacer_launch_context.py::rebind_completed_active_task, verify malformed input or a failed dependency produces the expected error or safe recovery.",
+          "kind": "fallback"
+        }
+      ],
+      "business_parameters": {},
+      "context": {
+        "budget_unit": "utf8_bytes_upper_bound",
+        "diagnostics": [],
+        "impact_summary": {
+          "changed_files": [
+            "aegis_campaign_probe.py"
+          ],
+          "compression_ratio": 0.999961,
+          "critical_symbol_recall": 1.0,
+          "graph_metrics": {
+            "call_edges": 2722,
+            "files": 219,
+            "reference_edges": 3027,
+            "symbols": 3280,
+            "unresolved_references": 166
+          },
+          "token_count": 25
+        },
+        "items": [
+          {
+            "distance": 0,
+            "end_line": 1032,
+            "file": "src/visual_agent/pacer_launch_context.py",
+            "relation": "target",
+            "source": "def rebind_completed_active_task(workspace_root: str | Path, *, launch_id: str, goal: str, reason: str='task_rollover') -> dict[str, Any]:\n    \"\"\"Start a new task slot inside a still-running native launch.\n\n    The task contract and source baseline are per-task evidence.  A new user\n    task may supersede an unfinished task in the same interactive window; the\n    old evidence is archived and remains explicitly non-completed.\n    \"\"\"\n    ...",
+            "start_line": 919,
+            "symbol": "src.visual_agent.pacer_launch_context:rebind_completed_active_task"
+          },
+          {
+            "distance": 1,
+            "end_line": 385,
+            "file": "src/visual_agent/pacer_launch_context.py",
+            "relation": "callee",
+            "source": "def _launch_state_transaction(workspace_root: str | Path) -> Iterator[None]:\n    ...",
+            "start_line": 373,
+            "symbol": "src.visual_agent.pacer_launch_context:_launch_state_transaction"
+          },
+          {
+            "distance": 1,
+            "end_line": 1608,
+            "file": "src/visual_agent/pacer_launch_context.py",
+            "relation": "callee",
+            "source": "def _task_goal_digest(goal: str) -> str:\n    ...",
+            "start_line": 1606,
+            "symbol": "src.visual_agent.pacer_launch_context:_task_goal_digest"
+          },
+          {
+            "distance": 1,
+            "end_line": 365,
+            "file": "src/visual_agent/pacer_launch_context.py",
+            "relation": "callee",
+            "source": "def _validated_launch_id(value: Any) -> str:\n    ...",
+            "start_line": 361,
+            "symbol": "src.visual_agent.pacer_launch_context:_validated_launch_id"
+          },
+          {
+            "distance": 1,
+            "end_line": 654,
+            "file": "src/visual_agent/pacer_launch_context.py",
+            "relation": "callee",
+            "source": "def _write_active_launch_unlocked(workspace: Path, payload: dict[str, Any], *, make_active: bool=False) -> None:\n    ...",
+            "start_line": 637,
+            "symbol": "src.visual_agent.pacer_launch_context:_write_active_launch_unlocked"
+          },
+          {
+            "distance": 1,
+            "end_line": 578,
+            "file": "src/visual_agent/pacer_launch_context.py",
+            "relation": "callee",
+            "source": "def read_active_launch(workspace_root: str | Path, *, launch_id: str='') -> dict[str, Any]:\n    ...",
+            "start_line": 542,
+            "symbol": "src.visual_agent.pacer_launch_context:read_active_launch"
+          },
+          {
+            "distance": 1,
+            "end_line": 1308,
+            "file": "src/visual_agent/pacer_launch_context.py",
+            "relation": "callee",
+            "source": "def task_source_baseline_path(workspace_root: str | Path, launch_id: str) -> Path:\n    ...",
+            "start_line": 1302,
+            "symbol": "src.visual_agent.pacer_launch_context:task_source_baseline_path"
+          },
+          {
+            "distance": 2,
+            "end_line": 391,
+            "file": "src/visual_agent/pacer_launch_context.py",
+            "relation": "callee",
+            "source": "def _workspace_thread_lock(workspace: Path) -> threading.RLock:\n    ...",
+            "start_line": 388,
+            "symbol": "src.visual_agent.pacer_launch_context:_workspace_thread_lock"
+          },
+          {
+            "distance": 2,
+            "end_line": 2043,
+            "file": "src/visual_agent/pacer_launch_context.py",
+            "relation": "caller",
+            "source": "def _commit_orphaned_launch(workspace_root: str | Path, launch: dict[str, Any], *, ended_at: str, orphaned_pid: int, status: str='orphaned') -> tuple[dict[str, Any], dict[str, Any]]:\n    ...",
+            "start_line": 1999,
+            "symbol": "src.visual_agent.pacer_launch_context:_commit_orphaned_launch"
+          },
+          {
+            "distance": 2,
+            "end_line": 875,
+            "file": "src/visual_agent/pacer_launch_context.py",
+            "relation": "caller",
+            "source": "def bind_active_project(*, workspace_root: str | Path, repo_root: str | Path, reason: str, launch_id: str='') -> dict[str, Any]:\n    ...",
+            "start_line": 807,
+            "symbol": "src.visual_agent.pacer_launch_context:bind_active_project"
+          }
+        ],
+        "structured_probe": {
+          "fallback": null,
+          "kind": "numeric_bounds",
+          "max": 10,
+          "min": 0,
+          "path": "aegis_campaign_probe.py",
+          "seed": 1419,
+          "symbol": "bounded"
+        },
+        "target": "src.visual_agent.pacer_launch_context:rebind_completed_active_task",
+        "token_upper_bound": 3721,
+        "truncated": true
+      },
+      "edge_cases": [
+        "Empty or minimum valid input",
+        "Invalid or malformed input",
+        "Repeated operation following a failed attempt"
+      ],
+      "engineering_invariants": [
+        "Preserve existing callable signatures and data shapes unless the requirement changes them.",
+        "Validate input before persisting a change and keep state consistent after a failed operation."
+      ],
+      "experience": [],
+      "intent": "Clamp the campaign contract value to the inclusive range [0, 10] in Xiaoyu155/pacer-recovery.",
+      "kind": "ExpandedSpec",
+      "questions": [],
+      "status": "READY"
+    },
+    "failure_diagnosis": {
+      "attempt": 1,
+      "candidate_failures": [
+        {
+          "candidate_id": "bait_constant",
+          "command": [
+            "/tmp/aegis-v13-test-env/bin/python",
+            "-B",
+            "-m",
+            "pytest",
+            "-p",
+            "no:cacheprovider",
+            "-q",
+            "tests/test_aegis_probe.py"
+          ],
+          "evidence": "lse:\n            expected = case.get(\"expected\")\n>           assert type(actual) is type(expected) and actual == expected, \"AEGIS_ACCEPTANCE: contract mismatch\"\nE           AssertionError: AEGIS_ACCEPTANCE: contract mismatch\nE           assert (<class 'int'> is <class 'int'> and 99 == 0)\nE            +  where <class 'int'> = type(99)\nE            +  and   <class 'int'> = type(0)\n\ntests/test_aegis_probe.py:73: AssertionError\n=============================== warnings summary ===============================\n../../../../../../aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636\n  /tmp/aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636: PytestConfigWarning: Unknown config option: cache_dir\n  \n    self._warn_or_fail_if_strict(f\"Unknown config option: {key}\\n\")\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n=========================== short test summary info ============================\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[positive_low]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[positive_high]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_underflow]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_overflow]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_type]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_fraction]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[positive_midpoint]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_0]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_1]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_2]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_3]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_4]\n12 failed, 1 warning in 0.81s\n\n",
+          "exit_code": 1,
+          "failure_code": "DYNAMIC_PROBE_FAILED",
+          "gate": "dynamic"
+        },
+        {
+          "candidate_id": "bait_constant",
+          "command": [
+            "/tmp/aegis-v13-test-env/bin/python",
+            "-B",
+            "-m",
+            "pytest",
+            "-p",
+            "no:cacheprovider",
+            "-q",
+            "tests/test_aegis_probe.py",
+            "-k",
+            "randomized"
+          ],
+          "evidence": "ert type(replay) is type(actual) and replay == actual, \"AEGIS_ACCEPTANCE: replay changed result\"\n        except asyncio.TimeoutError as error:\n            raise AssertionError(\"AEGIS_ACCEPTANCE: async fallback was not returned\") from error\n        if case.get(\"input_schema\") is not None:\n            assert args and _schema_matches(args[0], case[\"input_schema\"]), \"AEGIS_ACCEPTANCE: invalid input accepted\"\n        if case.get(\"return_schema\") is not None:\n            assert _schema_matches(actual, case[\"return_schema\"]), \"AEGIS_ACCEPTANCE: return schema mismatch\"\n        else:\n            expected = case.get(\"expected\")\n>           assert type(actual) is type(expected) and actual == expected, \"AEGIS_ACCEPTANCE: contract mismatch\"\nE           AssertionError: AEGIS_ACCEPTANCE: contract mismatch\nE           assert (<class 'int'> is <class 'int'> and 99 == 0)\nE            +  where <class 'int'> = type(99)\nE            +  and   <class 'int'> = type(0)\n\ntests/test_aegis_probe.py:73: AssertionError\n=============================== warnings summary ===============================\n../../../../../../aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636\n  /tmp/aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636: PytestConfigWarning: Unknown config option: cache_dir\n  \n    self._warn_or_fail_if_strict(f\"Unknown config option: {key}\\n\")\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n=========================== short test summary info ============================\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_0]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_1]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_2]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_3]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_4]\n5 failed, 7 deselected, 1 warning in 0.17s\n\n",
+          "exit_code": 1,
+          "failure_code": "MUTATION_PROBE_FAILED",
+          "gate": "mutation"
+        },
+        {
+          "candidate_id": "broken_signature",
+          "command": [
+            "/tmp/aegis-v13-test-env/bin/python",
+            "-B",
+            "-m",
+            "pytest",
+            "-p",
+            "no:cacheprovider",
+            "-q",
+            "tests/test_aegis_probe.py"
+          ],
+          "evidence": ")):\n                invoke()\n            return\n        try:\n>           actual = invoke()\n                     ^^^^^^^^\n\ntests/test_aegis_probe.py:61: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\n    def invoke():\n>       value = target(*args)\n                ^^^^^^^^^^^^^\nE       TypeError: bounded() takes 0 positional arguments but 1 was given\n\ntests/test_aegis_probe.py:49: TypeError\n=============================== warnings summary ===============================\n../../../../../../aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636\n  /tmp/aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636: PytestConfigWarning: Unknown config option: cache_dir\n  \n    self._warn_or_fail_if_strict(f\"Unknown config option: {key}\\n\")\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n=========================== short test summary info ============================\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[positive_low]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[positive_high]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_underflow]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_overflow]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_type]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_fraction]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[positive_midpoint]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_0]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_1]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_2]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_3]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_4]\n12 failed, 1 warning in 0.22s\n\n",
+          "exit_code": 1,
+          "failure_code": "DYNAMIC_PROBE_FAILED",
+          "gate": "dynamic"
+        },
+        {
+          "candidate_id": "broken_signature",
+          "command": [
+            "/tmp/aegis-v13-test-env/bin/python",
+            "-B",
+            "-m",
+            "pytest",
+            "-p",
+            "no:cacheprovider",
+            "-q",
+            "tests/test_aegis_probe.py",
+            "-k",
+            "randomized"
+          ],
+          "evidence": "uctured_acceptance(case):\n        args = case[\"args\"]\n        def invoke():\n            value = target(*args)\n            if case.get(\"async_timeout_ms\") is not None:\n                if not hasattr(value, \"__await__\"):\n                    raise TypeError(\"async contract requires an awaitable result\")\n                return asyncio.run(asyncio.wait_for(value, timeout=case[\"async_timeout_ms\"] / 1000))\n            return value\n        expected_exception = case.get(\"exception\")\n        if expected_exception:\n            with pytest.raises(getattr(builtins, expected_exception)):\n                invoke()\n            return\n        try:\n>           actual = invoke()\n                     ^^^^^^^^\n\ntests/test_aegis_probe.py:61: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\n    def invoke():\n>       value = target(*args)\n                ^^^^^^^^^^^^^\nE       TypeError: bounded() takes 0 positional arguments but 1 was given\n\ntests/test_aegis_probe.py:49: TypeError\n=============================== warnings summary ===============================\n../../../../../../aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636\n  /tmp/aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636: PytestConfigWarning: Unknown config option: cache_dir\n  \n    self._warn_or_fail_if_strict(f\"Unknown config option: {key}\\n\")\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n=========================== short test summary info ============================\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_0]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_1]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_2]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_3]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_4]\n5 failed, 7 deselected, 1 warning in 0.58s\n\n",
+          "exit_code": 1,
+          "failure_code": "MUTATION_PROBE_FAILED",
+          "gate": "mutation"
+        }
+      ],
+      "category": "candidate_rejected",
+      "contract_differences": [
+        {
+          "candidate_id": "bait_constant",
+          "code": "ASSERTION_MISMATCH",
+          "detail": ">           assert type(actual) is type(expected) and actual == expected, \"AEGIS_ACCEPTANCE: contract mismatch\"",
+          "gate": "dynamic",
+          "line": null,
+          "path": "tests/test_aegis_probe.py"
+        },
+        {
+          "candidate_id": "bait_constant",
+          "code": "ASSERTION_MISMATCH",
+          "detail": "play == actual, \"AEGIS_ACCEPTANCE: replay changed result\"",
+          "gate": "mutation",
+          "line": null,
+          "path": "tests/test_aegis_probe.py"
+        }
+      ],
+      "evidence_excerpt": "[{\"candidate_id\": \"bait_constant\", \"gate\": \"dynamic\", \"failure_code\": \"DYNAMIC_PROBE_FAILED\", \"exit_code\": 1, \"command\": [\"/tmp/aegis-v13-test-env/bin/python\", \"-B\", \"-m\", \"pytest\", \"-p\", \"no:cacheprovider\", \"-q\", \"tests/test_aegis_probe.py\"], \"evidence\": \"lse:\\n            expected = case.get(\\\"expected\\\")\\n>           assert type(actual) is type(expected) and actual == expected, \\\"AEGIS_ACCEPTANCE: contract mismatch\\\"\\nE           AssertionError: AEGIS_ACCEPTANCE: contract mismatch\\nE           assert (<class 'int'> is <class 'int'> and 99 == 0)\\nE            +  where <class 'int'> = type(99)\\nE            +  and   <class 'int'> = type(0)\\n\\ntests/test_aegis_probe.py:73: AssertionError\\n=============================== warnings summary ===============================\\n../../../../../../aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636\\n  /tmp/aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636: PytestConfigWarning: Unknown config option: cache_dir\\n  \\n    self._warn_or_fail_if_strict(f\\\"Unknown config option: {key}\\\\n\\\")\\n\\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\\n=========================== short test summary info ============================\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[positive_low]\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[positive_high]\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_underflow]\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_overflow]\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_type]\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_fraction]\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[positive_midpoint]\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_0]\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_1]\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_2]\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_3]\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_4]\\n12 failed, 1 warning in 0.81s\\n\\n\"}, {\"candidate_id\": \"bait_constant\", \"gate\": \"mutation\", \"failure_code\": \"MUTATION_PROBE_FAILED\", \"exit_code\": 1, \"command\": [\"/tmp/aegis-v13-test-env/bin/python\", \"-B\", \"-m\", \"pytest\", \"-p\", \"no:cacheprovider\", \"-q\", \"tests/test_aegis_probe.py\", \"-k\", \"randomized\"], \"evidence\": \"ert type(replay) is type(actual) and replay == actual, \\\"AEGIS_ACCEPTANCE: replay changed result\\\"\\n        except asyncio.TimeoutError as error:\\n            raise AssertionError(\\\"AEGIS_ACCEPTANCE: async fallback was not returned\\\") from error\\n        if case.get(\\\"input_schema\\\") is not None:\\n            assert args and _schema_matches(args[0], case[\\\"input_schema\\\"]), \\\"AEGIS_ACCEPTANCE: invalid input accepted\\\"\\n        if case.get(\\\"return_schema\\\") is not None:\\n            assert _schema_matches(actual, case[\\\"return_schema\\\"]), \\\"AEGIS_ACCEPTANCE: return schema mismatch\\\"\\n        else:\\n            expected = case.get(\\\"expected\\\")\\n>           assert type(actual) is type(expected) and actual == expected, \\\"AEGIS_ACCEPTANCE: contract mismatch\\\"\\nE           AssertionError: AEGIS_ACCEPTANCE: contract mismatch\\nE           assert (<class 'int'> is <class 'int'> and 99 == 0)\\nE            +  where <class 'int'> = type(99)\\nE            +  and   <class 'int'> = type(0)\\n\\ntests/test_aegis_probe.py:73: AssertionError\\n=============================== warnings summary ===============================\\n../../../../../../aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636\\n  /tmp/aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636: PytestConfigWarning: Unknown config option: cache_dir\\n  \\n    self._warn_or_fail_if_strict(f\\\"Unknown config opt",
+      "failure_code": "DYNAMIC_PROBE_FAILED",
+      "frames": [
+        {
+          "file": "tests/test_aegis_probe.py",
+          "line": 73
+        },
+        {
+          "file": "../../../../../../aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py",
+          "line": 1636
+        },
+        {
+          "file": "/tmp/aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py",
+          "line": 1636
+        },
+        {
+          "file": "tests/test_aegis_probe.py",
+          "line": 61
+        },
+        {
+          "file": "tests/test_aegis_probe.py",
+          "line": 49
+        }
+      ],
+      "kind": "FailureDiagnosis",
+      "mutation_examples": [
+        "negative_fraction",
+        "negative_overflow",
+        "negative_type",
+        "negative_underflow",
+        "positive_high",
+        "positive_low",
+        "positive_midpoint",
+        "randomized_0",
+        "randomized_1",
+        "randomized_2",
+        "randomized_3",
+        "randomized_4"
+      ],
+      "next_action": "Use the failing probe cases and independent audit findings to target a different repair strategy."
+    },
+    "impact": {
+      "budget_unit": "lexical_tokens_v1",
+      "changed_files": [
+        "aegis_campaign_probe.py"
+      ],
+      "compression_ratio": 0.999961,
+      "context": "[full_source aegis_campaign_probe.py:<file> aegis_campaign_probe.py distance=0 target]\ndef bounded(value):\n    return value\n",
+      "critical_symbol_count": 1,
+      "critical_symbol_recall": 1.0,
+      "graph_metrics": {
+        "call_edges": 2722,
+        "files": 219,
+        "reference_edges": 3027,
+        "symbols": 3280,
+        "unresolved_references": 166
+      },
+      "items": [
+        {
+          "direction": "target",
+          "distance": 0,
+          "file": "aegis_campaign_probe.py",
+          "representation": "full_source",
+          "symbol": "aegis_campaign_probe.py:<file>",
+          "text": "def bounded(value):\n    return value\n"
+        }
+      ],
+      "max_context_tokens": 1200,
+      "naive_token_count": 647336,
+      "omitted_symbols": [],
+      "recalled_symbol_count": 1,
+      "token_count": 25
+    },
+    "terminal_status": "succeeded"
+  },
+  "worktree": "/tmp/aegis-replay-hqjflhdt",
+  "outcome": {
+    "exit_code": 0,
+    "stdout": "............                                                             [100%]\n=============================== warnings summary ===============================\n../aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636\n  /tmp/aegis-v13-test-env/lib/python3.12/site-packages/_pytest/config/__init__.py:1636: PytestConfigWarning: Unknown config option: cache_dir\n  \n    self._warn_or_fail_if_strict(f\"Unknown config option: {key}\\n\")\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n12 passed, 1 warning in 0.09s\n",
+    "stderr": "",
+    "stdout_sha256": "2a47c3e7d54e1efb6330a120bd51a62610a5db83c03093f0e74c3ebe2df36ed0",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "result_sha256": "b33fde2572c78626eab805ecd5464f2971048858d595392fd3057fb5efddf805",
+    "matches_observed": null
+  }
+}

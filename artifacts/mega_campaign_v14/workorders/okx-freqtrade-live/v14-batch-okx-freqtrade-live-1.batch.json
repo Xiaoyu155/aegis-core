@@ -1,0 +1,189 @@
+{
+  "status": "succeeded",
+  "jobs": [
+    {
+      "id": "v14-batch-okx-freqtrade-live-1",
+      "priority": 1,
+      "repo_root": "/tmp/aegis-v14-mega-ocjs05u7/repos/okx-freqtrade-live",
+      "languages": {
+        "python": {
+          "files": 486,
+          "present": true
+        },
+        "javascript": {
+          "files": 1,
+          "present": true
+        },
+        "typescript": {
+          "files": 0,
+          "present": false
+        }
+      },
+      "result": {
+        "ticket_id": "v14-batch-okx-freqtrade-live-1",
+        "status": "succeeded",
+        "reason": "gate_passed",
+        "attempts": 1,
+        "results": [
+          {
+            "baseline_failed": true,
+            "after_passed": true,
+            "passed": true,
+            "cheat_detected": false,
+            "changed_files": [
+              "freqtrade/freqtradebot.py"
+            ],
+            "diff_lines": 1,
+            "repeated_patch": false,
+            "patch_sha256": "7863fe354e92f4ba0ad30656c64d35c5338d94c6bbc715ca247c46df03d00a61",
+            "complexity": {
+              "level": "L3",
+              "tier": "L3_ARCHITECT_AND_DIRECT",
+              "impact_radius": 1,
+              "coupling": 34,
+              "impacted_files": [
+                "freqtrade/freqtradebot.py",
+                "freqtrade/worker.py"
+              ],
+              "risk_probability": null
+            },
+            "model_tier": null,
+            "probe_kind": "unit",
+            "probe_script_sha256": {},
+            "predicted_next_state": {
+              "outcome": "assertion_error",
+              "probabilities": {
+                "gate_passed": 0.010438767679257385,
+                "assertion_error": 0.987475182451433,
+                "cheat_detected": 0.0004854437246012821,
+                "replay_blocked": 0.0011558029248076528,
+                "missing_constraint": 0.0004448032199007205
+              },
+              "decision_source": "causal_world_net",
+              "high_risk_pre_block": false,
+              "pre_block_reason": null,
+              "changed_paths": [
+                "freqtrade/freqtradebot.py"
+              ]
+            },
+            "predicted_reward": -0.1409808527223556,
+            "predicted_reward_interval": [
+              -0.7660274364214589,
+              0.48406573097674765
+            ],
+            "prediction_confidence": 0.987475182451433,
+            "risk_probability": 0.012688486659586969,
+            "world_model_version": "5c64ee2972cf103513d5a29ba6bb0bf61f0a6c621451618c292eb91f158ac8aa",
+            "baseline": {
+              "command": [
+                "/tmp/aegis-v13-test-env/bin/python",
+                "-B",
+                "-c",
+                "from pathlib import Path; p=Path('freqtrade/freqtradebot.py'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_OKX-FREQTRADE-LIVE_DOC_CONTRACT' in s; compile(s, 'freqtrade/freqtradebot.py', 'exec')"
+              ],
+              "exit_code": 1,
+              "stdout": "",
+              "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\nAssertionError\n",
+              "before_hash": "a146ca7bfb6d023c7e7fa8211c6fc08d4d7ce9234f5cb669a3b1d8195bda815c",
+              "after_hash": "a146ca7bfb6d023c7e7fa8211c6fc08d4d7ce9234f5cb669a3b1d8195bda815c",
+              "changed": false,
+              "reward": -1.0,
+              "passed": false,
+              "probe_kind": "unit",
+              "probe_script_sha256": {},
+              "probe_runtime_sha256": {},
+              "failure_code": "ASSERTION_FAILED",
+              "timed_out": false,
+              "timeout_killed": false,
+              "termination_reason": null,
+              "killed_process_group": false
+            },
+            "final": {
+              "command": [
+                "/tmp/aegis-v13-test-env/bin/python",
+                "-B",
+                "-c",
+                "from pathlib import Path; p=Path('freqtrade/freqtradebot.py'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_OKX-FREQTRADE-LIVE_DOC_CONTRACT' in s; compile(s, 'freqtrade/freqtradebot.py', 'exec')"
+              ],
+              "exit_code": 0,
+              "stdout": "",
+              "stderr": "",
+              "before_hash": "83c75a5cc9ba64879b13e0c90172487d8d330d2307bdd96e9e397a043223d107",
+              "after_hash": "83c75a5cc9ba64879b13e0c90172487d8d330d2307bdd96e9e397a043223d107",
+              "changed": false,
+              "reward": 1.0,
+              "passed": true,
+              "probe_kind": "unit",
+              "probe_script_sha256": {},
+              "probe_runtime_sha256": {},
+              "failure_code": null,
+              "timed_out": false,
+              "timeout_killed": false,
+              "termination_reason": null,
+              "killed_process_group": false
+            },
+            "timeout_killed": false,
+            "before_hash": "a146ca7bfb6d023c7e7fa8211c6fc08d4d7ce9234f5cb669a3b1d8195bda815c",
+            "after_hash": "83c75a5cc9ba64879b13e0c90172487d8d330d2307bdd96e9e397a043223d107",
+            "reward": 1.4957862969683327,
+            "source_changed_lines": 1,
+            "protected_changed": [],
+            "termination_reason": null,
+            "review": {
+              "reviewer": "independent_static_semantic",
+              "passed": true,
+              "audited_files": [
+                "freqtrade/freqtradebot.py"
+              ],
+              "findings": []
+            },
+            "elapsed_sec": 0.49651623600038874,
+            "world_model_outcome": "gate_passed",
+            "causal_prediction_error": {
+              "predicted_outcome": "assertion_error",
+              "actual_outcome": "gate_passed",
+              "state_mismatch": true,
+              "state_error": 1,
+              "reward_absolute_error": 1.636767149691,
+              "reward_interval_covered": false,
+              "composite_error": 2.636767149691
+            }
+          }
+        ],
+        "telemetry": {
+          "model_loaded": true,
+          "world_model_version": "5c64ee2972cf103513d5a29ba6bb0bf61f0a6c621451618c292eb91f158ac8aa",
+          "model_source": "bundled",
+          "model_mode": "observe",
+          "predictions_made": 1,
+          "no_prediction_count": 0,
+          "below_threshold_count": 0,
+          "scope": "repair_attempts"
+        },
+        "budget": {
+          "scope": "v14-batch-okx-freqtrade-live-1:49aef657577c4bf897e0b80cc0a5f429",
+          "limits": {},
+          "token_consumption": 0,
+          "estimated_cost_usd": 0.0,
+          "estimated_usd_per_token": 1e-05,
+          "wall_clock_sec": 7.686618630001249,
+          "reward": 1.4957862969683327,
+          "reward_per_1000_tokens": null,
+          "reward_per_usd": null,
+          "halted_by": null
+        }
+      },
+      "status": "succeeded",
+      "exit_code": 0
+    }
+  ],
+  "passed": 1,
+  "failed": 0,
+  "budget": {
+    "token_consumption": 0,
+    "estimated_cost_usd": 0.0,
+    "reward": 1.4957862969683327,
+    "wall_clock_sec": 7.686618630001249,
+    "reward_per_usd": null
+  }
+}

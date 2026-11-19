@@ -1,0 +1,137 @@
+{
+  "schema_version": "aegis.cli.v1",
+  "ticket_id": "v14-batch-okx-freqtrade-live-1",
+  "repo_root": "/tmp/aegis-v14-mega-ocjs05u7/repos/okx-freqtrade-live",
+  "base_commit": "3d31927c8232830729e37ce9c36f230ab8d9c7c2",
+  "compilation": {
+    "kind": "CompiledContract",
+    "ticket_id": "v14-batch-okx-freqtrade-live-1",
+    "status": "COMPILED",
+    "target_files": [
+      "freqtrade/freqtradebot.py"
+    ],
+    "contract_stub": "def document_audited_contract() -> None:\n    ...",
+    "constraints": {}
+  },
+  "fail_before_cmd": [
+    "/tmp/aegis-v13-test-env/bin/python",
+    "-B",
+    "-c",
+    "from pathlib import Path; p=Path('freqtrade/freqtradebot.py'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_OKX-FREQTRADE-LIVE_DOC_CONTRACT' in s; compile(s, 'freqtrade/freqtradebot.py', 'exec')"
+  ],
+  "pass_after_cmd": [
+    "/tmp/aegis-v13-test-env/bin/python",
+    "-B",
+    "-c",
+    "from pathlib import Path; p=Path('freqtrade/freqtradebot.py'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_OKX-FREQTRADE-LIVE_DOC_CONTRACT' in s; compile(s, 'freqtrade/freqtradebot.py', 'exec')"
+  ],
+  "probe_kind": "unit",
+  "probe_script_sha256": {},
+  "source_dirs": [
+    "."
+  ],
+  "tool_source_globs": [
+    "**/tools/**/*.py",
+    "**/tools/**/*.js",
+    "**/tools/**/*.jsx",
+    "**/tools/**/*.cjs",
+    "**/tools/**/*.mjs",
+    "**/tools/**/*.ts",
+    "**/tools/**/*.tsx",
+    "**/tools/**/*.mts",
+    "**/tools/**/*.cts",
+    "**/tools/**/*.html",
+    "**/tools/**/*.htm",
+    "**/tools/**/*.css"
+  ],
+  "patches": [
+    "/workspace/aegis-core/artifacts/mega_campaign_v14/workorders/okx-freqtrade-live/v14-batch-okx-freqtrade-live-1.patch"
+  ],
+  "models_path": null,
+  "probe_patch": "",
+  "context": {
+    "target": "freqtrade.freqtradebot:FreqtradeBot.process_stopped",
+    "items": [
+      {
+        "symbol": "freqtrade.freqtradebot:FreqtradeBot.process_stopped",
+        "file": "freqtrade/freqtradebot.py",
+        "start_line": 340,
+        "end_line": 345,
+        "relation": "target",
+        "distance": 0,
+        "source": "    def process_stopped(self) -> None:\n        \"\"\"\n        Close all orders that were left open\n        \"\"\"\n        if self.config.get(\"cancel_open_orders_on_exit\"):\n            self.cancel_all_open_orders()"
+      },
+      {
+        "symbol": "freqtrade.freqtradebot:FreqtradeBot.cancel_all_open_orders",
+        "file": "freqtrade/freqtradebot.py",
+        "start_line": 1856,
+        "end_line": 1867,
+        "relation": "callee",
+        "distance": 1,
+        "source": "def cancel_all_open_orders(self) -> None:\n    \"\"\"\n        Cancel all orders that are currently open\n        :return: None\n        \"\"\"\n    ..."
+      },
+      {
+        "symbol": "freqtrade.freqtradebot:FreqtradeBot.cancel_open_orders_of_trade",
+        "file": "freqtrade/freqtradebot.py",
+        "start_line": 1831,
+        "end_line": 1854,
+        "relation": "callee",
+        "distance": 2,
+        "source": "def cancel_open_orders_of_trade(self, trade: Trade, sides: list[str], reason: str, replacing: bool=False) -> None:\n    \"\"\"\n        Cancel trade orders of specified sides that are currently open\n        :param trade: Trade object of the trade we're analyzing\n        :param reason: The reason for that cancellation\n        :param sides: The sides where cancellation should take place\n        :return: None\n        \"\"\"\n    ..."
+      },
+      {
+        "symbol": "freqtrade.freqtradebot:FreqtradeBot.cleanup",
+        "file": "freqtrade/freqtradebot.py",
+        "start_line": 208,
+        "end_line": 240,
+        "relation": "caller",
+        "distance": 2,
+        "source": "def cleanup(self) -> None:\n    \"\"\"\n        Cleanup pending resources on an already stopped bot\n        :return: None\n        \"\"\"\n    ..."
+      },
+      {
+        "symbol": "freqtrade.freqtradebot:FreqtradeBot.handle_cancel_enter",
+        "file": "freqtrade/freqtradebot.py",
+        "start_line": 1903,
+        "end_line": 1992,
+        "relation": "callee",
+        "distance": 3,
+        "source": "def handle_cancel_enter(self, trade: Trade, order: CcxtOrder, order_obj: Order, reason: str, replacing: bool | None=False) -> bool:\n    \"\"\"\n        entry cancel - cancel order\n        :param order_obj: Order object from the database.\n        :param replacing: Replacing order - prevent trade deletion.\n        :return: True if trade was fully cancelled\n        \"\"\"\n    ..."
+      },
+      {
+        "symbol": "freqtrade.freqtradebot:FreqtradeBot.handle_cancel_exit",
+        "file": "freqtrade/freqtradebot.py",
+        "start_line": 1994,
+        "end_line": 2070,
+        "relation": "callee",
+        "distance": 3,
+        "source": "def handle_cancel_exit(self, trade: Trade, order: CcxtOrder, order_obj: Order, reason: str) -> bool:\n    \"\"\"\n        exit order cancel - cancel order and update trade\n        :return: True if exit order was cancelled, false otherwise\n        \"\"\"\n    ..."
+      },
+      {
+        "symbol": "freqtrade.freqtradebot:FreqtradeBot.handle_similar_open_order",
+        "file": "freqtrade/freqtradebot.py",
+        "start_line": 1869,
+        "end_line": 1901,
+        "relation": "caller",
+        "distance": 3,
+        "source": "def handle_similar_open_order(self, trade: Trade, price: float, amount: float, side: str) -> bool:\n    \"\"\"\n        Keep existing open order if same amount and side otherwise cancel\n        :param trade: Trade object of the trade we're analyzing\n        :param price: Limit price of the potential new order\n        :param amount: Quantity of assets of the potential new order\n        :param side: Side of the potential new order\n        :return: True if an existing similar order was found or if cancellation failed.\n        \"\"\"\n    ..."
+      },
+      {
+        "symbol": "tests.conftest:open_trade",
+        "file": "tests/conftest.py",
+        "start_line": 2646,
+        "end_line": 2680,
+        "relation": "caller",
+        "distance": 3,
+        "source": "def open_trade():\n    ..."
+      }
+    ],
+    "truncated": true,
+    "diagnostics": [],
+    "budget_unit": "utf8_bytes_upper_bound",
+    "token_upper_bound": 3903
+  },
+  "allow_model": false,
+  "max_attempts": 3,
+  "timeout_sec": 120,
+  "contract_sha256": "1dee8a683c92fcc688d164a1404dd81a9ae98bae39e81cb62954b0b4e357a101"
+}

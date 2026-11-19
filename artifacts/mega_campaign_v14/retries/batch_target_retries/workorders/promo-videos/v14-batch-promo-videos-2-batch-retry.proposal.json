@@ -1,0 +1,1 @@
+{"target_files": ["capture-prototype/capture.mjs"], "contract_stub": "def document_audited_contract() -> None:\n    ..."}

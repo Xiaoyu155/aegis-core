@@ -1,0 +1,321 @@
+{
+  "schema_version": "aegis.replay.v1",
+  "status": "replayed",
+  "ticket_id": "v14-swarm-crypto-quant-mvp",
+  "commit_oid": "6a75145b43fe63c4042b1faa8a0e7f681a1f826c",
+  "archive_sha256": "8821111fbb5972c0744d4275f2cce13a4cb07f1e59b5582c41a379859696ffd1",
+  "probe_sha256": "00231544fcdcce2190eb8347df56726a50e6ba5df6092799498eafdcf091e3bd",
+  "candidate_patch_sha256": "d27875be664a5f0da1d0979ba33b98fb4d6793adc90e5e1e5d9e18bfee8705b3",
+  "mutation_seeds": [
+    1419
+  ],
+  "world_context": {
+    "contract": {
+      "acceptance_criteria": [
+        {
+          "expected": "At app/services/scanner.py::discover, demonstrate the requested result for a representative valid input (Clamp the campaign contract value to the inclusive range [0, 10] in Xiaoyu155/crypto-quant-mvp.).",
+          "kind": "normal"
+        },
+        {
+          "expected": "At app/services/scanner.py::discover, verify empty/minimum input and exercise both sides of each stated or existing limit.",
+          "kind": "boundary"
+        },
+        {
+          "expected": "At app/services/scanner.py::discover, verify malformed input or a failed dependency produces the expected error or safe recovery.",
+          "kind": "fallback"
+        }
+      ],
+      "business_parameters": {},
+      "context": {
+        "budget_unit": "utf8_bytes_upper_bound",
+        "diagnostics": [],
+        "impact_summary": {
+          "changed_files": [
+            "aegis_campaign_probe.py"
+          ],
+          "compression_ratio": 0.999744,
+          "critical_symbol_recall": 1.0,
+          "graph_metrics": {
+            "call_edges": 756,
+            "files": 59,
+            "reference_edges": 909,
+            "symbols": 553,
+            "unresolved_references": 5
+          },
+          "token_count": 25
+        },
+        "items": [
+          {
+            "distance": 0,
+            "end_line": 231,
+            "file": "app/services/scanner.py",
+            "relation": "target",
+            "source": "def discover(crypto_limit: int = 10, traditional_limit: int = 0) -> list[Candidate]:\n    \"\"\"Candidates for this cycle.\n\n    Crypto only by default. The traditional side was tradable on paper but not\n    in practice: US futures and FX need an Interactive Brokers account with\n    futures permissions, so the arms were being measured on positions that\n    could never actually be placed. scan_traditional is kept for when a broker\n    is available - pass a non-zero limit to bring it back.\n    \"\"\"\n    candidates = scan_crypto(crypto_limit)\n    if traditional_limit > 0:\n        candidates += scan_traditional(traditional_limit)\n    return candidates",
+            "start_line": 219,
+            "symbol": "app.services.scanner:discover"
+          },
+          {
+            "distance": 1,
+            "end_line": 180,
+            "file": "app/services/scanner.py",
+            "relation": "callee",
+            "source": "def scan_crypto(limit: int=8) -> list[Candidate]:\n    ...",
+            "start_line": 162,
+            "symbol": "app.services.scanner:scan_crypto"
+          },
+          {
+            "distance": 1,
+            "end_line": 216,
+            "file": "app/services/scanner.py",
+            "relation": "callee",
+            "source": "def scan_traditional(limit: int=5) -> list[Candidate]:\n    \"\"\"Rank the non-crypto watchlist by how much it is moving right now.\n\n    Yahoo has no cheap whole-market endpoint, so this ranks a curated list\n    rather than discovering names. Closed venues are dropped: their quote is\n    stale, and a decision there cannot be acted on.\n    \"\"\"\n    ...",
+            "start_line": 183,
+            "symbol": "app.services.scanner:scan_traditional"
+          },
+          {
+            "distance": 1,
+            "end_line": 185,
+            "file": "app/services/experiment_runner.py",
+            "relation": "caller",
+            "source": "def _select_symbols(self) -> list[str]:\n    \"\"\"Re-rank the market each pass instead of trading a fixed list.\n\n        Anything already held is appended even when it drops out of the scan:\n        a rotated-out position still has a stop that has to be checked, and\n        dropping it from the rotation would leave it unmanaged.\n        \"\"\"\n    ...",
+            "start_line": 163,
+            "symbol": "app.services.experiment_runner:ExperimentRunner._select_symbols"
+          },
+          {
+            "distance": 1,
+            "end_line": 54,
+            "file": "app/services/scanner.py",
+            "relation": "type",
+            "source": "class Candidate:\n\n    def as_dict(self) -> dict:\n        ...\n    ...",
+            "start_line": 35,
+            "symbol": "app.services.scanner:Candidate"
+          },
+          {
+            "distance": 2,
+            "end_line": 105,
+            "file": "app/services/scanner.py",
+            "relation": "callee",
+            "source": "def fetch_listing_ages(force: bool=False) -> dict[str, float]:\n    \"\"\"Age in days of every spot instrument, cached.\"\"\"\n    ...",
+            "start_line": 79,
+            "symbol": "app.services.scanner:fetch_listing_ages"
+          },
+          {
+            "distance": 2,
+            "end_line": 76,
+            "file": "app/services/scanner.py",
+            "relation": "callee",
+            "source": "def fetch_okx_spot_tickers(force: bool=False) -> list[dict]:\n    \"\"\"Whole-market spot snapshot, cached briefly.\n\n    Binance answers 451 from this region, so OKX is the source that actually\n    works here.\n    \"\"\"\n    ...",
+            "start_line": 57,
+            "symbol": "app.services.scanner:fetch_okx_spot_tickers"
+          },
+          {
+            "distance": 2,
+            "end_line": 159,
+            "file": "app/services/scanner.py",
+            "relation": "callee",
+            "source": "def score_crypto_row(row: dict) -> Candidate | None:\n    \"\"\"Rank a pair on tradability: enough liquidity, and actually moving.\n\n    Volume alone would pick the same handful of majors every cycle; movement\n    alone would pick illiquid pairs whose fills cannot be trusted.\n    \"\"\"\n    ...",
+            "start_line": 117,
+            "symbol": "app.services.scanner:score_crypto_row"
+          }
+        ],
+        "structured_probe": {
+          "fallback": null,
+          "kind": "numeric_bounds",
+          "max": 10,
+          "min": 0,
+          "path": "aegis_campaign_probe.py",
+          "seed": 1419,
+          "symbol": "bounded"
+        },
+        "target": "app.services.scanner:discover",
+        "token_upper_bound": 3765,
+        "truncated": true
+      },
+      "edge_cases": [
+        "Empty or minimum valid input",
+        "Invalid or malformed input",
+        "Repeated operation following a failed attempt"
+      ],
+      "engineering_invariants": [
+        "Preserve existing callable signatures and data shapes unless the requirement changes them.",
+        "Validate input before persisting a change and keep state consistent after a failed operation."
+      ],
+      "experience": [],
+      "intent": "Clamp the campaign contract value to the inclusive range [0, 10] in Xiaoyu155/crypto-quant-mvp.",
+      "kind": "ExpandedSpec",
+      "questions": [],
+      "status": "READY"
+    },
+    "failure_diagnosis": {
+      "attempt": 1,
+      "candidate_failures": [
+        {
+          "candidate_id": "bait_constant",
+          "command": [
+            "/tmp/aegis-v13-test-env/bin/python",
+            "-B",
+            "-m",
+            "pytest",
+            "-p",
+            "no:cacheprovider",
+            "-q",
+            "tests/test_aegis_probe.py"
+          ],
+          "evidence": "    except asyncio.TimeoutError as error:\n            raise AssertionError(\"AEGIS_ACCEPTANCE: async fallback was not returned\") from error\n        if case.get(\"input_schema\") is not None:\n            assert args and _schema_matches(args[0], case[\"input_schema\"]), \"AEGIS_ACCEPTANCE: invalid input accepted\"\n        if case.get(\"return_schema\") is not None:\n            assert _schema_matches(actual, case[\"return_schema\"]), \"AEGIS_ACCEPTANCE: return schema mismatch\"\n        else:\n            expected = case.get(\"expected\")\n>           assert type(actual) is type(expected) and actual == expected, \"AEGIS_ACCEPTANCE: contract mismatch\"\nE           AssertionError: AEGIS_ACCEPTANCE: contract mismatch\nE           assert (<class 'int'> is <class 'int'> and 99 == 0)\nE            +  where <class 'int'> = type(99)\nE            +  and   <class 'int'> = type(0)\n\ntests/test_aegis_probe.py:73: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[positive_low]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[positive_high]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_underflow]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_overflow]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_type]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_fraction]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[positive_midpoint]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_0]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_1]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_2]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_3]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_4]\n12 failed in 0.53s\n\n",
+          "exit_code": 1,
+          "failure_code": "DYNAMIC_PROBE_FAILED",
+          "gate": "dynamic"
+        },
+        {
+          "candidate_id": "bait_constant",
+          "command": [
+            "/tmp/aegis-v13-test-env/bin/python",
+            "-B",
+            "-m",
+            "pytest",
+            "-p",
+            "no:cacheprovider",
+            "-q",
+            "tests/test_aegis_probe.py",
+            "-k",
+            "randomized"
+          ],
+          "evidence": "         return asyncio.run(asyncio.wait_for(value, timeout=case[\"async_timeout_ms\"] / 1000))\n            return value\n        expected_exception = case.get(\"exception\")\n        if expected_exception:\n            with pytest.raises(getattr(builtins, expected_exception)):\n                invoke()\n            return\n        try:\n            actual = invoke()\n            for _ in range(max(1, case.get(\"repeats\", 1) - 1)):\n                replay = invoke()\n                assert type(replay) is type(actual) and replay == actual, \"AEGIS_ACCEPTANCE: replay changed result\"\n        except asyncio.TimeoutError as error:\n            raise AssertionError(\"AEGIS_ACCEPTANCE: async fallback was not returned\") from error\n        if case.get(\"input_schema\") is not None:\n            assert args and _schema_matches(args[0], case[\"input_schema\"]), \"AEGIS_ACCEPTANCE: invalid input accepted\"\n        if case.get(\"return_schema\") is not None:\n            assert _schema_matches(actual, case[\"return_schema\"]), \"AEGIS_ACCEPTANCE: return schema mismatch\"\n        else:\n            expected = case.get(\"expected\")\n>           assert type(actual) is type(expected) and actual == expected, \"AEGIS_ACCEPTANCE: contract mismatch\"\nE           AssertionError: AEGIS_ACCEPTANCE: contract mismatch\nE           assert (<class 'int'> is <class 'int'> and 99 == 0)\nE            +  where <class 'int'> = type(99)\nE            +  and   <class 'int'> = type(0)\n\ntests/test_aegis_probe.py:73: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_0]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_1]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_2]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_3]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_4]\n5 failed, 7 deselected in 0.42s\n\n",
+          "exit_code": 1,
+          "failure_code": "MUTATION_PROBE_FAILED",
+          "gate": "mutation"
+        },
+        {
+          "candidate_id": "broken_signature",
+          "command": [
+            "/tmp/aegis-v13-test-env/bin/python",
+            "-B",
+            "-m",
+            "pytest",
+            "-p",
+            "no:cacheprovider",
+            "-q",
+            "tests/test_aegis_probe.py"
+          ],
+          "evidence": "t(*args)\n            if case.get(\"async_timeout_ms\") is not None:\n                if not hasattr(value, \"__await__\"):\n                    raise TypeError(\"async contract requires an awaitable result\")\n                return asyncio.run(asyncio.wait_for(value, timeout=case[\"async_timeout_ms\"] / 1000))\n            return value\n        expected_exception = case.get(\"exception\")\n        if expected_exception:\n            with pytest.raises(getattr(builtins, expected_exception)):\n                invoke()\n            return\n        try:\n>           actual = invoke()\n                     ^^^^^^^^\n\ntests/test_aegis_probe.py:61: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\n    def invoke():\n>       value = target(*args)\n                ^^^^^^^^^^^^^\nE       TypeError: bounded() takes 0 positional arguments but 1 was given\n\ntests/test_aegis_probe.py:49: TypeError\n=========================== short test summary info ============================\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[positive_low]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[positive_high]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_underflow]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_overflow]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_type]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_fraction]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[positive_midpoint]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_0]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_1]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_2]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_3]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_4]\n12 failed in 0.42s\n\n",
+          "exit_code": 1,
+          "failure_code": "DYNAMIC_PROBE_FAILED",
+          "gate": "dynamic"
+        },
+        {
+          "candidate_id": "broken_signature",
+          "command": [
+            "/tmp/aegis-v13-test-env/bin/python",
+            "-B",
+            "-m",
+            "pytest",
+            "-p",
+            "no:cacheprovider",
+            "-q",
+            "tests/test_aegis_probe.py",
+            "-k",
+            "randomized"
+          ],
+          "evidence": " _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\n    def invoke():\n>       value = target(*args)\n                ^^^^^^^^^^^^^\nE       TypeError: bounded() takes 0 positional arguments but 1 was given\n\ntests/test_aegis_probe.py:49: TypeError\n________________ test_aegis_structured_acceptance[randomized_4] ________________\n\ncase = {'label': 'randomized_4', 'args': [-3], 'expected': 0}\n\n    @pytest.mark.parametrize(\"case\", CASES, ids=[case[\"label\"] for case in CASES])\n    def test_aegis_structured_acceptance(case):\n        args = case[\"args\"]\n        def invoke():\n            value = target(*args)\n            if case.get(\"async_timeout_ms\") is not None:\n                if not hasattr(value, \"__await__\"):\n                    raise TypeError(\"async contract requires an awaitable result\")\n                return asyncio.run(asyncio.wait_for(value, timeout=case[\"async_timeout_ms\"] / 1000))\n            return value\n        expected_exception = case.get(\"exception\")\n        if expected_exception:\n            with pytest.raises(getattr(builtins, expected_exception)):\n                invoke()\n            return\n        try:\n>           actual = invoke()\n                     ^^^^^^^^\n\ntests/test_aegis_probe.py:61: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\n    def invoke():\n>       value = target(*args)\n                ^^^^^^^^^^^^^\nE       TypeError: bounded() takes 0 positional arguments but 1 was given\n\ntests/test_aegis_probe.py:49: TypeError\n=========================== short test summary info ============================\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_0]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_1]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_2]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_3]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_4]\n5 failed, 7 deselected in 0.36s\n\n",
+          "exit_code": 1,
+          "failure_code": "MUTATION_PROBE_FAILED",
+          "gate": "mutation"
+        }
+      ],
+      "category": "candidate_rejected",
+      "contract_differences": [
+        {
+          "candidate_id": "bait_constant",
+          "code": "ASSERTION_MISMATCH",
+          "detail": "raise AssertionError(\"AEGIS_ACCEPTANCE: async fallback was not returned\") from error",
+          "gate": "dynamic",
+          "line": null,
+          "path": "tests/test_aegis_probe.py"
+        },
+        {
+          "candidate_id": "bait_constant",
+          "code": "ASSERTION_MISMATCH",
+          "detail": "assert type(replay) is type(actual) and replay == actual, \"AEGIS_ACCEPTANCE: replay changed result\"",
+          "gate": "mutation",
+          "line": null,
+          "path": "tests/test_aegis_probe.py"
+        }
+      ],
+      "evidence_excerpt": "[{\"candidate_id\": \"bait_constant\", \"gate\": \"dynamic\", \"failure_code\": \"DYNAMIC_PROBE_FAILED\", \"exit_code\": 1, \"command\": [\"/tmp/aegis-v13-test-env/bin/python\", \"-B\", \"-m\", \"pytest\", \"-p\", \"no:cacheprovider\", \"-q\", \"tests/test_aegis_probe.py\"], \"evidence\": \"    except asyncio.TimeoutError as error:\\n            raise AssertionError(\\\"AEGIS_ACCEPTANCE: async fallback was not returned\\\") from error\\n        if case.get(\\\"input_schema\\\") is not None:\\n            assert args and _schema_matches(args[0], case[\\\"input_schema\\\"]), \\\"AEGIS_ACCEPTANCE: invalid input accepted\\\"\\n        if case.get(\\\"return_schema\\\") is not None:\\n            assert _schema_matches(actual, case[\\\"return_schema\\\"]), \\\"AEGIS_ACCEPTANCE: return schema mismatch\\\"\\n        else:\\n            expected = case.get(\\\"expected\\\")\\n>           assert type(actual) is type(expected) and actual == expected, \\\"AEGIS_ACCEPTANCE: contract mismatch\\\"\\nE           AssertionError: AEGIS_ACCEPTANCE: contract mismatch\\nE           assert (<class 'int'> is <class 'int'> and 99 == 0)\\nE            +  where <class 'int'> = type(99)\\nE            +  and   <class 'int'> = type(0)\\n\\ntests/test_aegis_probe.py:73: AssertionError\\n=========================== short test summary info ============================\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[positive_low]\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[positive_high]\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_underflow]\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_overflow]\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_type]\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_fraction]\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[positive_midpoint]\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_0]\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_1]\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_2]\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_3]\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_4]\\n12 failed in 0.53s\\n\\n\"}, {\"candidate_id\": \"bait_constant\", \"gate\": \"mutation\", \"failure_code\": \"MUTATION_PROBE_FAILED\", \"exit_code\": 1, \"command\": [\"/tmp/aegis-v13-test-env/bin/python\", \"-B\", \"-m\", \"pytest\", \"-p\", \"no:cacheprovider\", \"-q\", \"tests/test_aegis_probe.py\", \"-k\", \"randomized\"], \"evidence\": \"         return asyncio.run(asyncio.wait_for(value, timeout=case[\\\"async_timeout_ms\\\"] / 1000))\\n            return value\\n        expected_exception = case.get(\\\"exception\\\")\\n        if expected_exception:\\n            with pytest.raises(getattr(builtins, expected_exception)):\\n                invoke()\\n            return\\n        try:\\n            actual = invoke()\\n            for _ in range(max(1, case.get(\\\"repeats\\\", 1) - 1)):\\n                replay = invoke()\\n                assert type(replay) is type(actual) and replay == actual, \\\"AEGIS_ACCEPTANCE: replay changed result\\\"\\n        except asyncio.TimeoutError as error:\\n            raise AssertionError(\\\"AEGIS_ACCEPTANCE: async fallback was not returned\\\") from error\\n        if case.get(\\\"input_schema\\\") is not None:\\n            assert args and _schema_matches(args[0], case[\\\"input_schema\\\"]), \\\"AEGIS_ACCEPTANCE: invalid input accepted\\\"\\n        if case.get(\\\"return_schema\\\") is not None:\\n            assert _schema_matches(actual, case[\\\"return_schema\\\"]), \\\"AEGIS_ACCEPTANCE: return schema mismatch\\\"\\n        else:\\n            expected = case.get(\\\"expected\\\")\\n>           assert type(actual) is type(expected) and actual == expected, \\\"AEGIS_ACCEPTANCE: contract mismatch\\\"\\nE           AssertionError: AEGIS_ACCEPTANCE: contract mismatch\\nE           assert (<class 'int'> is <class 'int'> and 99 == 0)\\nE            +  where ",
+      "failure_code": "DYNAMIC_PROBE_FAILED",
+      "frames": [
+        {
+          "file": "tests/test_aegis_probe.py",
+          "line": 73
+        },
+        {
+          "file": "tests/test_aegis_probe.py",
+          "line": 61
+        },
+        {
+          "file": "tests/test_aegis_probe.py",
+          "line": 49
+        }
+      ],
+      "kind": "FailureDiagnosis",
+      "mutation_examples": [
+        "negative_fraction",
+        "negative_overflow",
+        "negative_type",
+        "negative_underflow",
+        "positive_high",
+        "positive_low",
+        "positive_midpoint",
+        "randomized_0",
+        "randomized_1",
+        "randomized_2",
+        "randomized_3",
+        "randomized_4"
+      ],
+      "next_action": "Use the failing probe cases and independent audit findings to target a different repair strategy."
+    },
+    "impact": {
+      "budget_unit": "lexical_tokens_v1",
+      "changed_files": [
+        "aegis_campaign_probe.py"
+      ],
+      "compression_ratio": 0.999744,
+      "context": "[full_source aegis_campaign_probe.py:<file> aegis_campaign_probe.py distance=0 target]\ndef bounded(value):\n    return value\n",
+      "critical_symbol_count": 1,
+      "critical_symbol_recall": 1.0,
+      "graph_metrics": {
+        "call_edges": 756,
+        "files": 59,
+        "reference_edges": 909,
+        "symbols": 553,
+        "unresolved_references": 5
+      },
+      "items": [
+        {
+          "direction": "target",
+          "distance": 0,
+          "file": "aegis_campaign_probe.py",
+          "representation": "full_source",
+          "symbol": "aegis_campaign_probe.py:<file>",
+          "text": "def bounded(value):\n    return value\n"
+        }
+      ],
+      "max_context_tokens": 1200,
+      "naive_token_count": 97495,
+      "omitted_symbols": [],
+      "recalled_symbol_count": 1,
+      "token_count": 25
+    },
+    "terminal_status": "succeeded"
+  },
+  "worktree": "/tmp/aegis-replay-5htxcq61",
+  "outcome": {
+    "exit_code": 0,
+    "stdout": "............                                                             [100%]\n12 passed in 0.07s\n",
+    "stderr": "",
+    "stdout_sha256": "ba56007400fa5292f01fa84ee89753d8713c5eaf824f5bc044e66f837f4f6d17",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "result_sha256": "5e47213ed199df856323a52f5dc7ecd2f772577ac3c530c7f6c1f9430a35fec9",
+    "matches_observed": null
+  }
+}

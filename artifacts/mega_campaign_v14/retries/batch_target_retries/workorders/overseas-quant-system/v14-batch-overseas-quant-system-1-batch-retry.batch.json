@@ -1,0 +1,180 @@
+{
+  "status": "succeeded",
+  "jobs": [
+    {
+      "id": "v14-batch-overseas-quant-system-1-batch-retry",
+      "priority": 1,
+      "repo_root": "/tmp/aegis-v14-mega-bfqqq2at/repos/overseas-quant-system",
+      "languages": {
+        "python": {
+          "files": 194,
+          "present": true
+        },
+        "javascript": {
+          "files": 0,
+          "present": false
+        },
+        "typescript": {
+          "files": 0,
+          "present": false
+        }
+      },
+      "result": {
+        "ticket_id": "v14-batch-overseas-quant-system-1-batch-retry",
+        "status": "succeeded",
+        "reason": "gate_passed",
+        "attempts": 1,
+        "results": [
+          {
+            "baseline_failed": true,
+            "after_passed": true,
+            "passed": true,
+            "cheat_detected": false,
+            "changed_files": [
+              "新架构设计/run_compare_comprehensive.py"
+            ],
+            "diff_lines": 1,
+            "repeated_patch": false,
+            "patch_sha256": "8d74a351262506b92f9e010f6cfe6f4d4b5ef91b85f3a5e835376d96a31701f6",
+            "complexity": {
+              "level": "L1",
+              "tier": "L1_LOCAL_CAUSAL",
+              "impact_radius": 0,
+              "coupling": 0,
+              "impacted_files": [
+                "新架构设计/run_compare_comprehensive.py"
+              ],
+              "risk_probability": null
+            },
+            "model_tier": null,
+            "probe_kind": "unit",
+            "probe_script_sha256": {},
+            "predicted_next_state": {
+              "outcome": "assertion_error",
+              "probabilities": {
+                "gate_passed": 0.0012251998295903768,
+                "assertion_error": 0.9617666642585992,
+                "cheat_detected": 0.005108651352571888,
+                "replay_blocked": 0.004214699251825903,
+                "missing_constraint": 0.027684785307412647
+              },
+              "decision_source": "causal_world_net",
+              "high_risk_pre_block": false,
+              "pre_block_reason": null,
+              "changed_paths": [
+                "新架构设计/run_compare_comprehensive.py"
+              ]
+            },
+            "predicted_reward": -0.6537607626122626,
+            "predicted_reward_interval": [
+              -1.2788073463113658,
+              -0.028714178913159305
+            ],
+            "prediction_confidence": 0.9617666642585992,
+            "risk_probability": 0.15404533371121892,
+            "world_model_version": "5c64ee2972cf103513d5a29ba6bb0bf61f0a6c621451618c292eb91f158ac8aa",
+            "baseline": {
+              "command": [
+                "/tmp/aegis-v13-test-env/bin/python",
+                "-B",
+                "-c",
+                "from pathlib import Path; p=Path('新架构设计/run_compare_comprehensive.py'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_OVERSEAS-QUANT-SYSTEM_DOC_CONTRACT' in s; compile(s, '新架构设计/run_compare_comprehensive.py', 'exec')"
+              ],
+              "exit_code": 1,
+              "stdout": "",
+              "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\nAssertionError\n",
+              "before_hash": "1e49b02bcbb522e84959e71390e4d91bd1fbef19ad3c84af9342e44921a9fa68",
+              "after_hash": "1e49b02bcbb522e84959e71390e4d91bd1fbef19ad3c84af9342e44921a9fa68",
+              "changed": false,
+              "reward": -1.0,
+              "passed": false,
+              "probe_kind": "unit",
+              "probe_script_sha256": {},
+              "probe_runtime_sha256": {},
+              "failure_code": "ASSERTION_FAILED",
+              "timed_out": false,
+              "timeout_killed": false,
+              "termination_reason": null,
+              "killed_process_group": false
+            },
+            "final": {
+              "command": [
+                "/tmp/aegis-v13-test-env/bin/python",
+                "-B",
+                "-c",
+                "from pathlib import Path; p=Path('新架构设计/run_compare_comprehensive.py'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_OVERSEAS-QUANT-SYSTEM_DOC_CONTRACT' in s; compile(s, '新架构设计/run_compare_comprehensive.py', 'exec')"
+              ],
+              "exit_code": 0,
+              "stdout": "",
+              "stderr": "",
+              "before_hash": "e03b20b79d7f6126cdde5ec68a8eb7e3bf87b8931678b112eb23ccb302eea414",
+              "after_hash": "e03b20b79d7f6126cdde5ec68a8eb7e3bf87b8931678b112eb23ccb302eea414",
+              "changed": false,
+              "reward": 1.0,
+              "passed": true,
+              "probe_kind": "unit",
+              "probe_script_sha256": {},
+              "probe_runtime_sha256": {},
+              "failure_code": null,
+              "timed_out": false,
+              "timeout_killed": false,
+              "termination_reason": null,
+              "killed_process_group": false
+            },
+            "timeout_killed": false,
+            "before_hash": "1e49b02bcbb522e84959e71390e4d91bd1fbef19ad3c84af9342e44921a9fa68",
+            "after_hash": "e03b20b79d7f6126cdde5ec68a8eb7e3bf87b8931678b112eb23ccb302eea414",
+            "reward": 1.496367911764998,
+            "source_changed_lines": 1,
+            "protected_changed": [],
+            "termination_reason": null,
+            "elapsed_sec": 0.2785492229995725,
+            "world_model_outcome": "gate_passed",
+            "causal_prediction_error": {
+              "predicted_outcome": "assertion_error",
+              "actual_outcome": "gate_passed",
+              "state_mismatch": true,
+              "state_error": 1,
+              "reward_absolute_error": 2.150128674377,
+              "reward_interval_covered": false,
+              "composite_error": 3.150128674377
+            }
+          }
+        ],
+        "telemetry": {
+          "model_loaded": true,
+          "world_model_version": "5c64ee2972cf103513d5a29ba6bb0bf61f0a6c621451618c292eb91f158ac8aa",
+          "model_source": "bundled",
+          "model_mode": "observe",
+          "predictions_made": 1,
+          "no_prediction_count": 0,
+          "below_threshold_count": 0,
+          "scope": "repair_attempts"
+        },
+        "budget": {
+          "scope": "v14-batch-overseas-quant-system-1-batch-retry:8858925ec7c046ad99e50bf08ff35f84",
+          "limits": {},
+          "token_consumption": 0,
+          "estimated_cost_usd": 0.0,
+          "estimated_usd_per_token": 1e-05,
+          "wall_clock_sec": 2.879467405999094,
+          "reward": 1.496367911764998,
+          "reward_per_1000_tokens": null,
+          "reward_per_usd": null,
+          "halted_by": null
+        }
+      },
+      "status": "succeeded",
+      "exit_code": 0
+    }
+  ],
+  "passed": 1,
+  "failed": 0,
+  "budget": {
+    "token_consumption": 0,
+    "estimated_cost_usd": 0.0,
+    "reward": 1.496367911764998,
+    "wall_clock_sec": 2.879467405999094,
+    "reward_per_usd": null
+  }
+}

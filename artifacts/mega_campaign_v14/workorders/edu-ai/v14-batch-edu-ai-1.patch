@@ -1,0 +1,8 @@
+diff --git a/app/page.tsx b/app/page.tsx
+--- a/app/page.tsx
++++ b/app/page.tsx
+@@ -1885,3 +1885,4 @@
+ export default function Page() {
+   return <HomePage />;
+ }
++// AEGIS_V14_EDU-AI_DOC_CONTRACT

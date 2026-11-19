@@ -1,0 +1,92 @@
+{
+  "schema_version": "aegis.cli.v1",
+  "ticket_id": "v14-batch-overseas-quant-system-open-core-1",
+  "repo_root": "/tmp/aegis-v14-mega-ocjs05u7/repos/overseas-quant-system-open-core",
+  "base_commit": "66ce315f2f0f990254f26698eaae4f2f87f9c051",
+  "compilation": {
+    "kind": "CompiledContract",
+    "ticket_id": "v14-batch-overseas-quant-system-open-core-1",
+    "status": "COMPILED",
+    "target_files": [
+      "core_alpha_stub.py"
+    ],
+    "contract_stub": "def document_audited_contract() -> None:\n    ...",
+    "constraints": {}
+  },
+  "fail_before_cmd": [
+    "/tmp/aegis-v13-test-env/bin/python",
+    "-B",
+    "-c",
+    "from pathlib import Path; p=Path('core_alpha_stub.py'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_OVERSEAS-QUANT-SYSTEM-OPEN-CORE_DOC_CONTRACT' in s; compile(s, 'core_alpha_stub.py', 'exec')"
+  ],
+  "pass_after_cmd": [
+    "/tmp/aegis-v13-test-env/bin/python",
+    "-B",
+    "-c",
+    "from pathlib import Path; p=Path('core_alpha_stub.py'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_OVERSEAS-QUANT-SYSTEM-OPEN-CORE_DOC_CONTRACT' in s; compile(s, 'core_alpha_stub.py', 'exec')"
+  ],
+  "probe_kind": "unit",
+  "probe_script_sha256": {},
+  "source_dirs": [
+    "."
+  ],
+  "tool_source_globs": [
+    "**/tools/**/*.py",
+    "**/tools/**/*.js",
+    "**/tools/**/*.jsx",
+    "**/tools/**/*.cjs",
+    "**/tools/**/*.mjs",
+    "**/tools/**/*.ts",
+    "**/tools/**/*.tsx",
+    "**/tools/**/*.mts",
+    "**/tools/**/*.cts",
+    "**/tools/**/*.html",
+    "**/tools/**/*.htm",
+    "**/tools/**/*.css"
+  ],
+  "patches": [
+    "/workspace/aegis-core/artifacts/mega_campaign_v14/workorders/overseas-quant-system-open-core/v14-batch-overseas-quant-system-open-core-1.patch"
+  ],
+  "models_path": null,
+  "probe_patch": "",
+  "context": {
+    "target": "core_alpha_stub:IntradayGuardian.inspect",
+    "items": [
+      {
+        "symbol": "core_alpha_stub:IntradayGuardian.inspect",
+        "file": "core_alpha_stub.py",
+        "start_line": 57,
+        "end_line": 57,
+        "relation": "target",
+        "distance": 0,
+        "source": "    def inspect(self, context: MarketContext) -> GuardianResult: ..."
+      },
+      {
+        "symbol": "core_alpha_stub:GuardianResult",
+        "file": "core_alpha_stub.py",
+        "start_line": 34,
+        "end_line": 37,
+        "relation": "type",
+        "distance": 1,
+        "source": "class GuardianResult:\n    ..."
+      },
+      {
+        "symbol": "core_alpha_stub:MarketContext",
+        "file": "core_alpha_stub.py",
+        "start_line": 10,
+        "end_line": 13,
+        "relation": "type",
+        "distance": 1,
+        "source": "class MarketContext:\n    ..."
+      }
+    ],
+    "truncated": false,
+    "diagnostics": [],
+    "budget_unit": "utf8_bytes_upper_bound",
+    "token_upper_bound": 792
+  },
+  "allow_model": false,
+  "max_attempts": 3,
+  "timeout_sec": 120,
+  "contract_sha256": "59f1431c1a9b67efb0ee6db38093cfa0752b8fc3ae2aea805a66d773ad0a9ffe"
+}

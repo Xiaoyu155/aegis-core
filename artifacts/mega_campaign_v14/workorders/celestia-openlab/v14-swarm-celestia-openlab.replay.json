@@ -1,0 +1,294 @@
+{
+  "schema_version": "aegis.replay.v1",
+  "status": "replayed",
+  "ticket_id": "v14-swarm-celestia-openlab",
+  "commit_oid": "966de141e07897a6cdb4e1e37da156623212581a",
+  "archive_sha256": "6e46dc3b7ed6ecb564737cf2b7f07ef03c4908722be5e5333ed3c4d1c679fb58",
+  "probe_sha256": "00231544fcdcce2190eb8347df56726a50e6ba5df6092799498eafdcf091e3bd",
+  "candidate_patch_sha256": "d27875be664a5f0da1d0979ba33b98fb4d6793adc90e5e1e5d9e18bfee8705b3",
+  "mutation_seeds": [
+    1419
+  ],
+  "world_context": {
+    "contract": {
+      "acceptance_criteria": [
+        {
+          "expected": "At games/celestia-openlab.sdd/LuaUI/Images/noise/regenerate_noise_volume.py::periodic_gradient_noise, demonstrate the requested result for a representative valid input (Clamp the campaign contract value to the inclusive range [0, 10] in Xiaoyu155/celestia-openlab.).",
+          "kind": "normal"
+        },
+        {
+          "expected": "At games/celestia-openlab.sdd/LuaUI/Images/noise/regenerate_noise_volume.py::periodic_gradient_noise, verify empty/minimum input and exercise both sides of each stated or existing limit.",
+          "kind": "boundary"
+        },
+        {
+          "expected": "At games/celestia-openlab.sdd/LuaUI/Images/noise/regenerate_noise_volume.py::periodic_gradient_noise, verify malformed input or a failed dependency produces the expected error or safe recovery.",
+          "kind": "fallback"
+        }
+      ],
+      "business_parameters": {},
+      "context": {
+        "budget_unit": "utf8_bytes_upper_bound",
+        "diagnostics": [],
+        "impact_summary": {
+          "changed_files": [
+            "aegis_campaign_probe.py"
+          ],
+          "compression_ratio": 0.999901,
+          "critical_symbol_recall": 1.0,
+          "graph_metrics": {
+            "call_edges": 500,
+            "files": 79,
+            "reference_edges": 509,
+            "symbols": 504,
+            "unresolved_references": 33
+          },
+          "token_count": 25
+        },
+        "items": [
+          {
+            "distance": 0,
+            "end_line": 98,
+            "file": "games/celestia-openlab.sdd/LuaUI/Images/noise/regenerate_noise_volume.py",
+            "relation": "target",
+            "source": "def periodic_gradient_noise(\n    size: int, frequency: int, rng: np.random.Generator\n) -> np.ndarray:\n    \"\"\"Return one periodic gradient-noise octave, stored in [z,y,x] order.\n\n    Gradient directions use uniform spherical angles, rather than uniform\n    sphere area. This approximates the source's measured directional bias:\n    gradient variance along its stored Z axis is larger than along X or Y.\n    Opposite lattice boundaries share gradients, so all three axes repeat.\n    \"\"\"\n    if frequency < 1 or size % frequency:\n        raise ValueError('Frequency must be positive and divide size.')\n    angles = rng.random((frequency, frequency, frequency, 2)) * (2 * np.pi)\n    theta, phi = angles[..., 0], angles[..., 1]\n    gradients = np.stack(\n        (np.cos(theta), np.sin(theta) * np.cos(phi),\n         np.sin(theta) * np.sin(phi)), axis=-1,\n    )\n    coordinate = np.arange(size, dtype=np.float64) * frequency / size\n    base = np.floor(coordinate).astype(np.int64)\n    fraction = coordinate - base\n    fade = fraction**3 * (fraction * (6 * fraction - 15) + 10)\n    result = np.zeros((size, size, size), dtype=np.float64)\n\n    for corner in itertools.product((0, 1), repeat=3):\n        iz, iy, ix = [(base + bit) % frequency for bit in corner]\n        gradient = gradients[np.ix_(iz, iy, ix)]\n        wz, wy, wx = [fade if bit else 1 - fade for bit in corner]\n        dot = (\n            gradient[..., 0] * (fraction[:, None, None] - corner[0])\n            + gradient[..., 1] * (fraction[None, :, None] - corner[1])\n            + gradient[..., 2] * (fraction[None, None, :] - corner[2])\n        )\n        result += dot * wz[:, None, None] * wy[None, :, None] * wx[None, None, :]\n    return result",
+            "start_line": 64,
+            "symbol": "games.celestia-openlab.sdd.LuaUI.Images.noise.regenerate_noise_volume:periodic_gradient_noise"
+          },
+          {
+            "distance": 1,
+            "end_line": 125,
+            "file": "games/celestia-openlab.sdd/LuaUI/Images/noise/regenerate_noise_volume.py",
+            "relation": "caller",
+            "source": "def generate(reference: np.ndarray, seed: int) -> tuple[np.ndarray, list[float]]:\n    ...",
+            "start_line": 101,
+            "symbol": "games.celestia-openlab.sdd.LuaUI.Images.noise.regenerate_noise_volume:generate"
+          },
+          {
+            "distance": 2,
+            "end_line": 232,
+            "file": "games/celestia-openlab.sdd/LuaUI/Images/noise/regenerate_noise_volume.py",
+            "relation": "caller",
+            "source": "def main() -> None:\n    ...",
+            "start_line": 169,
+            "symbol": "games.celestia-openlab.sdd.LuaUI.Images.noise.regenerate_noise_volume:main"
+          },
+          {
+            "distance": 3,
+            "end_line": 166,
+            "file": "games/celestia-openlab.sdd/LuaUI/Images/noise/regenerate_noise_volume.py",
+            "relation": "callee",
+            "source": "def atomic_write(path: Path, data: bytes) -> None:\n    ...",
+            "start_line": 154,
+            "symbol": "games.celestia-openlab.sdd.LuaUI.Images.noise.regenerate_noise_volume:atomic_write"
+          },
+          {
+            "distance": 3,
+            "end_line": 61,
+            "file": "games/celestia-openlab.sdd/LuaUI/Images/noise/regenerate_noise_volume.py",
+            "relation": "callee",
+            "source": "def read_reference(path: Path) -> tuple[bytes, np.ndarray]:\n    \"\"\"Accept only the original asset's legacy 64^3 RGBA8 DDS layout.\"\"\"\n    ...",
+            "start_line": 41,
+            "symbol": "games.celestia-openlab.sdd.LuaUI.Images.noise.regenerate_noise_volume:read_reference"
+          }
+        ],
+        "structured_probe": {
+          "fallback": null,
+          "kind": "numeric_bounds",
+          "max": 10,
+          "min": 0,
+          "path": "aegis_campaign_probe.py",
+          "seed": 1419,
+          "symbol": "bounded"
+        },
+        "target": "games.celestia-openlab.sdd.LuaUI.Images.noise.regenerate_noise_volume:periodic_gradient_noise",
+        "token_upper_bound": 3641,
+        "truncated": true
+      },
+      "edge_cases": [
+        "Empty or minimum valid input",
+        "Invalid or malformed input",
+        "Repeated operation following a failed attempt"
+      ],
+      "engineering_invariants": [
+        "Preserve existing callable signatures and data shapes unless the requirement changes them.",
+        "Validate input before persisting a change and keep state consistent after a failed operation."
+      ],
+      "experience": [],
+      "intent": "Clamp the campaign contract value to the inclusive range [0, 10] in Xiaoyu155/celestia-openlab.",
+      "kind": "ExpandedSpec",
+      "questions": [],
+      "status": "READY"
+    },
+    "failure_diagnosis": {
+      "attempt": 1,
+      "candidate_failures": [
+        {
+          "candidate_id": "bait_constant",
+          "command": [
+            "/tmp/aegis-v13-test-env/bin/python",
+            "-B",
+            "-m",
+            "pytest",
+            "-p",
+            "no:cacheprovider",
+            "-q",
+            "tests/test_aegis_probe.py"
+          ],
+          "evidence": "    except asyncio.TimeoutError as error:\n            raise AssertionError(\"AEGIS_ACCEPTANCE: async fallback was not returned\") from error\n        if case.get(\"input_schema\") is not None:\n            assert args and _schema_matches(args[0], case[\"input_schema\"]), \"AEGIS_ACCEPTANCE: invalid input accepted\"\n        if case.get(\"return_schema\") is not None:\n            assert _schema_matches(actual, case[\"return_schema\"]), \"AEGIS_ACCEPTANCE: return schema mismatch\"\n        else:\n            expected = case.get(\"expected\")\n>           assert type(actual) is type(expected) and actual == expected, \"AEGIS_ACCEPTANCE: contract mismatch\"\nE           AssertionError: AEGIS_ACCEPTANCE: contract mismatch\nE           assert (<class 'int'> is <class 'int'> and 99 == 0)\nE            +  where <class 'int'> = type(99)\nE            +  and   <class 'int'> = type(0)\n\ntests/test_aegis_probe.py:73: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[positive_low]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[positive_high]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_underflow]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_overflow]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_type]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_fraction]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[positive_midpoint]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_0]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_1]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_2]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_3]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_4]\n12 failed in 0.49s\n\n",
+          "exit_code": 1,
+          "failure_code": "DYNAMIC_PROBE_FAILED",
+          "gate": "dynamic"
+        },
+        {
+          "candidate_id": "bait_constant",
+          "command": [
+            "/tmp/aegis-v13-test-env/bin/python",
+            "-B",
+            "-m",
+            "pytest",
+            "-p",
+            "no:cacheprovider",
+            "-q",
+            "tests/test_aegis_probe.py",
+            "-k",
+            "randomized"
+          ],
+          "evidence": "         return asyncio.run(asyncio.wait_for(value, timeout=case[\"async_timeout_ms\"] / 1000))\n            return value\n        expected_exception = case.get(\"exception\")\n        if expected_exception:\n            with pytest.raises(getattr(builtins, expected_exception)):\n                invoke()\n            return\n        try:\n            actual = invoke()\n            for _ in range(max(1, case.get(\"repeats\", 1) - 1)):\n                replay = invoke()\n                assert type(replay) is type(actual) and replay == actual, \"AEGIS_ACCEPTANCE: replay changed result\"\n        except asyncio.TimeoutError as error:\n            raise AssertionError(\"AEGIS_ACCEPTANCE: async fallback was not returned\") from error\n        if case.get(\"input_schema\") is not None:\n            assert args and _schema_matches(args[0], case[\"input_schema\"]), \"AEGIS_ACCEPTANCE: invalid input accepted\"\n        if case.get(\"return_schema\") is not None:\n            assert _schema_matches(actual, case[\"return_schema\"]), \"AEGIS_ACCEPTANCE: return schema mismatch\"\n        else:\n            expected = case.get(\"expected\")\n>           assert type(actual) is type(expected) and actual == expected, \"AEGIS_ACCEPTANCE: contract mismatch\"\nE           AssertionError: AEGIS_ACCEPTANCE: contract mismatch\nE           assert (<class 'int'> is <class 'int'> and 99 == 0)\nE            +  where <class 'int'> = type(99)\nE            +  and   <class 'int'> = type(0)\n\ntests/test_aegis_probe.py:73: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_0]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_1]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_2]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_3]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_4]\n5 failed, 7 deselected in 0.18s\n\n",
+          "exit_code": 1,
+          "failure_code": "MUTATION_PROBE_FAILED",
+          "gate": "mutation"
+        },
+        {
+          "candidate_id": "broken_signature",
+          "command": [
+            "/tmp/aegis-v13-test-env/bin/python",
+            "-B",
+            "-m",
+            "pytest",
+            "-p",
+            "no:cacheprovider",
+            "-q",
+            "tests/test_aegis_probe.py"
+          ],
+          "evidence": "t(*args)\n            if case.get(\"async_timeout_ms\") is not None:\n                if not hasattr(value, \"__await__\"):\n                    raise TypeError(\"async contract requires an awaitable result\")\n                return asyncio.run(asyncio.wait_for(value, timeout=case[\"async_timeout_ms\"] / 1000))\n            return value\n        expected_exception = case.get(\"exception\")\n        if expected_exception:\n            with pytest.raises(getattr(builtins, expected_exception)):\n                invoke()\n            return\n        try:\n>           actual = invoke()\n                     ^^^^^^^^\n\ntests/test_aegis_probe.py:61: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\n    def invoke():\n>       value = target(*args)\n                ^^^^^^^^^^^^^\nE       TypeError: bounded() takes 0 positional arguments but 1 was given\n\ntests/test_aegis_probe.py:49: TypeError\n=========================== short test summary info ============================\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[positive_low]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[positive_high]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_underflow]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_overflow]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_type]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_fraction]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[positive_midpoint]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_0]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_1]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_2]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_3]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_4]\n12 failed in 0.43s\n\n",
+          "exit_code": 1,
+          "failure_code": "DYNAMIC_PROBE_FAILED",
+          "gate": "dynamic"
+        },
+        {
+          "candidate_id": "broken_signature",
+          "command": [
+            "/tmp/aegis-v13-test-env/bin/python",
+            "-B",
+            "-m",
+            "pytest",
+            "-p",
+            "no:cacheprovider",
+            "-q",
+            "tests/test_aegis_probe.py",
+            "-k",
+            "randomized"
+          ],
+          "evidence": " _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\n    def invoke():\n>       value = target(*args)\n                ^^^^^^^^^^^^^\nE       TypeError: bounded() takes 0 positional arguments but 1 was given\n\ntests/test_aegis_probe.py:49: TypeError\n________________ test_aegis_structured_acceptance[randomized_4] ________________\n\ncase = {'label': 'randomized_4', 'args': [-3], 'expected': 0}\n\n    @pytest.mark.parametrize(\"case\", CASES, ids=[case[\"label\"] for case in CASES])\n    def test_aegis_structured_acceptance(case):\n        args = case[\"args\"]\n        def invoke():\n            value = target(*args)\n            if case.get(\"async_timeout_ms\") is not None:\n                if not hasattr(value, \"__await__\"):\n                    raise TypeError(\"async contract requires an awaitable result\")\n                return asyncio.run(asyncio.wait_for(value, timeout=case[\"async_timeout_ms\"] / 1000))\n            return value\n        expected_exception = case.get(\"exception\")\n        if expected_exception:\n            with pytest.raises(getattr(builtins, expected_exception)):\n                invoke()\n            return\n        try:\n>           actual = invoke()\n                     ^^^^^^^^\n\ntests/test_aegis_probe.py:61: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\n    def invoke():\n>       value = target(*args)\n                ^^^^^^^^^^^^^\nE       TypeError: bounded() takes 0 positional arguments but 1 was given\n\ntests/test_aegis_probe.py:49: TypeError\n=========================== short test summary info ============================\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_0]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_1]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_2]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_3]\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_4]\n5 failed, 7 deselected in 0.22s\n\n",
+          "exit_code": 1,
+          "failure_code": "MUTATION_PROBE_FAILED",
+          "gate": "mutation"
+        }
+      ],
+      "category": "candidate_rejected",
+      "contract_differences": [
+        {
+          "candidate_id": "bait_constant",
+          "code": "ASSERTION_MISMATCH",
+          "detail": "raise AssertionError(\"AEGIS_ACCEPTANCE: async fallback was not returned\") from error",
+          "gate": "dynamic",
+          "line": null,
+          "path": "tests/test_aegis_probe.py"
+        },
+        {
+          "candidate_id": "bait_constant",
+          "code": "ASSERTION_MISMATCH",
+          "detail": "assert type(replay) is type(actual) and replay == actual, \"AEGIS_ACCEPTANCE: replay changed result\"",
+          "gate": "mutation",
+          "line": null,
+          "path": "tests/test_aegis_probe.py"
+        }
+      ],
+      "evidence_excerpt": "[{\"candidate_id\": \"bait_constant\", \"gate\": \"dynamic\", \"failure_code\": \"DYNAMIC_PROBE_FAILED\", \"exit_code\": 1, \"command\": [\"/tmp/aegis-v13-test-env/bin/python\", \"-B\", \"-m\", \"pytest\", \"-p\", \"no:cacheprovider\", \"-q\", \"tests/test_aegis_probe.py\"], \"evidence\": \"    except asyncio.TimeoutError as error:\\n            raise AssertionError(\\\"AEGIS_ACCEPTANCE: async fallback was not returned\\\") from error\\n        if case.get(\\\"input_schema\\\") is not None:\\n            assert args and _schema_matches(args[0], case[\\\"input_schema\\\"]), \\\"AEGIS_ACCEPTANCE: invalid input accepted\\\"\\n        if case.get(\\\"return_schema\\\") is not None:\\n            assert _schema_matches(actual, case[\\\"return_schema\\\"]), \\\"AEGIS_ACCEPTANCE: return schema mismatch\\\"\\n        else:\\n            expected = case.get(\\\"expected\\\")\\n>           assert type(actual) is type(expected) and actual == expected, \\\"AEGIS_ACCEPTANCE: contract mismatch\\\"\\nE           AssertionError: AEGIS_ACCEPTANCE: contract mismatch\\nE           assert (<class 'int'> is <class 'int'> and 99 == 0)\\nE            +  where <class 'int'> = type(99)\\nE            +  and   <class 'int'> = type(0)\\n\\ntests/test_aegis_probe.py:73: AssertionError\\n=========================== short test summary info ============================\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[positive_low]\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[positive_high]\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_underflow]\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_overflow]\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_type]\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[negative_fraction]\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[positive_midpoint]\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_0]\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_1]\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_2]\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_3]\\nFAILED tests/test_aegis_probe.py::test_aegis_structured_acceptance[randomized_4]\\n12 failed in 0.49s\\n\\n\"}, {\"candidate_id\": \"bait_constant\", \"gate\": \"mutation\", \"failure_code\": \"MUTATION_PROBE_FAILED\", \"exit_code\": 1, \"command\": [\"/tmp/aegis-v13-test-env/bin/python\", \"-B\", \"-m\", \"pytest\", \"-p\", \"no:cacheprovider\", \"-q\", \"tests/test_aegis_probe.py\", \"-k\", \"randomized\"], \"evidence\": \"         return asyncio.run(asyncio.wait_for(value, timeout=case[\\\"async_timeout_ms\\\"] / 1000))\\n            return value\\n        expected_exception = case.get(\\\"exception\\\")\\n        if expected_exception:\\n            with pytest.raises(getattr(builtins, expected_exception)):\\n                invoke()\\n            return\\n        try:\\n            actual = invoke()\\n            for _ in range(max(1, case.get(\\\"repeats\\\", 1) - 1)):\\n                replay = invoke()\\n                assert type(replay) is type(actual) and replay == actual, \\\"AEGIS_ACCEPTANCE: replay changed result\\\"\\n        except asyncio.TimeoutError as error:\\n            raise AssertionError(\\\"AEGIS_ACCEPTANCE: async fallback was not returned\\\") from error\\n        if case.get(\\\"input_schema\\\") is not None:\\n            assert args and _schema_matches(args[0], case[\\\"input_schema\\\"]), \\\"AEGIS_ACCEPTANCE: invalid input accepted\\\"\\n        if case.get(\\\"return_schema\\\") is not None:\\n            assert _schema_matches(actual, case[\\\"return_schema\\\"]), \\\"AEGIS_ACCEPTANCE: return schema mismatch\\\"\\n        else:\\n            expected = case.get(\\\"expected\\\")\\n>           assert type(actual) is type(expected) and actual == expected, \\\"AEGIS_ACCEPTANCE: contract mismatch\\\"\\nE           AssertionError: AEGIS_ACCEPTANCE: contract mismatch\\nE           assert (<class 'int'> is <class 'int'> and 99 == 0)\\nE            +  where ",
+      "failure_code": "DYNAMIC_PROBE_FAILED",
+      "frames": [
+        {
+          "file": "tests/test_aegis_probe.py",
+          "line": 73
+        },
+        {
+          "file": "tests/test_aegis_probe.py",
+          "line": 61
+        },
+        {
+          "file": "tests/test_aegis_probe.py",
+          "line": 49
+        }
+      ],
+      "kind": "FailureDiagnosis",
+      "mutation_examples": [
+        "negative_fraction",
+        "negative_overflow",
+        "negative_type",
+        "negative_underflow",
+        "positive_high",
+        "positive_low",
+        "positive_midpoint",
+        "randomized_0",
+        "randomized_1",
+        "randomized_2",
+        "randomized_3",
+        "randomized_4"
+      ],
+      "next_action": "Use the failing probe cases and independent audit findings to target a different repair strategy."
+    },
+    "impact": {
+      "budget_unit": "lexical_tokens_v1",
+      "changed_files": [
+        "aegis_campaign_probe.py"
+      ],
+      "compression_ratio": 0.999901,
+      "context": "[full_source aegis_campaign_probe.py:<file> aegis_campaign_probe.py distance=0 target]\ndef bounded(value):\n    return value\n",
+      "critical_symbol_count": 1,
+      "critical_symbol_recall": 1.0,
+      "graph_metrics": {
+        "call_edges": 500,
+        "files": 79,
+        "reference_edges": 509,
+        "symbols": 504,
+        "unresolved_references": 33
+      },
+      "items": [
+        {
+          "direction": "target",
+          "distance": 0,
+          "file": "aegis_campaign_probe.py",
+          "representation": "full_source",
+          "symbol": "aegis_campaign_probe.py:<file>",
+          "text": "def bounded(value):\n    return value\n"
+        }
+      ],
+      "max_context_tokens": 1200,
+      "naive_token_count": 252088,
+      "omitted_symbols": [],
+      "recalled_symbol_count": 1,
+      "token_count": 25
+    },
+    "terminal_status": "succeeded"
+  },
+  "worktree": "/tmp/aegis-replay-t74ajk5z",
+  "outcome": {
+    "exit_code": 0,
+    "stdout": "............                                                             [100%]\n12 passed in 0.09s\n",
+    "stderr": "",
+    "stdout_sha256": "0becb50d8f51974359e92415eab80f734b323f7a5c7a502e83098703486c56a5",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "result_sha256": "902ca4cf6314e39bf0a0a3a84b67610052f8fb1225a039e1a683c2f39f23dbf5",
+    "matches_observed": null
+  }
+}

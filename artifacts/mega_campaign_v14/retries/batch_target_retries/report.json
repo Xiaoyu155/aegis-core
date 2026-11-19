@@ -1,0 +1,386 @@
+{
+  "account": "Xiaoyu155",
+  "autopilot": {
+    "purpose": "physically validate fail-red, tournament rejection, correct repair, WAL learning and aegis replay against each repository's Git object database",
+    "records": [],
+    "target_kind": "temporary tracked contract fixture inside each repository's detached worktree"
+  },
+  "limits": [
+    "Audit annotation batch patches and contract fixture commits are discarded after each isolated campaign."
+  ],
+  "repositories": [
+    {
+      "analysis": {
+        "impact_graph": {
+          "call_edges": 1935,
+          "files": 146,
+          "reference_edges": 2145,
+          "symbols": 2159,
+          "unresolved_references": 81
+        },
+        "languages": {
+          "html_documents": 0,
+          "javascript_typescript_html": 0,
+          "python": 151,
+          "tracked_source_files": 88
+        },
+        "parse_diagnostics": 0,
+        "semantic_contracts": {
+          "callbacks_recognized": 134,
+          "contract_mismatches": 334,
+          "decorators_recognized": 31,
+          "dynamic_resolution_rate": 0.0,
+          "dynamic_sites": 62,
+          "fields": 2992,
+          "flows": 2070,
+          "legacy_unresolved_references": 81,
+          "resolved_dynamic_sites": 0,
+          "schema_count": 2022
+        }
+      },
+      "analysis_elapsed_sec": 21.5664,
+      "attach_exit_code": 0,
+      "checkout_branch": "",
+      "default_branch": "main",
+      "default_head_after": "e66a376b2f81dcdcf9a63a3d5ffe842a37f45406",
+      "default_head_before": "e66a376b2f81dcdcf9a63a3d5ffe842a37f45406",
+      "default_head_unchanged": true,
+      "private": false,
+      "registered_worktrees_after": 1,
+      "repo": "Xiaoyu155/Checkpoint",
+      "tracked_diff_after": [],
+      "url": "https://github.com/Xiaoyu155/Checkpoint",
+      "work_orders": [
+        {
+          "elapsed_sec": 17.7478,
+          "exit_code": 0,
+          "failed": 0,
+          "marker": "AEGIS_V14_CHECKPOINT_DOC_CONTRACT",
+          "mode": "aegis batch",
+          "passed": 1,
+          "reason": "gate_passed",
+          "status": "succeeded",
+          "stderr_tail": "",
+          "stdout_tail": ":b6d7939578614f8a95801ece774d482e\", \"limits\": {}, \"token_consumption\": 0, \"estimated_cost_usd\": 0.0, \"estimated_usd_per_token\": 1e-05, \"wall_clock_sec\": 2.633797394000794, \"reward\": 1.4959588754250006, \"reward_per_1000_tokens\": null, \"reward_per_usd\": null, \"halted_by\": null}}, \"status\": \"succeeded\", \"exit_code\": 0}], \"passed\": 1, \"failed\": 0, \"budget\": {\"token_consumption\": 0, \"estimated_cost_usd\": 0.0, \"reward\": 1.4959588754250006, \"wall_clock_sec\": 2.633797394000794, \"reward_per_usd\": null}}\n",
+          "target_file": "xiao/src/visual_agent/task_review.py",
+          "ticket_id": "v14-batch-Checkpoint-1-batch-retry",
+          "work_order": "doc_contract"
+        },
+        {
+          "elapsed_sec": 21.5664,
+          "exit_code": 0,
+          "failed": 0,
+          "marker": "AEGIS_V14_CHECKPOINT_DEPENDENCY_HANDOFF",
+          "mode": "aegis batch",
+          "passed": 1,
+          "reason": "gate_passed",
+          "status": "succeeded",
+          "stderr_tail": "",
+          "stdout_tail": "182ea1d960d468b921b91500729ed49\", \"limits\": {}, \"token_consumption\": 0, \"estimated_cost_usd\": 0.0, \"estimated_usd_per_token\": 1e-05, \"wall_clock_sec\": 1.7067069370004901, \"reward\": 1.4969625527333332, \"reward_per_1000_tokens\": null, \"reward_per_usd\": null, \"halted_by\": null}}, \"status\": \"succeeded\", \"exit_code\": 0}], \"passed\": 1, \"failed\": 0, \"budget\": {\"token_consumption\": 0, \"estimated_cost_usd\": 0.0, \"reward\": 1.4969625527333332, \"wall_clock_sec\": 1.7067069370004901, \"reward_per_usd\": null}}\n",
+          "target_file": "xiao/src/visual_agent/task_review.py",
+          "ticket_id": "v14-batch-Checkpoint-2-batch-retry",
+          "work_order": "dependency_handoff"
+        }
+      ]
+    },
+    {
+      "analysis": {
+        "impact_graph": {
+          "call_edges": 1169,
+          "files": 184,
+          "reference_edges": 1201,
+          "symbols": 1491,
+          "unresolved_references": 806
+        },
+        "languages": {
+          "html_documents": 1,
+          "javascript_typescript_html": 1,
+          "python": 193,
+          "tracked_source_files": 205
+        },
+        "parse_diagnostics": 2,
+        "semantic_contracts": {
+          "callbacks_recognized": 207,
+          "contract_mismatches": 166,
+          "decorators_recognized": 18,
+          "dynamic_resolution_rate": 0.0,
+          "dynamic_sites": 46,
+          "fields": 2026,
+          "flows": 2720,
+          "legacy_unresolved_references": 806,
+          "resolved_dynamic_sites": 0,
+          "schema_count": 1420
+        }
+      },
+      "analysis_elapsed_sec": 32.7628,
+      "attach_exit_code": 0,
+      "checkout_branch": "",
+      "default_branch": "main",
+      "default_head_after": "f7faac007e007d308908feaa130e9b07c15dc6fb",
+      "default_head_before": "f7faac007e007d308908feaa130e9b07c15dc6fb",
+      "default_head_unchanged": true,
+      "private": true,
+      "registered_worktrees_after": 1,
+      "repo": "Xiaoyu155/overseas-quant-system",
+      "tracked_diff_after": [],
+      "url": "https://github.com/Xiaoyu155/overseas-quant-system",
+      "work_orders": [
+        {
+          "elapsed_sec": 27.0082,
+          "exit_code": 0,
+          "failed": 0,
+          "marker": "AEGIS_V14_OVERSEAS-QUANT-SYSTEM_DOC_CONTRACT",
+          "mode": "aegis batch",
+          "passed": 1,
+          "reason": "gate_passed",
+          "status": "succeeded",
+          "stderr_tail": "新架构设计/live_trading_v1/live_stress_exam.py:3: SyntaxWarning: invalid escape sequence '\\l'\n  Production Directory: D:\\海外股票量化\\新架构设计\\live_trading_v1\n新架构设计/validation_current_20261024/source/live_stress_exam.py:3: SyntaxWarning: invalid escape sequence '\\l'\n  Production Directory: D:\\海外股票量化\\新架构设计\\live_trading_v1\n",
+          "stdout_tail": "ry:8858925ec7c046ad99e50bf08ff35f84\", \"limits\": {}, \"token_consumption\": 0, \"estimated_cost_usd\": 0.0, \"estimated_usd_per_token\": 1e-05, \"wall_clock_sec\": 2.879467405999094, \"reward\": 1.496367911764998, \"reward_per_1000_tokens\": null, \"reward_per_usd\": null, \"halted_by\": null}}, \"status\": \"succeeded\", \"exit_code\": 0}], \"passed\": 1, \"failed\": 0, \"budget\": {\"token_consumption\": 0, \"estimated_cost_usd\": 0.0, \"reward\": 1.496367911764998, \"wall_clock_sec\": 2.879467405999094, \"reward_per_usd\": null}}\n",
+          "target_file": "新架构设计/run_compare_comprehensive.py",
+          "ticket_id": "v14-batch-overseas-quant-system-1-batch-retry",
+          "work_order": "doc_contract"
+        },
+        {
+          "elapsed_sec": 32.7627,
+          "exit_code": 0,
+          "failed": 0,
+          "marker": "AEGIS_V14_OVERSEAS-QUANT-SYSTEM_DEPENDENCY_HANDOFF",
+          "mode": "aegis batch",
+          "passed": 1,
+          "reason": "gate_passed",
+          "status": "succeeded",
+          "stderr_tail": "新架构设计/live_trading_v1/live_stress_exam.py:3: SyntaxWarning: invalid escape sequence '\\l'\n  Production Directory: D:\\海外股票量化\\新架构设计\\live_trading_v1\n新架构设计/validation_current_20261024/source/live_stress_exam.py:3: SyntaxWarning: invalid escape sequence '\\l'\n  Production Directory: D:\\海外股票量化\\新架构设计\\live_trading_v1\n",
+          "stdout_tail": "b3b2246764a4bafb76ab892c48a9e26\", \"limits\": {}, \"token_consumption\": 0, \"estimated_cost_usd\": 0.0, \"estimated_usd_per_token\": 1e-05, \"wall_clock_sec\": 2.4942379889998847, \"reward\": 1.4968778810766679, \"reward_per_1000_tokens\": null, \"reward_per_usd\": null, \"halted_by\": null}}, \"status\": \"succeeded\", \"exit_code\": 0}], \"passed\": 1, \"failed\": 0, \"budget\": {\"token_consumption\": 0, \"estimated_cost_usd\": 0.0, \"reward\": 1.4968778810766679, \"wall_clock_sec\": 2.4942379889998847, \"reward_per_usd\": null}}\n",
+          "target_file": "新架构设计/run_compare_comprehensive.py",
+          "ticket_id": "v14-batch-overseas-quant-system-2-batch-retry",
+          "work_order": "dependency_handoff"
+        }
+      ]
+    },
+    {
+      "analysis": {
+        "impact_graph": {
+          "call_edges": 72,
+          "files": 16,
+          "reference_edges": 72,
+          "symbols": 106,
+          "unresolved_references": 31
+        },
+        "languages": {
+          "html_documents": 0,
+          "javascript_typescript_html": 12,
+          "python": 5,
+          "tracked_source_files": 22
+        },
+        "parse_diagnostics": 0,
+        "semantic_contracts": {
+          "callbacks_recognized": 4,
+          "contract_mismatches": 8,
+          "decorators_recognized": 0,
+          "dynamic_resolution_rate": 1.0,
+          "dynamic_sites": 0,
+          "fields": 95,
+          "flows": 257,
+          "legacy_unresolved_references": 31,
+          "resolved_dynamic_sites": 0,
+          "schema_count": 84
+        }
+      },
+      "analysis_elapsed_sec": 0.7381,
+      "attach_exit_code": 0,
+      "checkout_branch": "",
+      "default_branch": "master",
+      "default_head_after": "09fca25ed3f65fc3c0a00854ff0db650a9427a93",
+      "default_head_before": "09fca25ed3f65fc3c0a00854ff0db650a9427a93",
+      "default_head_unchanged": true,
+      "private": true,
+      "registered_worktrees_after": 1,
+      "repo": "Xiaoyu155/pet-miniapp",
+      "setup_error": {
+        "message": "no tracked source eligible for Aegis business-change gates",
+        "type": "ValueError"
+      },
+      "tracked_diff_after": [],
+      "url": "https://github.com/Xiaoyu155/pet-miniapp",
+      "work_orders": []
+    },
+    {
+      "analysis": {
+        "impact_graph": {
+          "call_edges": 567,
+          "files": 44,
+          "reference_edges": 610,
+          "symbols": 554,
+          "unresolved_references": 39
+        },
+        "languages": {
+          "html_documents": 0,
+          "javascript_typescript_html": 2,
+          "python": 46,
+          "tracked_source_files": 49
+        },
+        "parse_diagnostics": 0,
+        "semantic_contracts": {
+          "callbacks_recognized": 33,
+          "contract_mismatches": 75,
+          "decorators_recognized": 20,
+          "dynamic_resolution_rate": 0.0,
+          "dynamic_sites": 20,
+          "fields": 418,
+          "flows": 626,
+          "legacy_unresolved_references": 39,
+          "resolved_dynamic_sites": 0,
+          "schema_count": 533
+        }
+      },
+      "analysis_elapsed_sec": 7.0051,
+      "attach_exit_code": 0,
+      "checkout_branch": "",
+      "default_branch": "master",
+      "default_head_after": "592888391a1298361cc6eae3b31c4add50c5a656",
+      "default_head_before": "592888391a1298361cc6eae3b31c4add50c5a656",
+      "default_head_unchanged": true,
+      "private": true,
+      "registered_worktrees_after": 1,
+      "repo": "Xiaoyu155/promo-videos",
+      "tracked_diff_after": [],
+      "url": "https://github.com/Xiaoyu155/promo-videos",
+      "work_orders": [
+        {
+          "elapsed_sec": 5.7331,
+          "exit_code": 0,
+          "failed": 0,
+          "marker": "AEGIS_V14_PROMO-VIDEOS_DOC_CONTRACT",
+          "mode": "aegis batch",
+          "passed": 1,
+          "reason": "gate_passed",
+          "status": "succeeded",
+          "stderr_tail": "scripts/marketing-video/_legacy/download_checkpoint_stream.py:5: SyntaxWarning: invalid escape sequence '\\C'\n  to the final checkpoint in D:\\ComfyUI\\models\\checkpoints.\n",
+          "stdout_tail": ":185b3f6e5e4844f7828c7b90d07921f2\", \"limits\": {}, \"token_consumption\": 0, \"estimated_cost_usd\": 0.0, \"estimated_usd_per_token\": 1e-05, \"wall_clock_sec\": 1.103142736999871, \"reward\": 1.4963031589316689, \"reward_per_1000_tokens\": null, \"reward_per_usd\": null, \"halted_by\": null}}, \"status\": \"succeeded\", \"exit_code\": 0}], \"passed\": 1, \"failed\": 0, \"budget\": {\"token_consumption\": 0, \"estimated_cost_usd\": 0.0, \"reward\": 1.4963031589316689, \"wall_clock_sec\": 1.103142736999871, \"reward_per_usd\": null}}\n",
+          "target_file": "capture-prototype/capture.mjs",
+          "ticket_id": "v14-batch-promo-videos-1-batch-retry",
+          "work_order": "doc_contract"
+        },
+        {
+          "elapsed_sec": 7.0051,
+          "exit_code": 0,
+          "failed": 0,
+          "marker": "AEGIS_V14_PROMO-VIDEOS_DEPENDENCY_HANDOFF",
+          "mode": "aegis batch",
+          "passed": 1,
+          "reason": "gate_passed",
+          "status": "succeeded",
+          "stderr_tail": "scripts/marketing-video/_legacy/download_checkpoint_stream.py:5: SyntaxWarning: invalid escape sequence '\\C'\n  to the final checkpoint in D:\\ComfyUI\\models\\checkpoints.\n",
+          "stdout_tail": "9d5056012984b0db66050646530d99f\", \"limits\": {}, \"token_consumption\": 0, \"estimated_cost_usd\": 0.0, \"estimated_usd_per_token\": 1e-05, \"wall_clock_sec\": 0.6140837599996303, \"reward\": 1.4971069869050007, \"reward_per_1000_tokens\": null, \"reward_per_usd\": null, \"halted_by\": null}}, \"status\": \"succeeded\", \"exit_code\": 0}], \"passed\": 1, \"failed\": 0, \"budget\": {\"token_consumption\": 0, \"estimated_cost_usd\": 0.0, \"reward\": 1.4971069869050007, \"wall_clock_sec\": 0.6140837599996303, \"reward_per_usd\": null}}\n",
+          "target_file": "capture-prototype/capture.mjs",
+          "ticket_id": "v14-batch-promo-videos-2-batch-retry",
+          "work_order": "dependency_handoff"
+        }
+      ]
+    },
+    {
+      "analysis": {
+        "impact_graph": {
+          "call_edges": 5363,
+          "files": 679,
+          "reference_edges": 6168,
+          "symbols": 8098,
+          "unresolved_references": 443
+        },
+        "languages": {
+          "html_documents": 10,
+          "javascript_typescript_html": 31,
+          "python": 678,
+          "tracked_source_files": 511
+        },
+        "parse_diagnostics": 0,
+        "semantic_contracts": {
+          "callbacks_recognized": 575,
+          "contract_mismatches": 607,
+          "decorators_recognized": 520,
+          "dynamic_resolution_rate": 0.05202312138728324,
+          "dynamic_sites": 346,
+          "fields": 7686,
+          "flows": 6604,
+          "legacy_unresolved_references": 443,
+          "resolved_dynamic_sites": 18,
+          "schema_count": 6966
+        }
+      },
+      "analysis_elapsed_sec": 99.1276,
+      "attach_exit_code": 0,
+      "checkout_branch": "",
+      "default_branch": "master",
+      "default_head_after": "8418afe2e41496efb4b8f7144ee168076dd6ba5d",
+      "default_head_before": "8418afe2e41496efb4b8f7144ee168076dd6ba5d",
+      "default_head_unchanged": true,
+      "private": true,
+      "registered_worktrees_after": 1,
+      "repo": "Xiaoyu155/yuansi_app",
+      "tracked_diff_after": [],
+      "url": "https://github.com/Xiaoyu155/yuansi_app",
+      "work_orders": [
+        {
+          "elapsed_sec": 78.829,
+          "exit_code": 0,
+          "failed": 0,
+          "marker": "AEGIS_V14_YUANSI_APP_DOC_CONTRACT",
+          "mode": "aegis batch",
+          "passed": 1,
+          "reason": "gate_passed",
+          "status": "succeeded",
+          "stderr_tail": "yuansi-server/python_brain/persistence/travel_map_repo.py:133: SyntaxWarning: invalid escape sequence '\\d'\n  WHEN tags_json->>'sequence' ~ '^\\d+$'\nyuansi-server/python_brain/services/voice_text.py:81: SyntaxWarning: invalid escape sequence '\\s'\n  2. 原本 ``\\s+`` 把换行一并压成空格，于是「链接\\n2. 下一家」变成\n",
+          "stdout_tail": "0d03f20373d45bcb882cf6525b71a4b\", \"limits\": {}, \"token_consumption\": 0, \"estimated_cost_usd\": 0.0, \"estimated_usd_per_token\": 1e-05, \"wall_clock_sec\": 10.022107082999355, \"reward\": 1.4952018494249995, \"reward_per_1000_tokens\": null, \"reward_per_usd\": null, \"halted_by\": null}}, \"status\": \"succeeded\", \"exit_code\": 0}], \"passed\": 1, \"failed\": 0, \"budget\": {\"token_consumption\": 0, \"estimated_cost_usd\": 0.0, \"reward\": 1.4952018494249995, \"wall_clock_sec\": 10.022107082999355, \"reward_per_usd\": null}}\n",
+          "target_file": "prod_wechat_youyou_isolated/youyou_courier.py",
+          "ticket_id": "v14-batch-yuansi_app-1-batch-retry",
+          "work_order": "doc_contract"
+        },
+        {
+          "elapsed_sec": 99.1276,
+          "exit_code": 0,
+          "failed": 0,
+          "marker": "AEGIS_V14_YUANSI_APP_DEPENDENCY_HANDOFF",
+          "mode": "aegis batch",
+          "passed": 1,
+          "reason": "gate_passed",
+          "status": "succeeded",
+          "stderr_tail": "yuansi-server/python_brain/persistence/travel_map_repo.py:133: SyntaxWarning: invalid escape sequence '\\d'\n  WHEN tags_json->>'sequence' ~ '^\\d+$'\nyuansi-server/python_brain/services/voice_text.py:81: SyntaxWarning: invalid escape sequence '\\s'\n  2. 原本 ``\\s+`` 把换行一并压成空格，于是「链接\\n2. 下一家」变成\n",
+          "stdout_tail": ":252570c29a6f47bebd49e8a4fe1ac474\", \"limits\": {}, \"token_consumption\": 0, \"estimated_cost_usd\": 0.0, \"estimated_usd_per_token\": 1e-05, \"wall_clock_sec\": 9.604098125999371, \"reward\": 1.4963090061433346, \"reward_per_1000_tokens\": null, \"reward_per_usd\": null, \"halted_by\": null}}, \"status\": \"succeeded\", \"exit_code\": 0}], \"passed\": 1, \"failed\": 0, \"budget\": {\"token_consumption\": 0, \"estimated_cost_usd\": 0.0, \"reward\": 1.4963090061433346, \"wall_clock_sec\": 9.604098125999371, \"reward_per_usd\": null}}\n",
+          "target_file": "prod_wechat_youyou_isolated/youyou_courier.py",
+          "ticket_id": "v14-batch-yuansi_app-2-batch-retry",
+          "work_order": "dependency_handoff"
+        }
+      ]
+    }
+  ],
+  "schema_version": "aegis.mega_campaign.v14",
+  "summary": {
+    "all_remote_default_heads_unchanged": true,
+    "autopilot_candidate_evaluations": 0,
+    "autopilot_rejected_candidates": 0,
+    "autopilot_succeeded": 0,
+    "autopilot_winners": 0,
+    "autopilot_work_orders": 0,
+    "batch_work_orders": 8,
+    "campaign_elapsed_sec": 171.704,
+    "candidate_red_light_interception_rate": null,
+    "cross_language_ast_coverage_files": 875,
+    "experience_bank_new_records": 20,
+    "external_write_policy": "all source edits confined to temporary git worktrees; no push, merge or default-branch edit",
+    "high_risk_l3_findings": {},
+    "intentionally_invalid_candidates": 0,
+    "repositories_cloned_and_analyzed": 5,
+    "repositories_requested": 5,
+    "sqlite": {
+      "causal_traces": 368,
+      "database_lock_errors": 0,
+      "experience_records": 20,
+      "journal_mode": "wal",
+      "tickets": 68,
+      "trace_throughput_per_sec": 2.143,
+      "wal_peak_bytes": 32992
+    },
+    "tracked_worktree_residuals": [],
+    "work_orders": 8
+  }
+}

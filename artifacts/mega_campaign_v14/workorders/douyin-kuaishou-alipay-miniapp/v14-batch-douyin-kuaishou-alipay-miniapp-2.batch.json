@@ -1,0 +1,180 @@
+{
+  "status": "succeeded",
+  "jobs": [
+    {
+      "id": "v14-batch-douyin-kuaishou-alipay-miniapp-2",
+      "priority": 1,
+      "repo_root": "/tmp/aegis-v14-mega-ocjs05u7/repos/douyin-kuaishou-alipay-miniapp",
+      "languages": {
+        "python": {
+          "files": 3,
+          "present": true
+        },
+        "javascript": {
+          "files": 195,
+          "present": true
+        },
+        "typescript": {
+          "files": 0,
+          "present": false
+        }
+      },
+      "result": {
+        "ticket_id": "v14-batch-douyin-kuaishou-alipay-miniapp-2",
+        "status": "succeeded",
+        "reason": "gate_passed",
+        "attempts": 1,
+        "results": [
+          {
+            "baseline_failed": true,
+            "after_passed": true,
+            "passed": true,
+            "cheat_detected": false,
+            "changed_files": [
+              "快手/e2e/browser_e2e.py"
+            ],
+            "diff_lines": 1,
+            "repeated_patch": false,
+            "patch_sha256": "1f50607c353c312e8cb586ddae4062536b8fc64ccb2bc81c441217e73960d82b",
+            "complexity": {
+              "level": "L1",
+              "tier": "L1_LOCAL_CAUSAL",
+              "impact_radius": 0,
+              "coupling": 0,
+              "impacted_files": [
+                "快手/e2e/browser_e2e.py"
+              ],
+              "risk_probability": null
+            },
+            "model_tier": null,
+            "probe_kind": "unit",
+            "probe_script_sha256": {},
+            "predicted_next_state": {
+              "outcome": "assertion_error",
+              "probabilities": {
+                "gate_passed": 0.0004811839407960341,
+                "assertion_error": 0.966021505569898,
+                "cheat_detected": 0.0052077867802140165,
+                "replay_blocked": 0.002828758019830431,
+                "missing_constraint": 0.02546076568926158
+              },
+              "decision_source": "causal_world_net",
+              "high_risk_pre_block": false,
+              "pre_block_reason": null,
+              "changed_paths": [
+                "快手/e2e/browser_e2e.py"
+              ]
+            },
+            "predicted_reward": -0.8566729717149244,
+            "predicted_reward_interval": [
+              -1.4817195554140277,
+              -0.23162638801582114
+            ],
+            "prediction_confidence": 0.966021505569898,
+            "risk_probability": 0.1838989106883077,
+            "world_model_version": "5c64ee2972cf103513d5a29ba6bb0bf61f0a6c621451618c292eb91f158ac8aa",
+            "baseline": {
+              "command": [
+                "/tmp/aegis-v13-test-env/bin/python",
+                "-B",
+                "-c",
+                "from pathlib import Path; p=Path('快手/e2e/browser_e2e.py'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_DOUYIN-KUAISHOU-ALIPAY-MINIAPP_DEPENDENCY_HANDOFF' in s; compile(s, '快手/e2e/browser_e2e.py', 'exec')"
+              ],
+              "exit_code": 1,
+              "stdout": "",
+              "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\nAssertionError\n",
+              "before_hash": "f7b12155664af6b55dfdb85fc3cfd6bf78c1eb2e9584bca029813d916eb338bd",
+              "after_hash": "f7b12155664af6b55dfdb85fc3cfd6bf78c1eb2e9584bca029813d916eb338bd",
+              "changed": false,
+              "reward": -1.0,
+              "passed": false,
+              "probe_kind": "unit",
+              "probe_script_sha256": {},
+              "probe_runtime_sha256": {},
+              "failure_code": "ASSERTION_FAILED",
+              "timed_out": false,
+              "timeout_killed": false,
+              "termination_reason": null,
+              "killed_process_group": false
+            },
+            "final": {
+              "command": [
+                "/tmp/aegis-v13-test-env/bin/python",
+                "-B",
+                "-c",
+                "from pathlib import Path; p=Path('快手/e2e/browser_e2e.py'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_DOUYIN-KUAISHOU-ALIPAY-MINIAPP_DEPENDENCY_HANDOFF' in s; compile(s, '快手/e2e/browser_e2e.py', 'exec')"
+              ],
+              "exit_code": 0,
+              "stdout": "",
+              "stderr": "",
+              "before_hash": "4146aa27ae1a331662397d92f13710d1faf945b8031209a0e6bf890ed15fa44b",
+              "after_hash": "4146aa27ae1a331662397d92f13710d1faf945b8031209a0e6bf890ed15fa44b",
+              "changed": false,
+              "reward": 1.0,
+              "passed": true,
+              "probe_kind": "unit",
+              "probe_script_sha256": {},
+              "probe_runtime_sha256": {},
+              "failure_code": null,
+              "timed_out": false,
+              "timeout_killed": false,
+              "termination_reason": null,
+              "killed_process_group": false
+            },
+            "timeout_killed": false,
+            "before_hash": "f7b12155664af6b55dfdb85fc3cfd6bf78c1eb2e9584bca029813d916eb338bd",
+            "after_hash": "4146aa27ae1a331662397d92f13710d1faf945b8031209a0e6bf890ed15fa44b",
+            "reward": 1.4969367498049997,
+            "source_changed_lines": 1,
+            "protected_changed": [],
+            "termination_reason": null,
+            "elapsed_sec": 0.27356098599921097,
+            "world_model_outcome": "gate_passed",
+            "causal_prediction_error": {
+              "predicted_outcome": "assertion_error",
+              "actual_outcome": "gate_passed",
+              "state_mismatch": true,
+              "state_error": 1,
+              "reward_absolute_error": 2.35360972152,
+              "reward_interval_covered": false,
+              "composite_error": 3.35360972152
+            }
+          }
+        ],
+        "telemetry": {
+          "model_loaded": true,
+          "world_model_version": "5c64ee2972cf103513d5a29ba6bb0bf61f0a6c621451618c292eb91f158ac8aa",
+          "model_source": "bundled",
+          "model_mode": "observe",
+          "predictions_made": 1,
+          "no_prediction_count": 0,
+          "below_threshold_count": 0,
+          "scope": "repair_attempts"
+        },
+        "budget": {
+          "scope": "v14-batch-douyin-kuaishou-alipay-miniapp-2:c7e921199e8b4d9790fac28853098c74",
+          "limits": {},
+          "token_consumption": 0,
+          "estimated_cost_usd": 0.0,
+          "estimated_usd_per_token": 1e-05,
+          "wall_clock_sec": 1.5512383959994622,
+          "reward": 1.4969367498049997,
+          "reward_per_1000_tokens": null,
+          "reward_per_usd": null,
+          "halted_by": null
+        }
+      },
+      "status": "succeeded",
+      "exit_code": 0
+    }
+  ],
+  "passed": 1,
+  "failed": 0,
+  "budget": {
+    "token_consumption": 0,
+    "estimated_cost_usd": 0.0,
+    "reward": 1.4969367498049997,
+    "wall_clock_sec": 1.5512383959994622,
+    "reward_per_usd": null
+  }
+}

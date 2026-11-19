@@ -1,181 +1,193 @@
 {
-  "phase": 13,
-  "pull_request": "https://github.com/Xiaoyu155/aegis-core/pull/13",
-  "branch": "feat/world-model-v13",
-  "base_branch": "feat/world-model-v12",
-  "base_commit": "e32c80469104e2bcaa42b19dd57bccc6d401a9c9",
-  "preserved_baseline": {
-    "pull_request": "https://github.com/Xiaoyu155/aegis-core/pull/12",
-    "tests": 507,
-    "github_actions": "8/8 green on PR #12 head e32c80469104e2bcaa42b19dd57bccc6d401a9c9",
-    "preserved_paths": [
-      "training/",
-      "scripts/bootstrap_local.ps1"
-    ]
+  "phase": 14,
+  "status": "local_complete_ci_pending_with_documented_limitations",
+  "pull_request": null,
+  "branch": "feat/world-model-v14",
+  "base_branch": "feat/world-model-v13",
+  "base_commit": "c3a892c3963c24ddee1d359898ce22213e53fff9",
+  "previous_phase_13": {
+    "pull_request": "https://github.com/Xiaoyu155/aegis-core/pull/13",
+    "head": "c3a892c3963c24ddee1d359898ce22213e53fff9",
+    "tests": 656,
+    "github_actions": "8/8 green at the locked baseline"
+  },
+  "preservation": {
+    "baseline_tests": 656,
+    "baseline_tests_still_collected": 656,
+    "training_directory_preserved": true,
+    "bootstrap_local_ps1_preserved": true,
+    "changes_under_preserved_paths": false
   },
   "tests": {
-    "total": 656,
-    "passed": 656,
-    "baseline_preserved": 507,
-    "phase_13_new": 149,
+    "total_collected": 944,
+    "passed": 944,
+    "baseline_preserved": 656,
+    "phase_14_new": 288,
     "new_cases_by_milestone": {
-      "impact_analyzer": 41,
-      "candidate_tournament": 35,
-      "structured_probe_compiler": 48,
-      "self_heal_loop": 25
+      "semantic_contract": 93,
+      "time_travel": 45,
+      "swarm_arbiter": 81,
+      "distill_pipeline": 47,
+      "mega_campaign": 22
     },
     "local_verification": {
       "command": "PYTHONPATH=. /tmp/aegis-v13-test-env/bin/python -m pytest -q",
       "python": "3.12.14",
       "node": "v24.22.1",
-      "elapsed_seconds": 198.29,
-      "result": "656 passed"
+      "elapsed_seconds": 203.99,
+      "result": "944 passed",
+      "loopback_permission_enabled": true
     }
   },
   "milestones": {
-    "m1_impact_analyzer": {
-      "module": "aegis_core/impact_analyzer.py",
-      "tests": 41,
-      "languages": [
-        "Python",
-        "JavaScript",
-        "TypeScript",
-        "HTML inline JavaScript"
-      ],
+    "m1_semantic_contract": {
+      "module": "aegis_core/semantic_contract.py",
+      "tests": 93,
       "features": [
-        "bidirectional caller and callee graph with bounded N-hop traversal",
-        "cross-file aliased imports and type/reference edges",
-        "cycle-safe traversal and explicit unresolved dynamic references",
-        "whole changed-file context, one-hop signatures, distant summaries, lexical-token budget and recall metrics"
+        "Python TypedDict/dataclass/dict and return schema inference",
+        "JS/TS contracts, destructuring and response property flows",
+        "HTML inline script consumers",
+        "decorator, callback, receiver type, argparse schema and cross-module field analysis"
       ],
-      "physical_scale_run": {
-        "repository_files": 1000,
-        "indexed_symbols": 1000,
-        "resolved_edges": 250,
-        "index_seconds": 0.117,
-        "html_cross_file_caller_resolved": true
-      }
+      "corpus_scan": {
+        "repositories": 21,
+        "tracked_source_files": 4920,
+        "schemas": 25962,
+        "fields": 43609,
+        "flows": 72391,
+        "dynamic_sites": 780,
+        "resolved_dynamic_sites": 90,
+        "unresolved_dynamic_sites": 690,
+        "dynamic_unresolved_reduction_rate": 0.11538461538461539,
+        "required_rate": 0.7,
+        "required_rate_met": false,
+        "parse_diagnostics": 17
+      },
+      "interpretation": "Unresolved dynamic calls are retained when receiver types or runtime object schemas cannot be proven statically."
     },
-    "m2_candidate_tournament": {
-      "module": "aegis_core/tournament.py",
-      "tests": 35,
-      "physical_campaign_evaluations": 47,
-      "accepted_candidates": 11,
-      "rejected_candidates": 36,
-      "candidate_isolation": "one detached Git worktree per candidate",
-      "gates": [
-        "static probes",
-        "dynamic acceptance probes",
-        "seeded mutation probes",
-        "independent L3 audit",
-        "complexity and token/time cost scoring",
-        "Pareto selection and atomic GRPO JSONL export"
+    "m2_time_travel": {
+      "module": "aegis_core/time_travel.py",
+      "cli": [
+        "aegis replay --ticket",
+        "aegis blame"
+      ],
+      "tests": 45,
+      "physical_campaign_replays": 21,
+      "features": [
+        "SQLite WAL immutable snapshot receipts",
+        "Git archive byte hashes and frozen probe/seed/context evidence",
+        "deterministic replay verification",
+        "file delta-debugging and changed-line blame reports"
       ]
     },
-    "m3_structured_probe_compiler": {
-      "module": "aegis_core/probe_synth.py",
-      "tests": 48,
-      "probe_kinds": [
-        "numeric bounds and overflow",
-        "finite-state-machine transitions",
-        "idempotency and replay safety",
-        "bounded collection and eviction",
-        "async timeout and fallback recovery",
-        "cross-module contract schema"
+    "m3_swarm_arbiter": {
+      "module": "aegis_core/swarm_arbiter.py",
+      "tests": 81,
+      "roles": [
+        "Architect",
+        "Coder",
+        "Adversarial Critic",
+        "Verifier"
       ],
-      "baseline_physical_red_checks": "all six kinds produced real ASSERTION_FAILED receipts",
-      "case_policy": "legal, illegal, and fixed-seed randomized cases per probe"
+      "features": [
+        "explicit role-state receipts",
+        "Python AST and JS/TS brace-region three-way merge",
+        "overlapping semantic block and shared invariant conflict reporting"
+      ]
     },
-    "m4_self_heal_and_replay": {
-      "module": "aegis_core/self_heal_loop.py",
-      "cli": "aegis autopilot",
-      "tests": 25,
-      "phases": [
-        "contract",
-        "expand",
-        "synthesize probe",
-        "tournament",
-        "mutation and L3 audit",
-        "failure diagnosis",
-        "multi-round self-heal",
-        "online replay learn"
-      ],
-      "second_round_validation": {
-        "physical_cases": 1,
-        "round_1_rejected": 1,
-        "round_2_accepted": 1,
-        "verified_recoveries": 1,
-        "rounds_to_converge": 2,
-        "experience_bank_hint_retrieved": true
-      }
-    },
-    "m5_endurance": {
-      "script": "scripts/run_endurance_v13_stress.py",
-      "physical_run": "artifacts/endurance_v13/stdout.txt",
-      "full_receipts": "artifacts/endurance_v13/report.json",
-      "wal_worktree_race": {
-        "workers": 8,
-        "completed": 8,
-        "database_locked": 0,
-        "ledger_tickets": 8,
-        "ledger_traces": 24,
-        "experience_records": 8,
-        "residual_worktrees": 0,
-        "residual_temp_paths": 0,
-        "main_worktree_clean": true,
-        "integrity_check": "ok"
+    "m4_distillation": {
+      "module": "aegis_core/distill_pipeline.py",
+      "tests": 47,
+      "tokenizer": "official Qwen/Qwen2.5-Coder-3B-Instruct",
+      "cpu_release_bundle_readback_verified": true,
+      "max_tokens": 4096,
+      "zero_truncation": true,
+      "sft_examples": 489,
+      "preference_pairs": 78,
+      "chosen_rows": 78,
+      "rejected_rows": 78,
+      "token_distribution": {
+        "sft": {
+          "min": 86,
+          "p50": 469,
+          "p90": 589,
+          "max": 592
+        },
+        "preference": {
+          "min": 103,
+          "p50": 114,
+          "p90": 223,
+          "max": 247
+        }
       },
-      "mixed_language_campaign": {
-        "work_orders": 12,
-        "python_backend_state_machine": true,
-        "javascript_async_event_stream": true,
-        "html_frontend_contract": true,
-        "build_tool_contract": true,
-        "successful_repairs": 11,
-        "budget_fuse_rejections": 1,
-        "candidate_evaluations": 47,
-        "malicious_or_invalid_candidates_rejected": 36,
-        "all_planted_attacks_blocked": true,
-        "campaign_worktree_clean": true,
-        "remaining_worktrees": 0
-      }
+      "bundle_files_verified": 10,
+      "hashes": {
+        "sft": "a6f17cedce5d60772c20c52bb95d7f68f492b792a3a16ab6bd01ca79dde0a182",
+        "grpo": "879520ba0f90c21dd63d4986133ccd95c43d979803ca40986675bff9ea4eb8f4",
+        "manifest": "d4c61f551caada89be90fcf28c7aa4156db8a5450d20cab4b3083559195cdb79",
+        "existing_tournament_pairs": "8cf50f972735c08eae5e1d5831b3b20cec442615315ad294fc58e1ab8dbbe9a3"
+      },
+      "gpu_training_run": "not_run_in_linux_cloud"
+    },
+    "m5_21_repository_campaign": {
+      "script": "scripts/run_21repos_mega_campaign.py",
+      "tests": 22,
+      "repositories": 21,
+      "tracked_source_files": 4920,
+      "work_order_attempts": 72,
+      "final_physical_gate_passes": 61,
+      "batch": {
+        "passed": 40,
+        "attempts": 50,
+        "recovered_initial_failures": 8,
+        "source_ineligible_repositories": [
+          "pet-miniapp"
+        ]
+      },
+      "autopilot": {
+        "final_successes": 21,
+        "invalid_candidates_rejected": 63,
+        "invalid_candidates_total": 63,
+        "candidate_evaluations": 84
+      },
+      "sqlite_wal": {
+        "tickets": 69,
+        "traces": 372,
+        "traces_per_second": 0.386,
+        "peak_wal_bytes": 588537912,
+        "database_lock_errors": 0,
+        "new_experience_records": 21
+      },
+      "high_risk_l3_findings": {},
+      "remote_default_heads_unchanged": true,
+      "temporary_worktree_residuals": 0,
+      "source_workorder_scope": "Batch used temporary source comment audit markers; autopilot repairs used temporary tracked contract fixtures. No external application bug fixes were delivered.",
+      "elapsed_seconds": 964.483,
+      "report": "artifacts/mega_campaign_v14/report.json",
+      "stdout": "artifacts/mega_campaign_v14/stdout.txt",
+      "semantic_scan": "artifacts/mega_campaign_v14/semantic_scan.json"
+    },
+    "m6_delivery": {
+      "ci": {
+        "state": "pending",
+        "checks_passed": 0,
+        "checks_expected": 8,
+        "matrix": "Linux/Windows x Python 3.11/3.12; push and pull_request"
+      },
+      "pull_request": "pending"
     }
   },
-  "training_data": {
-    "path": "datasets/grpo_tournament_pairs.jsonl",
-    "records": 36,
-    "sha256": "8cf50f972735c08eae5e1d5831b3b20cec442615315ad294fc58e1ab8dbbe9a3",
-    "source": "physically gated tournament winner/loser patches from the offline authored 12-order campaign"
-  },
-  "ci": {
-    "state": "success",
-    "checks_passed": 8,
-    "checks_expected": 8,
-    "matrix": "Linux/Windows x Python 3.11/3.12; push + pull_request",
-    "validated_code_head": "2cdae7dcac410c5bf1472bbc3f0cddbf49aeaa18",
-    "source_changes_since_validation": false,
-    "runs": {
-      "push": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44433120954",
-      "pull_request": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44433127869"
-    },
-    "results": {
-      "push": {
-        "ubuntu-latest / Python 3.11": "success",
-        "ubuntu-latest / Python 3.12": "success",
-        "windows-latest / Python 3.11": "success",
-        "windows-latest / Python 3.12": "success"
-      },
-      "pull_request": {
-        "ubuntu-latest / Python 3.11": "success",
-        "ubuntu-latest / Python 3.12": "success",
-        "windows-latest / Python 3.11": "success",
-        "windows-latest / Python 3.12": "success"
-      }
-    }
+  "artifacts": {
+    "campaign_report_sha256": "788709c6b0aa0eec5582bab1caa00e92b88ec7450333922ac8c7da5c2caef6a7",
+    "semantic_scan_sha256": "08930e4c21cbaa276d4c0e78c9d66df26772c7b550921a2c634a86799cac48d4",
+    "campaign_stdout_lines": 171,
+    "release_bundle": "datasets/release_v14/",
+    "release_manifest": "datasets/release_v14_bundle_manifest.json"
   },
   "limits": [
-    "Static resolution reports dynamic property dispatch and reflection as unresolved when it cannot prove a target.",
-    "The cloud environment had no commercial model API key; tournament candidates were authored offline and every candidate gate ran in a real detached Git worktree.",
-    "The Windows 11 RTX 5060 8 GB training handoff remains preserved but was not physically run in this Linux cloud environment."
+    "The requested 70% reduction in unresolved dynamic sites was not achieved: source corpus result is 11.54% (90/780 resolved).",
+    "21-repository campaign gates used temporary audit markers and contract fixtures; these checks prove isolation and gate execution, not 21 repositories' real business defects fixed.",
+    "RTX 5060 Windows GPU training was not run in this Linux environment.",
+    "CI and PR #14 are pending until branch push and GitHub Actions checks complete."
   ]
 }

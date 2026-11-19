@@ -1,0 +1,181 @@
+{
+  "status": "succeeded",
+  "jobs": [
+    {
+      "id": "v14-batch-nova-agent-1",
+      "priority": 1,
+      "repo_root": "/tmp/aegis-v14-mega-ocjs05u7/repos/nova-agent",
+      "languages": {
+        "python": {
+          "files": 125,
+          "present": true
+        },
+        "javascript": {
+          "files": 0,
+          "present": false
+        },
+        "typescript": {
+          "files": 0,
+          "present": false
+        }
+      },
+      "result": {
+        "ticket_id": "v14-batch-nova-agent-1",
+        "status": "succeeded",
+        "reason": "gate_passed",
+        "attempts": 1,
+        "results": [
+          {
+            "baseline_failed": true,
+            "after_passed": true,
+            "passed": true,
+            "cheat_detected": false,
+            "changed_files": [
+              "agent/personas.py"
+            ],
+            "diff_lines": 1,
+            "repeated_patch": false,
+            "patch_sha256": "6ca4f2ebcff4cdfcf0288dc3ba5eef76434d47e14b4a1849e4ef588ff54cb0fe",
+            "complexity": {
+              "level": "L2",
+              "tier": "L2_WORKER_POOL",
+              "impact_radius": 1,
+              "coupling": 3,
+              "impacted_files": [
+                "agent/livekit_entry.py",
+                "agent/personas.py"
+              ],
+              "risk_probability": null
+            },
+            "model_tier": null,
+            "probe_kind": "unit",
+            "probe_script_sha256": {},
+            "predicted_next_state": {
+              "outcome": "assertion_error",
+              "probabilities": {
+                "gate_passed": 0.03496195602187647,
+                "assertion_error": 0.9616696614525349,
+                "cheat_detected": 0.0008867127426566134,
+                "replay_blocked": 0.0017769914250190294,
+                "missing_constraint": 0.00070467835791291
+              },
+              "decision_source": "causal_world_net",
+              "high_risk_pre_block": false,
+              "pre_block_reason": null,
+              "changed_paths": [
+                "agent/personas.py"
+              ]
+            },
+            "predicted_reward": 0.03068983321427854,
+            "predicted_reward_interval": [
+              -0.5943567504848247,
+              0.6557364169133818
+            ],
+            "prediction_confidence": 0.9616696614525349,
+            "risk_probability": 0.012108965361781202,
+            "world_model_version": "5c64ee2972cf103513d5a29ba6bb0bf61f0a6c621451618c292eb91f158ac8aa",
+            "baseline": {
+              "command": [
+                "/tmp/aegis-v13-test-env/bin/python",
+                "-B",
+                "-c",
+                "from pathlib import Path; p=Path('agent/personas.py'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_NOVA-AGENT_DOC_CONTRACT' in s; compile(s, 'agent/personas.py', 'exec')"
+              ],
+              "exit_code": 1,
+              "stdout": "",
+              "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\nAssertionError\n",
+              "before_hash": "968d8f56f228651a2057f06d6aea2b56aaf1e0298d9885d4fdfaeb518d7f2249",
+              "after_hash": "968d8f56f228651a2057f06d6aea2b56aaf1e0298d9885d4fdfaeb518d7f2249",
+              "changed": false,
+              "reward": -1.0,
+              "passed": false,
+              "probe_kind": "unit",
+              "probe_script_sha256": {},
+              "probe_runtime_sha256": {},
+              "failure_code": "ASSERTION_FAILED",
+              "timed_out": false,
+              "timeout_killed": false,
+              "termination_reason": null,
+              "killed_process_group": false
+            },
+            "final": {
+              "command": [
+                "/tmp/aegis-v13-test-env/bin/python",
+                "-B",
+                "-c",
+                "from pathlib import Path; p=Path('agent/personas.py'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_NOVA-AGENT_DOC_CONTRACT' in s; compile(s, 'agent/personas.py', 'exec')"
+              ],
+              "exit_code": 0,
+              "stdout": "",
+              "stderr": "",
+              "before_hash": "a3de27e805c51a863502ac8baebf8e83aa96e902312da8ead2e293f0587b104f",
+              "after_hash": "a3de27e805c51a863502ac8baebf8e83aa96e902312da8ead2e293f0587b104f",
+              "changed": false,
+              "reward": 1.0,
+              "passed": true,
+              "probe_kind": "unit",
+              "probe_script_sha256": {},
+              "probe_runtime_sha256": {},
+              "failure_code": null,
+              "timed_out": false,
+              "timeout_killed": false,
+              "termination_reason": null,
+              "killed_process_group": false
+            },
+            "timeout_killed": false,
+            "before_hash": "968d8f56f228651a2057f06d6aea2b56aaf1e0298d9885d4fdfaeb518d7f2249",
+            "after_hash": "a3de27e805c51a863502ac8baebf8e83aa96e902312da8ead2e293f0587b104f",
+            "reward": 1.496604347120001,
+            "source_changed_lines": 1,
+            "protected_changed": [],
+            "termination_reason": null,
+            "elapsed_sec": 0.21862793199943553,
+            "world_model_outcome": "gate_passed",
+            "causal_prediction_error": {
+              "predicted_outcome": "assertion_error",
+              "actual_outcome": "gate_passed",
+              "state_mismatch": true,
+              "state_error": 1,
+              "reward_absolute_error": 1.465914513906,
+              "reward_interval_covered": false,
+              "composite_error": 2.465914513906
+            }
+          }
+        ],
+        "telemetry": {
+          "model_loaded": true,
+          "world_model_version": "5c64ee2972cf103513d5a29ba6bb0bf61f0a6c621451618c292eb91f158ac8aa",
+          "model_source": "bundled",
+          "model_mode": "observe",
+          "predictions_made": 1,
+          "no_prediction_count": 0,
+          "below_threshold_count": 0,
+          "scope": "repair_attempts"
+        },
+        "budget": {
+          "scope": "v14-batch-nova-agent-1:7b0bc60c6d154b64aaf40d644f6ebfc0",
+          "limits": {},
+          "token_consumption": 0,
+          "estimated_cost_usd": 0.0,
+          "estimated_usd_per_token": 1e-05,
+          "wall_clock_sec": 0.873217864000253,
+          "reward": 1.496604347120001,
+          "reward_per_1000_tokens": null,
+          "reward_per_usd": null,
+          "halted_by": null
+        }
+      },
+      "status": "succeeded",
+      "exit_code": 0
+    }
+  ],
+  "passed": 1,
+  "failed": 0,
+  "budget": {
+    "token_consumption": 0,
+    "estimated_cost_usd": 0.0,
+    "reward": 1.496604347120001,
+    "wall_clock_sec": 0.873217864000253,
+    "reward_per_usd": null
+  }
+}

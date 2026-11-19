@@ -1,0 +1,1 @@
+{"target_files": ["\u5feb\u624b/e2e/browser_e2e.py"], "contract_stub": "def document_audited_contract() -> None:\n    ..."}

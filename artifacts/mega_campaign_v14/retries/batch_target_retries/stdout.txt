@@ -1,0 +1,26 @@
+AEGIS V14 | 21-REPOSITORY READ-ONLY MEGA CAMPAIGN
+account=Xiaoyu155 | requested_workorders=10 | parallel_autopilot_workers=4
+execution=real Git clones + detached worktrees + actual aegis batch/autopilot/replay commands
+remote_mutation=none (no push, no PR, no merge); all generated commits stay in temporary checkouts
+NOTICE repository_count=5 (account inventory is not exactly 21)
+REPO Xiaoyu155/Checkpoint | source_files=88 py=151 js_ts_html=0 symbols=2159 flows=2070 batch_tickets=2 analysis=21.5664s
+REPO Xiaoyu155/overseas-quant-system | source_files=205 py=193 js_ts_html=1 symbols=1491 flows=2720 batch_tickets=2 analysis=32.7628s
+REPO Xiaoyu155/pet-miniapp | source_files=22 py=5 js_ts_html=12 symbols=106 flows=257 batch_tickets=0 analysis=0.7381s
+REPO Xiaoyu155/promo-videos | source_files=49 py=46 js_ts_html=2 symbols=554 flows=626 batch_tickets=2 analysis=7.0051s
+REPO Xiaoyu155/yuansi_app | source_files=511 py=678 js_ts_html=31 symbols=8098 flows=6604 batch_tickets=2 analysis=99.1276s
+AUTOPILOT | launching detached worktree campaigns with shared SQLite WAL ledger
+
+21-REPOSITORY CAMPAIGN DECISION TABLE
+REPOSITORY | LANG FILES | BATCH | AUTOPILOT | WINNER | REPLAY | HEAD CLEAN
+Xiaoyu155/Checkpoint | 88 | 2/2 | n/a | - | - | True
+Xiaoyu155/overseas-quant-system | 205 | 2/2 | n/a | - | - | True
+Xiaoyu155/pet-miniapp | 22 | 0/2 | n/a | - | - | True
+Xiaoyu155/promo-videos | 49 | 2/2 | n/a | - | - | True
+Xiaoyu155/yuansi_app | 511 | 2/2 | n/a | - | - | True
+
+CAMPAIGN TOTALS
+repositories=5/5 work_orders=8 (batch 8/8, autopilot 0/0)
+AST-covered files=875 | rejected candidates=0/0 (None) | L3 findings={}
+SQLite WAL=wal traces=368 traces/sec=2.143 peak_wal=32992 bytes locks=0 experiences=20
+default_heads_clean=True worktree_residuals=0 elapsed=171.704s
+report=/tmp/aegis-v14-batch-retry/report.json

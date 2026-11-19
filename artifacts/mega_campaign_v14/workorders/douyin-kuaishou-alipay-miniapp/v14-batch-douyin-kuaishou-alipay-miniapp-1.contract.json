@@ -1,0 +1,83 @@
+{
+  "schema_version": "aegis.cli.v1",
+  "ticket_id": "v14-batch-douyin-kuaishou-alipay-miniapp-1",
+  "repo_root": "/tmp/aegis-v14-mega-ocjs05u7/repos/douyin-kuaishou-alipay-miniapp",
+  "base_commit": "1c00730f1902d847762e0e1a957efc775a5af384",
+  "compilation": {
+    "kind": "CompiledContract",
+    "ticket_id": "v14-batch-douyin-kuaishou-alipay-miniapp-1",
+    "status": "COMPILED",
+    "target_files": [
+      "快手/e2e/browser_e2e.py"
+    ],
+    "contract_stub": "def document_audited_contract() -> None:\n    ...",
+    "constraints": {}
+  },
+  "fail_before_cmd": [
+    "/tmp/aegis-v13-test-env/bin/python",
+    "-B",
+    "-c",
+    "from pathlib import Path; p=Path('快手/e2e/browser_e2e.py'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_DOUYIN-KUAISHOU-ALIPAY-MINIAPP_DOC_CONTRACT' in s; compile(s, '快手/e2e/browser_e2e.py', 'exec')"
+  ],
+  "pass_after_cmd": [
+    "/tmp/aegis-v13-test-env/bin/python",
+    "-B",
+    "-c",
+    "from pathlib import Path; p=Path('快手/e2e/browser_e2e.py'); s=p.read_text(encoding='utf-8-sig'); assert 'AEGIS_V14_DOUYIN-KUAISHOU-ALIPAY-MINIAPP_DOC_CONTRACT' in s; compile(s, '快手/e2e/browser_e2e.py', 'exec')"
+  ],
+  "probe_kind": "unit",
+  "probe_script_sha256": {},
+  "source_dirs": [
+    "."
+  ],
+  "tool_source_globs": [
+    "**/tools/**/*.py",
+    "**/tools/**/*.js",
+    "**/tools/**/*.jsx",
+    "**/tools/**/*.cjs",
+    "**/tools/**/*.mjs",
+    "**/tools/**/*.ts",
+    "**/tools/**/*.tsx",
+    "**/tools/**/*.mts",
+    "**/tools/**/*.cts",
+    "**/tools/**/*.html",
+    "**/tools/**/*.htm",
+    "**/tools/**/*.css"
+  ],
+  "patches": [
+    "/workspace/aegis-core/artifacts/mega_campaign_v14/workorders/douyin-kuaishou-alipay-miniapp/v14-batch-douyin-kuaishou-alipay-miniapp-1.patch"
+  ],
+  "models_path": null,
+  "probe_patch": "",
+  "context": {
+    "target": "快手.e2e.browser_e2e:has_review_status",
+    "items": [
+      {
+        "symbol": "快手.e2e.browser_e2e:has_review_status",
+        "file": "快手/e2e/browser_e2e.py",
+        "start_line": 128,
+        "end_line": 129,
+        "relation": "target",
+        "distance": 0,
+        "source": "def has_review_status(text):\n    return \"待复核\" in (text or \"\") or \"已核验\" in (text or \"\")"
+      }
+    ],
+    "truncated": false,
+    "diagnostics": [
+      {
+        "file": "抖音/miniapp/__MACOSX/template/._app.js",
+        "error": "ValueError"
+      },
+      {
+        "file": "抖音/miniapp/__MACOSX/template/pages/index/._index.js",
+        "error": "ValueError"
+      }
+    ],
+    "budget_unit": "utf8_bytes_upper_bound",
+    "token_upper_bound": 680
+  },
+  "allow_model": false,
+  "max_attempts": 3,
+  "timeout_sec": 120,
+  "contract_sha256": "bfbed7f5d1da1ced3a8a9b55b4bf1931212ffa77b1b899e3c1bcbfa2837cb87a"
+}

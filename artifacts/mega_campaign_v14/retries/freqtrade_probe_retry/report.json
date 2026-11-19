@@ -1,0 +1,219 @@
+{
+  "account": "Xiaoyu155",
+  "autopilot": {
+    "purpose": "physically validate fail-red, tournament rejection, correct repair, WAL learning and aegis replay against each repository's Git object database",
+    "records": [
+      {
+        "base_commit": "ad7dfdf3f0b90b0c38a01ffbcf4fd2142aefad80",
+        "candidate_rejections": 3,
+        "candidate_strategies": [
+          "constant bait",
+          "signature break",
+          "correct clamp",
+          "off by one"
+        ],
+        "default_head_unchanged": true,
+        "elapsed_sec": 31.3932,
+        "exit_code": 0,
+        "isolated_fixture": "aegis_campaign_probe.py",
+        "learning": {
+          "experience_bank": {
+            "experience_count": 21,
+            "version": 21,
+            "version_sha256": "1d4e949ea7c30707c0df5a93a91bdb850d1e3b1763789ac63211055d380a0031"
+          },
+          "experience_ingest": {
+            "added": 1,
+            "experience_count": 21,
+            "version": 21,
+            "version_sha256": "1d4e949ea7c30707c0df5a93a91bdb850d1e3b1763789ac63211055d380a0031"
+          },
+          "grpo_dataset_sha256": "ad76a5b84b66364ee98254e3b939f97633730c5451f88cde73a844e9ecec59f4",
+          "replayed_hints": [],
+          "selected_model_traces": 40,
+          "selection_counts": {
+            "above_threshold_count": 40,
+            "below_threshold_count": 0,
+            "excluded_count": 0,
+            "no_prediction_count": 42,
+            "predictions_made": 40,
+            "repair_attempt_count": 82,
+            "selection_limited_count": 0,
+            "unscored_count": 0
+          },
+          "verified_recoveries": 21
+        },
+        "mode": "aegis autopilot",
+        "reason": "all_candidate_gates_passed",
+        "replay_exit_code": 0,
+        "replay_probe_exit_code": 0,
+        "replay_status": "replayed",
+        "repo": "Xiaoyu155/okx-freqtrade-live",
+        "rounds_attempted": 2,
+        "seeded_fault": "identity body replaced with return value (true red expected)",
+        "status": "succeeded",
+        "stderr_tail": "",
+        "stdout_tail": "{\"predictions_made\": 40, \"no_prediction_count\": 42, \"below_threshold_count\": 0, \"unscored_count\": 0, \"excluded_count\": 0, \"above_threshold_count\": 40, \"repair_attempt_count\": 82, \"selection_limited_count\": 0}, \"experience_ingest\": {\"added\": 1, \"experience_count\": 21, \"version\": 21, \"version_sha256\": \"1d4e949ea7c30707c0df5a93a91bdb850d1e3b1763789ac63211055d380a0031\"}, \"experience_bank\": {\"experience_count\": 21, \"version\": 21, \"version_sha256\": \"1d4e949ea7c30707c0df5a93a91bdb850d1e3b1763789ac63211055d380a0031\"}, \"replayed_hints\": [], \"grpo_dataset_sha256\": \"ad76a5b84b66364ee98254e3b939f97633730c5451f88cde73a844e9ecec59f4\"}, \"budget\": {\"max_rounds\": 2, \"max_total_tokens\": 8000, \"tokens_used\": 271, \"max_wall_clock_sec\": 180, \"elapsed_sec\": 31.135517}, \"ledger\": {\"tickets\": 69, \"statuses\": {\"queued\": 8, \"succeeded\": 61}, \"traces\": 372, \"terminal_tickets\": 61, \"success_rate\": 1.0, \"repair_attempts\": 82, \"cheat_interceptions\": 0, \"replay_interceptions\": 0, \"mean_reward\": 0.7298811333262604}}\n",
+        "ticket_id": "v14-swarm-okx-freqtrade-live-conftest-isolated",
+        "time_travel_snapshot": {
+          "archive_sha256": "b5ff96bbd3061bc2db1c44c8c11870e2247af6dd91bdcaa3d56920209a540a24",
+          "candidate_patch_sha256": "d27875be664a5f0da1d0979ba33b98fb4d6793adc90e5e1e5d9e18bfee8705b3",
+          "commit_oid": "ad7dfdf3f0b90b0c38a01ffbcf4fd2142aefad80",
+          "mutation_seeds": [
+            1419
+          ],
+          "probe_sha256": "00231544fcdcce2190eb8347df56726a50e6ba5df6092799498eafdcf091e3bd",
+          "ticket_id": "v14-swarm-okx-freqtrade-live-conftest-isolated"
+        },
+        "tracked_main_worktree_clean": true,
+        "winner": "conservative_repair"
+      }
+    ],
+    "target_kind": "temporary tracked contract fixture inside each repository's detached worktree"
+  },
+  "limits": [
+    "Audit annotation batch patches and contract fixture commits are discarded after each isolated campaign."
+  ],
+  "repositories": [
+    {
+      "analysis": {
+        "impact_graph": {
+          "call_edges": 6887,
+          "files": 430,
+          "reference_edges": 9862,
+          "symbols": 4839,
+          "unresolved_references": 769
+        },
+        "languages": {
+          "html_documents": 3,
+          "javascript_typescript_html": 4,
+          "python": 483,
+          "tracked_source_files": 345
+        },
+        "parse_diagnostics": 0,
+        "semantic_contracts": {
+          "callbacks_recognized": 174,
+          "contract_mismatches": 56,
+          "decorators_recognized": 387,
+          "dynamic_resolution_rate": 0.0625,
+          "dynamic_sites": 32,
+          "fields": 3209,
+          "flows": 4750,
+          "legacy_unresolved_references": 769,
+          "resolved_dynamic_sites": 2,
+          "schema_count": 4354
+        }
+      },
+      "analysis_elapsed_sec": 44.7493,
+      "attach_exit_code": null,
+      "checkout_branch": "",
+      "default_branch": "develop",
+      "default_head_after": "3d31927c8232830729e37ce9c36f230ab8d9c7c2",
+      "default_head_before": "3d31927c8232830729e37ce9c36f230ab8d9c7c2",
+      "default_head_unchanged": true,
+      "private": true,
+      "registered_worktrees_after": 1,
+      "repo": "Xiaoyu155/okx-freqtrade-live",
+      "tracked_diff_after": [],
+      "url": "https://github.com/Xiaoyu155/okx-freqtrade-live",
+      "work_orders": [
+        {
+          "base_commit": "ad7dfdf3f0b90b0c38a01ffbcf4fd2142aefad80",
+          "candidate_rejections": 3,
+          "candidate_strategies": [
+            "constant bait",
+            "signature break",
+            "correct clamp",
+            "off by one"
+          ],
+          "default_head_unchanged": true,
+          "elapsed_sec": 31.3932,
+          "exit_code": 0,
+          "isolated_fixture": "aegis_campaign_probe.py",
+          "learning": {
+            "experience_bank": {
+              "experience_count": 21,
+              "version": 21,
+              "version_sha256": "1d4e949ea7c30707c0df5a93a91bdb850d1e3b1763789ac63211055d380a0031"
+            },
+            "experience_ingest": {
+              "added": 1,
+              "experience_count": 21,
+              "version": 21,
+              "version_sha256": "1d4e949ea7c30707c0df5a93a91bdb850d1e3b1763789ac63211055d380a0031"
+            },
+            "grpo_dataset_sha256": "ad76a5b84b66364ee98254e3b939f97633730c5451f88cde73a844e9ecec59f4",
+            "replayed_hints": [],
+            "selected_model_traces": 40,
+            "selection_counts": {
+              "above_threshold_count": 40,
+              "below_threshold_count": 0,
+              "excluded_count": 0,
+              "no_prediction_count": 42,
+              "predictions_made": 40,
+              "repair_attempt_count": 82,
+              "selection_limited_count": 0,
+              "unscored_count": 0
+            },
+            "verified_recoveries": 21
+          },
+          "mode": "aegis autopilot",
+          "reason": "all_candidate_gates_passed",
+          "replay_exit_code": 0,
+          "replay_probe_exit_code": 0,
+          "replay_status": "replayed",
+          "repo": "Xiaoyu155/okx-freqtrade-live",
+          "rounds_attempted": 2,
+          "seeded_fault": "identity body replaced with return value (true red expected)",
+          "status": "succeeded",
+          "stderr_tail": "",
+          "stdout_tail": "{\"predictions_made\": 40, \"no_prediction_count\": 42, \"below_threshold_count\": 0, \"unscored_count\": 0, \"excluded_count\": 0, \"above_threshold_count\": 40, \"repair_attempt_count\": 82, \"selection_limited_count\": 0}, \"experience_ingest\": {\"added\": 1, \"experience_count\": 21, \"version\": 21, \"version_sha256\": \"1d4e949ea7c30707c0df5a93a91bdb850d1e3b1763789ac63211055d380a0031\"}, \"experience_bank\": {\"experience_count\": 21, \"version\": 21, \"version_sha256\": \"1d4e949ea7c30707c0df5a93a91bdb850d1e3b1763789ac63211055d380a0031\"}, \"replayed_hints\": [], \"grpo_dataset_sha256\": \"ad76a5b84b66364ee98254e3b939f97633730c5451f88cde73a844e9ecec59f4\"}, \"budget\": {\"max_rounds\": 2, \"max_total_tokens\": 8000, \"tokens_used\": 271, \"max_wall_clock_sec\": 180, \"elapsed_sec\": 31.135517}, \"ledger\": {\"tickets\": 69, \"statuses\": {\"queued\": 8, \"succeeded\": 61}, \"traces\": 372, \"terminal_tickets\": 61, \"success_rate\": 1.0, \"repair_attempts\": 82, \"cheat_interceptions\": 0, \"replay_interceptions\": 0, \"mean_reward\": 0.7298811333262604}}\n",
+          "ticket_id": "v14-swarm-okx-freqtrade-live-conftest-isolated",
+          "time_travel_snapshot": {
+            "archive_sha256": "b5ff96bbd3061bc2db1c44c8c11870e2247af6dd91bdcaa3d56920209a540a24",
+            "candidate_patch_sha256": "d27875be664a5f0da1d0979ba33b98fb4d6793adc90e5e1e5d9e18bfee8705b3",
+            "commit_oid": "ad7dfdf3f0b90b0c38a01ffbcf4fd2142aefad80",
+            "mutation_seeds": [
+              1419
+            ],
+            "probe_sha256": "00231544fcdcce2190eb8347df56726a50e6ba5df6092799498eafdcf091e3bd",
+            "ticket_id": "v14-swarm-okx-freqtrade-live-conftest-isolated"
+          },
+          "tracked_main_worktree_clean": true,
+          "winner": "conservative_repair",
+          "work_order": "seeded_red_contract_and_candidate_tournament"
+        }
+      ]
+    }
+  ],
+  "schema_version": "aegis.mega_campaign.v14",
+  "summary": {
+    "all_remote_default_heads_unchanged": true,
+    "autopilot_candidate_evaluations": 0,
+    "autopilot_rejected_candidates": 3,
+    "autopilot_succeeded": 1,
+    "autopilot_winners": 1,
+    "autopilot_work_orders": 1,
+    "batch_work_orders": 0,
+    "campaign_elapsed_sec": 81.389,
+    "candidate_red_light_interception_rate": 1.0,
+    "cross_language_ast_coverage_files": 345,
+    "experience_bank_new_records": 21,
+    "external_write_policy": "all source edits confined to temporary git worktrees; no push, merge or default-branch edit",
+    "high_risk_l3_findings": {},
+    "intentionally_invalid_candidates": 3,
+    "repositories_cloned_and_analyzed": 1,
+    "repositories_requested": 1,
+    "sqlite": {
+      "causal_traces": 372,
+      "database_lock_errors": 0,
+      "experience_records": 21,
+      "journal_mode": "wal",
+      "tickets": 69,
+      "trace_throughput_per_sec": 4.571,
+      "wal_peak_bytes": 61993672
+    },
+    "tracked_worktree_residuals": [],
+    "work_orders": 1
+  }
+}
