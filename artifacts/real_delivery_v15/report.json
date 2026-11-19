@@ -1,7 +1,7 @@
 {
   "schema_version": "aegis.real_delivery.v15",
   "campaign": "Phase 15 real business repository delivery",
-  "status": "local_regressions_and_business_gates_passed_ci_pending",
+  "status": "ci_verified_on_code_head",
   "default_branch_writes_issued": false,
   "business_repositories": {
     "okx-freqtrade-live": {
@@ -211,14 +211,44 @@
   "raw_outputs": "stdout.txt",
   "core_regression": {
     "command": "PYTHONPATH=. /tmp/aegis-v15-env/bin/python -m pytest -q",
-    "collected": 1142,
-    "passed": 1142,
+    "collected": 1145,
+    "passed": 1145,
     "failed": 0,
     "baseline_preserved": 944,
-    "new_tests": 198,
-    "elapsed_seconds": 225.26,
-    "stdout": "core_full_regression.stdout",
-    "targeted_config_scope_tests": 7,
-    "config_scope_regression": "169 passed"
+    "new_tests": 201,
+    "elapsed_seconds": 219.66,
+    "stdout": "core_full_regression_pathfix.stdout",
+    "loopback_permission_enabled": true,
+    "targeted_path_validation_tests": 10
+  },
+  "windows_path_validation_followup": {
+    "issue": "Windows Path.is_absolute() did not reject POSIX-rooted /tmp/package.json.",
+    "fix": "Validate paths with both PurePosixPath and PureWindowsPath on all platforms.",
+    "added_cases": 3,
+    "focused_regression": "10 passed"
+  },
+  "ci": {
+    "state": "success",
+    "checks_passed": 8,
+    "checks_expected": 8,
+    "validated_head": "8e4673d824679bf64221615beb175d2f9402d27c",
+    "runs": {
+      "push": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44481505540",
+      "pull_request": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44481511483"
+    },
+    "results": {
+      "push": {
+        "ubuntu-latest / Python 3.11": "success",
+        "ubuntu-latest / Python 3.12": "success",
+        "windows-latest / Python 3.11": "success",
+        "windows-latest / Python 3.12": "success"
+      },
+      "pull_request": {
+        "ubuntu-latest / Python 3.11": "success",
+        "ubuntu-latest / Python 3.12": "success",
+        "windows-latest / Python 3.11": "success",
+        "windows-latest / Python 3.12": "success"
+      }
+    }
   }
 }

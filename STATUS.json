@@ -1,6 +1,6 @@
 {
   "phase": 15,
-  "status": "local_verification_green_ci_revalidation_pending_dynamic_rate_gap_documented",
+  "status": "delivered_ci_verified_dynamic_rate_gap_documented",
   "pull_request": "https://github.com/Xiaoyu155/aegis-core/pull/15",
   "branch": "feat/world-model-v15",
   "base_branch": "feat/world-model-v14",
@@ -248,10 +248,6 @@
       "stdout": "artifacts/real_delivery_v15/core_full_regression_pathfix.stdout"
     },
     "targeted_config_scope_regression": {
-      "command": "pytest -q tests/test_v15_config_scope.py tests/test_v13_tournament.py tests/test_v13_self_heal_loop.py tests/test_v15_invariant_guard.py",
-      "passed": 169
-    },
-    "path_validation_regression": {
       "command": "PYTHONPATH=. /tmp/aegis-v15-env/bin/python -m pytest -q tests/test_v15_config_scope.py",
       "passed": 10,
       "coverage": [
@@ -447,12 +443,29 @@
     }
   },
   "ci": {
-    "state": "revalidation_pending",
-    "checks_passed": 0,
+    "state": "success",
+    "checks_passed": 8,
     "checks_expected": 8,
     "matrix": "Linux/Windows x Python 3.11/3.12; push and pull_request",
-    "validated_head": null,
-    "runs": {},
+    "validated_head": "8e4673d824679bf64221615beb175d2f9402d27c",
+    "runs": {
+      "push": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44481505540",
+      "pull_request": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44481511483"
+    },
+    "results": {
+      "push": {
+        "ubuntu-latest / Python 3.11": "success",
+        "ubuntu-latest / Python 3.12": "success",
+        "windows-latest / Python 3.11": "success",
+        "windows-latest / Python 3.12": "success"
+      },
+      "pull_request": {
+        "ubuntu-latest / Python 3.11": "success",
+        "ubuntu-latest / Python 3.12": "success",
+        "windows-latest / Python 3.11": "success",
+        "windows-latest / Python 3.12": "success"
+      }
+    },
     "previous_attempts": {
       "push": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44478507261",
       "pull_request": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44478556275",
@@ -461,10 +474,11 @@
     }
   },
   "artifacts": {
-    "real_delivery_report_sha256": "382865ae33a141f2f68655c71e935b2b089aa5dcb3a1a974d69c75de5c8a8146",
+    "real_delivery_report_sha256": "13a7829ad2e6dc407d86afc40660568cb0258ebbaf97905b3e096c291645637a",
     "runtime_profile_summary_sha256": "37bd8e118209d9688ec6ccde510ba9ad3f41d3a77c77299823ec87dc1fb0d33e",
     "release_bundle": "datasets/release_v15/",
-    "release_manifest": "datasets/release_v15_bundle_manifest.json"
+    "release_manifest": "datasets/release_v15_bundle_manifest.json",
+    "core_regression_sha256": "986fec57d8ba1a3374ddb21c1302f4f4c8b211386a8069f81c7b065b34efc2eb"
   },
   "limits": [
     "The 75% whole-corpus dynamic resolution target is not supported by the measured profiles. Only 7 OKX and 1 Pacer dynamic sites were observed and resolved at runtime; whole-project augmented rates are 26.47% and 14.11%.",
