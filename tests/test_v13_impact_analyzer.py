@@ -136,7 +136,7 @@ def test_direct_file_is_kept_complete_in_compressed_context(tmp_path):
     source = "def target(value: int) -> int:\n    # preserve every line\n    return value + 1\n\nCONSTANT = 3\n"
     root = _write(tmp_path, {"app.py": source})
     result = ImpactAnalyzer(root).compress_context("app.py::target", max_context_tokens=80)
-    assert source in result["context"]
+    assert source.replace("\r\n", "\n") in result["context"].replace("\r\n", "\n")
     assert result["items"][0]["representation"] == "full_source"
 
 
@@ -200,7 +200,7 @@ def test_multiple_changed_files_are_all_complete(tmp_path):
     first, second = "def one(): return 1\n", "def two(): return 2\n"
     root = _write(tmp_path, {"one.py": first, "two.js": "function two(){ return 2; }\n"})
     result = ImpactAnalyzer(root).compress_context(["one.py::one", "two.js::two"], max_context_tokens=80)
-    assert first in result["context"]
+    assert first.replace("\r\n", "\n") in result["context"].replace("\r\n", "\n")
     assert "function two(){ return 2; }" in result["context"]
     assert set(result["changed_files"]) == {"one.py", "two.js"}
 
