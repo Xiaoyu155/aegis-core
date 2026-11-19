@@ -132,7 +132,7 @@ The cloud run had no commercial model API key, so candidate code was authored of
 
 ## PR #14 — semantic contracts, replay attribution, swarm merge, and data release
 
-PR: https://github.com/Xiaoyu155/aegis-core/pull/14. The PR is open from `feat/world-model-v14` into `feat/world-model-v13`; GitHub Actions is running on the pushed commit.
+PR: https://github.com/Xiaoyu155/aegis-core/pull/14. The PR is open from `feat/world-model-v14` into `feat/world-model-v13`. The full push and pull_request matrices passed 8/8 on `dba020cb94f7de83e132ac0ddf5e5f8c9e51ea42`; links are recorded in `STATUS.json`.
 
 PR #14 is stacked on PR #13 at `c3a892c3963c24ddee1d359898ce22213e53fff9` on branch `feat/world-model-v13`. It preserves the 656-test PR #13 baseline, `training/`, and `scripts/bootstrap_local.ps1`; new work is additive. The v14 branch adds 288 tests (final local collection: 944 total; all 656 baseline tests remain in the suite).
 
@@ -164,4 +164,4 @@ The business-source batch patches in this read-only campaign were temporary audi
 
 ### Verification and delivery
 
-The final Linux run is performed with local socket permission enabled because the inherited `test_real_socket` test binds loopback. The final pytest result and duration, plus the Linux/Windows × Python 3.11/3.12 Actions links, are recorded in `STATUS.json` after PR #14 checks complete. The official tokenizer and release bundle were CPU-validated; Windows GPU training was not run in this Linux environment.
+The final Linux run is performed with local socket permission enabled because the inherited `test_real_socket` test binds loopback. The local 944-test result and duration, plus the 8/8 Linux/Windows × Python 3.11/3.12 push and pull_request Actions links, are recorded in `STATUS.json`. The official tokenizer and release bundle were CPU-validated; Windows GPU training was not run in this Linux environment.

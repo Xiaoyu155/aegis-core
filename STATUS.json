@@ -1,6 +1,6 @@
 {
   "phase": 14,
-  "status": "local_complete_ci_running",
+  "status": "ci_verified_with_documented_m1_gap",
   "pull_request": "https://github.com/Xiaoyu155/aegis-core/pull/14",
   "branch": "feat/world-model-v14",
   "base_branch": "feat/world-model-v13",
@@ -169,11 +169,29 @@
     },
     "m6_delivery": {
       "ci": {
-        "state": "running",
-        "checks_passed": 0,
+        "state": "success",
+        "checks_passed": 8,
         "checks_expected": 8,
         "matrix": "Linux/Windows x Python 3.11/3.12; push and pull_request",
-        "candidate_head": "c5f522e360e0869c33f77f4d110dbf0c8a0a39d4"
+        "validated_head": "dba020cb94f7de83e132ac0ddf5e5f8c9e51ea42",
+        "runs": {
+          "push": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44456319152",
+          "pull_request": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44456325882"
+        },
+        "results": {
+          "push": {
+            "ubuntu-latest / Python 3.11": "success",
+            "ubuntu-latest / Python 3.12": "success",
+            "windows-latest / Python 3.11": "success",
+            "windows-latest / Python 3.12": "success"
+          },
+          "pull_request": {
+            "ubuntu-latest / Python 3.11": "success",
+            "ubuntu-latest / Python 3.12": "success",
+            "windows-latest / Python 3.11": "success",
+            "windows-latest / Python 3.12": "success"
+          }
+        }
       },
       "pull_request": "https://github.com/Xiaoyu155/aegis-core/pull/14"
     }
@@ -188,8 +206,8 @@
   "limits": [
     "The requested 70% reduction in unresolved dynamic sites was not achieved: source corpus result is 11.54% (90/780 resolved).",
     "21-repository campaign gates used temporary audit markers and contract fixtures; these checks prove isolation and gate execution, not 21 repositories' real business defects fixed.",
-    "RTX 5060 Windows GPU training was not run in this Linux environment.",
-    "The pull request is open and the 8-job GitHub Actions matrix is running on the pushed branch."
+    "RTX 5060 Windows GPU training was not run in this Linux environment."
   ],
-  "head_commit": "c5f522e360e0869c33f77f4d110dbf0c8a0a39d4"
+  "head_commit": "c5f522e360e0869c33f77f4d110dbf0c8a0a39d4",
+  "head_commit_before_ci_record": "dba020cb94f7de83e132ac0ddf5e5f8c9e51ea42"
 }
