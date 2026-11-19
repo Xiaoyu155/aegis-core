@@ -8,7 +8,7 @@ import hashlib
 import json
 import math
 import os
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 import re
 import shutil
 import subprocess
@@ -97,9 +97,20 @@ class CandidateTournament:
                 raise ValueError("allowed_paths must be a sequence of repository-relative paths")
             normalized = set()
             for item in allowed_paths:
-                if type(item) is not str or not item or Path(item).is_absolute() or ".." in Path(item).parts:
+                if type(item) is not str or not item:
                     raise ValueError("allowed_paths must contain safe repository-relative paths")
-                normalized.add(Path(item).as_posix())
+                # A POSIX-rooted path (for example /tmp/config.json) is not
+                # absolute according to WindowsPath.is_absolute() unless it
+                # also carries a drive. Check both grammars on every host and
+                # normalize Windows separators to Git's repository path form.
+                posix_item = item.replace("\\", "/")
+                posix_path = PurePosixPath(posix_item)
+                windows_path = PureWindowsPath(item)
+                if (posix_path.is_absolute() or windows_path.root or windows_path.drive
+                        or ".." in posix_path.parts or ".." in windows_path.parts
+                        or posix_path.as_posix() != posix_item):
+                    raise ValueError("allowed_paths must contain safe repository-relative paths")
+                normalized.add(posix_path.as_posix())
             self.allowed_paths = normalized
         if type(probe_patch) is not str:
             raise ValueError("probe_patch must be text")

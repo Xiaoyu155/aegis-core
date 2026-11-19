@@ -1,7 +1,7 @@
 {
   "phase": 15,
-  "status": "local_and_business_delivery_verified_ci_pending_dynamic_rate_gap_documented",
-  "pull_request": null,
+  "status": "local_verification_green_ci_revalidation_pending_dynamic_rate_gap_documented",
+  "pull_request": "https://github.com/Xiaoyu155/aegis-core/pull/15",
   "branch": "feat/world-model-v15",
   "base_branch": "feat/world-model-v14",
   "base_commit": "1bb8f510ed8f0e226448d267b40f7e3af2b58a27",
@@ -226,30 +226,40 @@
     "verification": "No files deleted; training/ and scripts/bootstrap_local.ps1 are unchanged from the locked PR #14 commit."
   },
   "tests": {
-    "total_collected": 1142,
-    "passed": 1142,
+    "total_collected": 1145,
+    "passed": 1145,
     "failed": 0,
     "baseline_preserved": 944,
-    "phase_15_new": 198,
+    "phase_15_new": 201,
     "new_cases_by_milestone": {
       "runtime_profiler": 73,
       "invariant_guard": 102,
       "probe_synth_regression": 1,
       "distill_release": 14,
-      "autopilot_config_scope": 7,
+      "autopilot_config_scope": 10,
       "verified_repair_sft_regression": 1
     },
     "local_verification": {
       "command": "PYTHONPATH=. /tmp/aegis-v15-env/bin/python -m pytest -q",
       "python": "3.12.14",
-      "elapsed_seconds": 225.26,
-      "result": "1142 passed",
+      "elapsed_seconds": 219.66,
+      "result": "1145 passed",
       "loopback_permission_enabled": true,
-      "stdout": "artifacts/real_delivery_v15/core_full_regression.stdout"
+      "stdout": "artifacts/real_delivery_v15/core_full_regression_pathfix.stdout"
     },
     "targeted_config_scope_regression": {
       "command": "pytest -q tests/test_v15_config_scope.py tests/test_v13_tournament.py tests/test_v13_self_heal_loop.py tests/test_v15_invariant_guard.py",
       "passed": 169
+    },
+    "path_validation_regression": {
+      "command": "PYTHONPATH=. /tmp/aegis-v15-env/bin/python -m pytest -q tests/test_v15_config_scope.py",
+      "passed": 10,
+      "coverage": [
+        "POSIX absolute path",
+        "Windows rooted path",
+        "Windows drive path",
+        "POSIX and Windows traversal"
+      ]
     }
   },
   "milestones": {
@@ -344,7 +354,7 @@
         "aegis_core/cli.py",
         "aegis_core/reviewer.py"
       ],
-      "tests": 8,
+      "tests": 11,
       "features": [
         "Wrong exception types are classified as ASSERTION_FAILED",
         "Autopilot accepts explicit per-file JSON allowlists only",
@@ -437,12 +447,18 @@
     }
   },
   "ci": {
-    "state": "pending",
+    "state": "revalidation_pending",
     "checks_passed": 0,
     "checks_expected": 8,
     "matrix": "Linux/Windows x Python 3.11/3.12; push and pull_request",
     "validated_head": null,
-    "runs": {}
+    "runs": {},
+    "previous_attempts": {
+      "push": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44478507261",
+      "pull_request": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44478556275",
+      "outcome": "4/8 Linux jobs passed; four Windows jobs exposed the same rooted POSIX-path validation bug, fixed with dual POSIX/Windows path parsing.",
+      "failed_head": "262bf16e4892165e66e457577bf18ca301683a61"
+    }
   },
   "artifacts": {
     "real_delivery_report_sha256": "382865ae33a141f2f68655c71e935b2b089aa5dcb3a1a974d69c75de5c8a8146",

@@ -169,7 +169,7 @@ The final Linux run is performed with local socket permission enabled because th
 
 ## PR #15 — runtime contracts, domain invariants, and real delivery
 
-PR #15 is based on PR #14 commit `1bb8f510ed8f0e226448d267b40f7e3af2b58a27` on `feat/world-model-v14`. It preserves the 944-test baseline, `training/`, and `scripts/bootstrap_local.ps1`; 198 additive tests bring the local suite to 1,142 passing tests.
+PR #15 is based on PR #14 commit `1bb8f510ed8f0e226448d267b40f7e3af2b58a27` on `feat/world-model-v14`. It preserves the 944-test baseline, `training/`, and `scripts/bootstrap_local.ps1`; 201 additive tests bring the local suite to 1,145 passing tests.
 
 ### Runtime profiling and dynamic contract overlays
 
@@ -181,7 +181,7 @@ The PR #14 static corpus recorded 90 resolved sites out of 780 (11.54%). Runtime
 
 `aegis_core/invariant_guard.py` adds differential L3 findings for finite positive financial values, transaction and state-machine boundaries, network timeouts and retry backoff, credential literals, and resource lifecycle leaks. Findings include file, line, rule code, severity, and evidence. The new invariant module has 102 cases, including positive controls to reduce false positives. The structured probe regression confirms that an unexpected exception type produces a true `ASSERTION_FAILED` red gate.
 
-The tournament now accepts JSON configuration changes only when an explicit `allowed_paths` list names the file. Allowlisted JSON goes through `json.tool` syntax validation and L3 parsing; other JSON changes and unsafe paths are rejected. This was exercised in a physical `aegis autopilot` run against the frontend repository.
+The tournament now accepts JSON configuration changes only when an explicit `allowed_paths` list names the file. Allowlisted JSON goes through `json.tool` syntax validation and L3 parsing; other JSON changes and unsafe paths are rejected. The first Windows CI run exposed that a POSIX-rooted path such as `/tmp/package.json` was not rejected by Windows `Path.is_absolute()`. Validation now checks both POSIX and Windows path grammars on every host, covering drive paths, rooted paths, and traversal through either slash style. The 10 focused config-scope tests and the full 1,145-test suite pass locally. The allowlisted JSON flow was also exercised in a physical `aegis autopilot` run against the frontend repository.
 
 ### Real repository delivery
 
@@ -200,4 +200,4 @@ Full autopilot receipts, commands, gate output, profile metrics, PostgreSQL inte
 
 `datasets/release_v15_bundle_manifest.json` was produced with the official `Qwen/Qwen2.5-Coder-3B-Instruct` tokenizer and read back locally. It contains 1,462 SFT examples and 342 balanced preference pairs, with zero truncation; 10 bundle files verify. SFT SHA-256 is `8fb67693c7b693fa698dade551fe801f0e3e3e30b3f043a2c41384b60124dc4c`; preference SHA-256 is `b5cab843e47c6f4ce22ee3a28d6db93e3d6027a04c9a82581bcc77ac4b065899`; the bundle manifest SHA-256 is `a258cd031f13204eceeb0b40045c7878b3b5e72a855198cdb70cd0ed3901106a`. The Windows GPU training workload was not run in this Linux environment.
 
-The full local regression passed 1,142 tests in 225.26 seconds on Python 3.12.14, including the inherited loopback socket test. The 8-job Linux/Windows × Python 3.11/3.12 push and pull-request matrix is pending PR creation. `STATUS.json` records the exact measured limits instead of extrapolating sampled runtime coverage to the full 21-repository corpus.
+The full local regression passed 1,145 tests in 219.66 seconds on Python 3.12.14, including the inherited loopback socket test. The first GitHub matrix runs passed the Linux jobs and exposed the Windows path-validation issue above; both runs are recorded in `STATUS.json`, and the corrected source is awaiting its 8-job Linux/Windows × Python 3.11/3.12 push and pull-request revalidation. `STATUS.json` records the exact measured limits instead of extrapolating sampled runtime coverage to the full 21-repository corpus.

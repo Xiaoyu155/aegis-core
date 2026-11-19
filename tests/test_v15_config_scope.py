@@ -100,7 +100,14 @@ def test_l3_json_reviewer_rejects_malformed_allowlisted_configuration(tmp_path):
     assert result["findings"][0]["path"] == "package.json"
 
 
-@pytest.mark.parametrize("path", ["../package.json", "/tmp/package.json", ""])
+@pytest.mark.parametrize("path", [
+    "../package.json",
+    "/tmp/package.json",
+    r"\tmp\package.json",
+    r"C:\tmp\package.json",
+    r"folder\..\package.json",
+    "",
+])
 def test_allowlist_rejects_unsafe_paths_before_candidate_execution(tmp_path, path):
     root = _repo(tmp_path / "repo")
     with pytest.raises(ValueError, match="safe repository-relative"):
