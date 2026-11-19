@@ -132,6 +132,8 @@ The cloud run had no commercial model API key, so candidate code was authored of
 
 ## PR #14 — semantic contracts, replay attribution, swarm merge, and data release
 
+PR: https://github.com/Xiaoyu155/aegis-core/pull/14. The PR is open from `feat/world-model-v14` into `feat/world-model-v13`; GitHub Actions is running on the pushed commit.
+
 PR #14 is stacked on PR #13 at `c3a892c3963c24ddee1d359898ce22213e53fff9` on branch `feat/world-model-v13`. It preserves the 656-test PR #13 baseline, `training/`, and `scripts/bootstrap_local.ps1`; new work is additive. The v14 branch adds 288 tests (final local collection: 944 total; all 656 baseline tests remain in the suite).
 
 ### Semantic contract inference

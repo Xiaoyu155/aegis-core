@@ -1,7 +1,7 @@
 {
   "phase": 14,
-  "status": "local_complete_ci_pending_with_documented_limitations",
-  "pull_request": null,
+  "status": "local_complete_ci_running",
+  "pull_request": "https://github.com/Xiaoyu155/aegis-core/pull/14",
   "branch": "feat/world-model-v14",
   "base_branch": "feat/world-model-v13",
   "base_commit": "c3a892c3963c24ddee1d359898ce22213e53fff9",
@@ -169,12 +169,13 @@
     },
     "m6_delivery": {
       "ci": {
-        "state": "pending",
+        "state": "running",
         "checks_passed": 0,
         "checks_expected": 8,
-        "matrix": "Linux/Windows x Python 3.11/3.12; push and pull_request"
+        "matrix": "Linux/Windows x Python 3.11/3.12; push and pull_request",
+        "candidate_head": "c5f522e360e0869c33f77f4d110dbf0c8a0a39d4"
       },
-      "pull_request": "pending"
+      "pull_request": "https://github.com/Xiaoyu155/aegis-core/pull/14"
     }
   },
   "artifacts": {
@@ -188,6 +189,7 @@
     "The requested 70% reduction in unresolved dynamic sites was not achieved: source corpus result is 11.54% (90/780 resolved).",
     "21-repository campaign gates used temporary audit markers and contract fixtures; these checks prove isolation and gate execution, not 21 repositories' real business defects fixed.",
     "RTX 5060 Windows GPU training was not run in this Linux environment.",
-    "CI and PR #14 are pending until branch push and GitHub Actions checks complete."
-  ]
+    "The pull request is open and the 8-job GitHub Actions matrix is running on the pushed branch."
+  ],
+  "head_commit": "c5f522e360e0869c33f77f4d110dbf0c8a0a39d4"
 }
