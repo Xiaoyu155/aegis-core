@@ -1,6 +1,6 @@
 {
   "phase": 16,
-  "status": "local_full_suite_green_final_branch_ci_pending",
+  "status": "branch_ci_verified_pr_open",
   "version": "1.1.0",
   "branch": "feat/aegis-v1.1-fullstack",
   "base_branch": "main",
@@ -148,7 +148,7 @@
         "v16-gates"
       ]
     },
-    "status": "See workflow_url for live status of branch-head checks",
+    "status": "See workflow_url for current head; last successful push and PR matrices are recorded below",
     "previous_run": {
       "run_id": 44677431133,
       "url": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44677431133",
@@ -170,6 +170,23 @@
         "run_id": 44680156053,
         "commit": "5f993450440ea9f4ee07a9f316ec0ec69bde0278",
         "result": "same trace timeout remained before the cache optimization"
+      }
+    ],
+    "latest_verified_head": "c57c319fc7fae0867b7e723b8d7b99dddbc5419c",
+    "latest_successful_runs": [
+      {
+        "event": "push",
+        "run_id": 44682703955,
+        "url": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44682703955",
+        "head": "c57c319fc7fae0867b7e723b8d7b99dddbc5419c",
+        "result": "8/8 success"
+      },
+      {
+        "event": "pull_request",
+        "run_id": 44682709697,
+        "url": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44682709697",
+        "head": "c57c319fc7fae0867b7e723b8d7b99dddbc5419c",
+        "result": "8/8 success"
       }
     ]
   },
