@@ -223,7 +223,7 @@ def load_official_tokenizer(model_id: str = "Qwen/Qwen2.5-Coder-3B-Instruct"):
     try:
         from transformers import AutoTokenizer
     except ImportError as error:
-        raise HardNegativeError("transformers is not installed; official Qwen tokenizer validation is unavailable") from error
+        raise HardNegativeError("official tokenizer validation requires transformers, which is not installed") from error
     model_path = Path(model_id)
     candidates = [model_path] if model_path.is_dir() else []
     cache_root = (Path(os.environ["HF_HUB_CACHE"]) if os.environ.get("HF_HUB_CACHE") else
