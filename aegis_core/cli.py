@@ -2,6 +2,7 @@
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import shlex
 import subprocess
@@ -685,6 +686,13 @@ def main(argv: list[str] | None = None) -> int:
     attach.add_argument("--repo", required=True)
     attach.add_argument("--tool-source-glob", action="append", dest="tool_source_globs",
                         help="Replace the default tool source patterns; repeat for additional patterns")
+    fleet = commands.add_parser("audit-fleet", help="read-only merge preflight for feat/aegis-* repositories",
+                                description="Read-only merge preflight for remote feat/aegis-* delivery branches.")
+    fleet.add_argument("--owner", required=True, help="GitHub user or organization account")
+    fleet.add_argument("--out-dir", default="artifacts", help="Directory for the JSON ledger and Markdown dashboard")
+    fleet.add_argument("--token-env", default="GITHUB_TOKEN", help="Environment variable holding an optional GitHub token")
+    fleet.add_argument("--exclude-repo", action="append", default=[],
+                       help="Skip an account repository by full name or short name; repeat as needed")
     for name in ("stats", "export-traces"):
         command = commands.add_parser(name)
         command.add_argument("--repo", default=".")
@@ -857,6 +865,12 @@ def main(argv: list[str] | None = None) -> int:
             from .repo_adapter import attach_repository
             result = attach_repository(args.repo, tool_source_globs=args.tool_source_globs)
             code = 0
+        elif args.command == "audit-fleet":
+            from .pr_orchestrator import audit_fleet, write_fleet_artifacts
+            result = audit_fleet(args.owner, token=os.environ.get(args.token_env),
+                                 exclude_repositories=args.exclude_repo)
+            result["artifacts"] = write_fleet_artifacts(result, args.out_dir)
+            code = 0 if result["summary"]["conflicts"] == 0 else 1
         else:
             ledger = _ledger(_repo(args.repo), args.db)
             if args.command == "stats":

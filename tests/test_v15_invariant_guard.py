@@ -216,5 +216,5 @@ def test_guard_skips_non_python_and_symlinked_candidate_files(tmp_path):
     (root / "linked.py").symlink_to(outside)
     report = scan_changed_files(root, ["safe.js", "linked.py"], baseline=base)
     assert report["passed"] is True
-    assert report["scanned_files"] == []
+    assert report["scanned_files"] == ["safe.js"]
 

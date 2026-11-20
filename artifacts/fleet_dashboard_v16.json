@@ -1,0 +1,601 @@
+{
+  "owner": "Xiaoyu155",
+  "repositories": [
+    {
+      "default_branch": "refs/remotes/origin/master",
+      "default_head": "7e1194cb3c18bdf38632112fc77df3890e1a300b",
+      "deliveries": [
+        {
+          "branch": "feat/aegis-delivery-v1",
+          "changes": {
+            "changed_files": 5,
+            "files": [
+              "starfall/play/engine/chemistry.js",
+              "starfall/play/engine/mission.js",
+              "starfall/play/engine/ship.js",
+              "starfall/play/progress.js",
+              "starfall/play/test_game_integrity.mjs"
+            ],
+            "lines_added": 291,
+            "lines_deleted": 25
+          },
+          "conflicted": false,
+          "conflicts": [],
+          "default_branch_zero_pollution": true,
+          "default_head": "7e1194cb3c18bdf38632112fc77df3890e1a300b",
+          "delivery_commits_already_on_default": 0,
+          "feature_already_merged_to_default": false,
+          "head": "998e9462c9359b7c7c72ea29d2ab2d54e647a60b",
+          "merge_base": "7e1194cb3c18bdf38632112fc77df3890e1a300b",
+          "priority": "P2",
+          "status": "mergeable"
+        }
+      ],
+      "repository": "Xiaoyu155/celestia-game",
+      "summary": {
+        "conflicts": 0,
+        "default_branch_zero_pollution": true,
+        "delivery_branches": 1,
+        "mergeable": 1
+      }
+    },
+    {
+      "default_branch": "refs/remotes/origin/master",
+      "default_head": "4e548c28e1434ed89d6a4f0748c1373313ff9bfb",
+      "deliveries": [
+        {
+          "branch": "feat/aegis-delivery-v1",
+          "changes": {
+            "changed_files": 4,
+            "files": [
+              "tests/celestia_colony_test.py",
+              "tests/celestia_fx_audio_test.py",
+              "tests/test_colony_events_converter.py",
+              "tools/celestia_colony_events_convert.py"
+            ],
+            "lines_added": 203,
+            "lines_deleted": 7
+          },
+          "conflicted": false,
+          "conflicts": [],
+          "default_branch_zero_pollution": true,
+          "default_head": "4e548c28e1434ed89d6a4f0748c1373313ff9bfb",
+          "delivery_commits_already_on_default": 0,
+          "feature_already_merged_to_default": false,
+          "head": "dd52cbd73dc14eff7d4aac438461a5ed5a13dc85",
+          "merge_base": "4e548c28e1434ed89d6a4f0748c1373313ff9bfb",
+          "priority": "P2",
+          "status": "mergeable"
+        }
+      ],
+      "repository": "Xiaoyu155/celestia-openlab",
+      "summary": {
+        "conflicts": 0,
+        "default_branch_zero_pollution": true,
+        "delivery_branches": 1,
+        "mergeable": 1
+      }
+    },
+    {
+      "default_branch": "refs/remotes/origin/experiment-harness",
+      "default_head": "d2cc408fa6abab2f8e2f26b7158427e7c6beb3a5",
+      "deliveries": [
+        {
+          "branch": "feat/aegis-delivery-v1",
+          "changes": {
+            "changed_files": 7,
+            "files": [
+              ".aegis/repo_profile.json",
+              "app/config.py",
+              "app/services/backtest.py",
+              "app/services/model_ai_decision.py",
+              "app/services/risk.py",
+              "app/services/virtual_account.py",
+              "tests/test_risk_regression_v1.py"
+            ],
+            "lines_added": 608,
+            "lines_deleted": 9
+          },
+          "conflicted": false,
+          "conflicts": [],
+          "default_branch_zero_pollution": true,
+          "default_head": "d2cc408fa6abab2f8e2f26b7158427e7c6beb3a5",
+          "delivery_commits_already_on_default": 0,
+          "feature_already_merged_to_default": false,
+          "head": "aae7047cf8ddf4084c1345360affa0c72622c5fb",
+          "merge_base": "d2cc408fa6abab2f8e2f26b7158427e7c6beb3a5",
+          "priority": "P2",
+          "status": "mergeable"
+        }
+      ],
+      "repository": "Xiaoyu155/crypto-quant-mvp",
+      "summary": {
+        "conflicts": 0,
+        "default_branch_zero_pollution": true,
+        "delivery_branches": 1,
+        "mergeable": 1
+      }
+    },
+    {
+      "default_branch": "refs/remotes/origin/master",
+      "default_head": "1c00730f1902d847762e0e1a957efc775a5af384",
+      "deliveries": [
+        {
+          "branch": "feat/aegis-delivery-v1",
+          "changes": {
+            "changed_files": 16,
+            "files": [
+              "\"\\345\\277\\253\\346\\211\\213/miniapp/pages/profile-edit/profile-edit.js\"",
+              "\"\\345\\277\\253\\346\\211\\213/miniapp/utils/backendSync.js\"",
+              "\"\\345\\277\\253\\346\\211\\213/miniapp/utils/platformAdapter.js\"",
+              "\"\\345\\277\\253\\346\\211\\213/miniapp/utils/profileStore.js\"",
+              "\"\\345\\277\\253\\346\\211\\213/test.js\"",
+              "\"\\346\\212\\226\\351\\237\\263/miniapp/pages/profile-edit/profile-edit.js\"",
+              "\"\\346\\212\\226\\351\\237\\263/miniapp/utils/backendSync.js\"",
+              "\"\\346\\212\\226\\351\\237\\263/miniapp/utils/platformAdapter.js\"",
+              "\"\\346\\212\\226\\351\\237\\263/miniapp/utils/profileStore.js\"",
+              "\"\\346\\212\\226\\351\\237\\263/test.js\"",
+              "\"\\346\\224\\257\\344\\273\\230\\345\\256\\235/miniapp/pages/profile-edit/profile-edit.js\"",
+              "\"\\346\\224\\257\\344\\273\\230\\345\\256\\235/miniapp/utils/backendSync.js\"",
+              "\"\\346\\224\\257\\344\\273\\230\\345\\256\\235/miniapp/utils/platformAdapter.js\"",
+              "\"\\346\\224\\257\\344\\273\\230\\345\\256\\235/miniapp/utils/profileStore.js\"",
+              "\"\\346\\224\\257\\344\\273\\230\\345\\256\\235/test.js\"",
+              "tests/miniapp_contract_regressions.test.js"
+            ],
+            "lines_added": 1497,
+            "lines_deleted": 261
+          },
+          "conflicted": false,
+          "conflicts": [],
+          "default_branch_zero_pollution": true,
+          "default_head": "1c00730f1902d847762e0e1a957efc775a5af384",
+          "delivery_commits_already_on_default": 0,
+          "feature_already_merged_to_default": false,
+          "head": "aa79c76256475d7eb10c8eb048520e79ba6bd36c",
+          "merge_base": "1c00730f1902d847762e0e1a957efc775a5af384",
+          "priority": "P2",
+          "status": "mergeable"
+        }
+      ],
+      "repository": "Xiaoyu155/douyin-kuaishou-alipay-miniapp",
+      "summary": {
+        "conflicts": 0,
+        "default_branch_zero_pollution": true,
+        "delivery_branches": 1,
+        "mergeable": 1
+      }
+    },
+    {
+      "default_branch": "refs/remotes/origin/main",
+      "default_head": "062eca44468bcc1af5795eefd4c3d910bbd832a5",
+      "deliveries": [
+        {
+          "branch": "feat/aegis-delivery-v1",
+          "changes": {
+            "changed_files": 2,
+            "files": [
+              "lib/server/model-fetch.ts",
+              "tests/server/model-fetch-http.test.ts"
+            ],
+            "lines_added": 67,
+            "lines_deleted": 9
+          },
+          "conflicted": false,
+          "conflicts": [],
+          "default_branch_zero_pollution": true,
+          "default_head": "062eca44468bcc1af5795eefd4c3d910bbd832a5",
+          "delivery_commits_already_on_default": 0,
+          "feature_already_merged_to_default": false,
+          "head": "fe7b1c835e2d7b5bf9a35efa40ca5559d47d65b8",
+          "merge_base": "062eca44468bcc1af5795eefd4c3d910bbd832a5",
+          "priority": "P2",
+          "status": "mergeable"
+        }
+      ],
+      "repository": "Xiaoyu155/edu-ai",
+      "summary": {
+        "conflicts": 0,
+        "default_branch_zero_pollution": true,
+        "delivery_branches": 1,
+        "mergeable": 1
+      }
+    },
+    {
+      "default_branch": "refs/remotes/origin/develop",
+      "default_head": "3d31927c8232830729e37ce9c36f230ab8d9c7c2",
+      "deliveries": [
+        {
+          "branch": "feat/aegis-v15-delivery",
+          "changes": {
+            "changed_files": 2,
+            "files": [
+              "freqtrade/exchange/okx.py",
+              "tests/test_okx_leverage_guard_v15.py"
+            ],
+            "lines_added": 43,
+            "lines_deleted": 1
+          },
+          "conflicted": false,
+          "conflicts": [],
+          "default_branch_zero_pollution": true,
+          "default_head": "3d31927c8232830729e37ce9c36f230ab8d9c7c2",
+          "delivery_commits_already_on_default": 0,
+          "feature_already_merged_to_default": false,
+          "head": "c2370e1deb3270703c640da8f78341f65b313658",
+          "merge_base": "3d31927c8232830729e37ce9c36f230ab8d9c7c2",
+          "priority": "P2",
+          "status": "mergeable"
+        }
+      ],
+      "repository": "Xiaoyu155/okx-freqtrade-live",
+      "summary": {
+        "conflicts": 0,
+        "default_branch_zero_pollution": true,
+        "delivery_branches": 1,
+        "mergeable": 1
+      }
+    },
+    {
+      "default_branch": "refs/remotes/origin/master",
+      "default_head": "a9665f48422e30574db43677b90707f2cc0b55b3",
+      "deliveries": [
+        {
+          "branch": "feat/aegis-delivery-v1",
+          "changes": {
+            "changed_files": 5,
+            "files": [
+              "common/checkpoint.py",
+              "common/guard.py",
+              "common/metrics.py",
+              "exp_b/ab_runner.py",
+              "tests/test_aegis_eval_regressions.py"
+            ],
+            "lines_added": 494,
+            "lines_deleted": 97
+          },
+          "conflicted": false,
+          "conflicts": [],
+          "default_branch_zero_pollution": true,
+          "default_head": "a9665f48422e30574db43677b90707f2cc0b55b3",
+          "delivery_commits_already_on_default": 0,
+          "feature_already_merged_to_default": false,
+          "head": "97ffe3b69999f3250ce9b6429cd88b9adf083ac9",
+          "merge_base": "a9665f48422e30574db43677b90707f2cc0b55b3",
+          "priority": "P2",
+          "status": "mergeable"
+        }
+      ],
+      "repository": "Xiaoyu155/omni-eval",
+      "summary": {
+        "conflicts": 0,
+        "default_branch_zero_pollution": true,
+        "delivery_branches": 1,
+        "mergeable": 1
+      }
+    },
+    {
+      "default_branch": "refs/remotes/origin/main",
+      "default_head": "f7faac007e007d308908feaa130e9b07c15dc6fb",
+      "deliveries": [
+        {
+          "branch": "feat/aegis-delivery-v1",
+          "changes": {
+            "changed_files": 3,
+            "files": [
+              "\"\\346\\226\\260\\346\\236\\266\\346\\236\\204\\350\\256\\276\\350\\256\\241/validation_current_20261024/source/data_feeder.py\"",
+              "\"\\346\\226\\260\\346\\236\\266\\346\\236\\204\\350\\256\\276\\350\\256\\241/validation_current_20261024/source/execution_router.py\"",
+              "\"\\346\\226\\260\\346\\236\\266\\346\\236\\204\\350\\256\\276\\350\\256\\241/validation_current_20261024/source/test_aegis_delivery_regressions.py\""
+            ],
+            "lines_added": 445,
+            "lines_deleted": 128
+          },
+          "conflicted": false,
+          "conflicts": [],
+          "default_branch_zero_pollution": true,
+          "default_head": "f7faac007e007d308908feaa130e9b07c15dc6fb",
+          "delivery_commits_already_on_default": 0,
+          "feature_already_merged_to_default": false,
+          "head": "cbf73944f1096572eb579bb4f2a8209a33f76e5a",
+          "merge_base": "f7faac007e007d308908feaa130e9b07c15dc6fb",
+          "priority": "P2",
+          "status": "mergeable"
+        }
+      ],
+      "repository": "Xiaoyu155/overseas-quant-system",
+      "summary": {
+        "conflicts": 0,
+        "default_branch_zero_pollution": true,
+        "delivery_branches": 1,
+        "mergeable": 1
+      }
+    },
+    {
+      "default_branch": "refs/remotes/origin/main",
+      "default_head": "c2dc21106d5aa8f25e8a98be1ad622007e221030",
+      "deliveries": [
+        {
+          "branch": "feat/aegis-v15-delivery",
+          "changes": {
+            "changed_files": 2,
+            "files": [
+              "src/visual_agent/managed_checkpoint.py",
+              "tests/test_phase15_checkpoint_transition.py"
+            ],
+            "lines_added": 59,
+            "lines_deleted": 7
+          },
+          "conflicted": false,
+          "conflicts": [],
+          "default_branch_zero_pollution": true,
+          "default_head": "c2dc21106d5aa8f25e8a98be1ad622007e221030",
+          "delivery_commits_already_on_default": 0,
+          "feature_already_merged_to_default": false,
+          "head": "73f50a7ee09742d0b2ea0c62041acae31c8e1d25",
+          "merge_base": "c2dc21106d5aa8f25e8a98be1ad622007e221030",
+          "priority": "P2",
+          "status": "mergeable"
+        }
+      ],
+      "repository": "Xiaoyu155/pacer-recovery",
+      "summary": {
+        "conflicts": 0,
+        "default_branch_zero_pollution": true,
+        "delivery_branches": 1,
+        "mergeable": 1
+      }
+    },
+    {
+      "default_branch": "refs/remotes/origin/master",
+      "default_head": "904ad484b8d351c7711b2eb6ecd2c3433fff87c6",
+      "deliveries": [
+        {
+          "branch": "feat/aegis-v15-delivery",
+          "changes": {
+            "changed_files": 2,
+            "files": [
+              "src/services/db.js",
+              "test/dbTransactionPostgres.integration.test.js"
+            ],
+            "lines_added": 62,
+            "lines_deleted": 2
+          },
+          "conflicted": false,
+          "conflicts": [],
+          "default_branch_zero_pollution": true,
+          "default_head": "904ad484b8d351c7711b2eb6ecd2c3433fff87c6",
+          "delivery_commits_already_on_default": 0,
+          "feature_already_merged_to_default": false,
+          "head": "80a004a91722e8e96a741e6d652057f8df2f92dd",
+          "merge_base": "904ad484b8d351c7711b2eb6ecd2c3433fff87c6",
+          "priority": "P2",
+          "status": "mergeable"
+        }
+      ],
+      "repository": "Xiaoyu155/pet-miniapp-backend",
+      "summary": {
+        "conflicts": 0,
+        "default_branch_zero_pollution": true,
+        "delivery_branches": 1,
+        "mergeable": 1
+      }
+    },
+    {
+      "default_branch": "refs/remotes/origin/master",
+      "default_head": "b8719738e2f54c4f292fb78703a908dad076684f",
+      "deliveries": [
+        {
+          "branch": "feat/aegis-v15-delivery",
+          "changes": {
+            "changed_files": 3,
+            "files": [
+              "package.json",
+              "scripts/aegis_frontend_probe.py",
+              "scripts/e2e/realBackendPostgres.mjs"
+            ],
+            "lines_added": 153,
+            "lines_deleted": 2
+          },
+          "conflicted": false,
+          "conflicts": [],
+          "default_branch_zero_pollution": true,
+          "default_head": "b8719738e2f54c4f292fb78703a908dad076684f",
+          "delivery_commits_already_on_default": 0,
+          "feature_already_merged_to_default": false,
+          "head": "16154611c316b2209dee36ae6991badad66b9af5",
+          "merge_base": "b8719738e2f54c4f292fb78703a908dad076684f",
+          "priority": "P2",
+          "status": "mergeable"
+        }
+      ],
+      "repository": "Xiaoyu155/pet-miniapp-frontend",
+      "summary": {
+        "conflicts": 0,
+        "default_branch_zero_pollution": true,
+        "delivery_branches": 1,
+        "mergeable": 1
+      }
+    },
+    {
+      "default_branch": "refs/remotes/origin/master",
+      "default_head": "592888391a1298361cc6eae3b31c4add50c5a656",
+      "deliveries": [
+        {
+          "branch": "feat/aegis-delivery-v1",
+          "changes": {
+            "changed_files": 6,
+            "files": [
+              "scripts/marketing-video/daily_promo.py",
+              "scripts/marketing-video/render_capture_promo.py",
+              "scripts/marketing-video/sample_render/render_sample.py",
+              "scripts/marketing-video/sample_render/render_sample_v6.py",
+              "scripts/marketing-video/tests/test_render_capture_promo.py",
+              "scripts/marketing-video/tests/test_render_sample_v6_e2e.py"
+            ],
+            "lines_added": 602,
+            "lines_deleted": 54
+          },
+          "conflicted": false,
+          "conflicts": [],
+          "default_branch_zero_pollution": true,
+          "default_head": "592888391a1298361cc6eae3b31c4add50c5a656",
+          "delivery_commits_already_on_default": 0,
+          "feature_already_merged_to_default": false,
+          "head": "9faaf3a6c8d82a8650d84208d6bcfc3bc9de15d7",
+          "merge_base": "592888391a1298361cc6eae3b31c4add50c5a656",
+          "priority": "P2",
+          "status": "mergeable"
+        }
+      ],
+      "repository": "Xiaoyu155/promo-videos",
+      "summary": {
+        "conflicts": 0,
+        "default_branch_zero_pollution": true,
+        "delivery_branches": 1,
+        "mergeable": 1
+      }
+    },
+    {
+      "default_branch": "refs/remotes/origin/master",
+      "default_head": "fd53804383f8d79cc0a84fe930414896cce8e1c5",
+      "deliveries": [
+        {
+          "branch": "feat/aegis-delivery-v1",
+          "changes": {
+            "changed_files": 8,
+            "files": [
+              ".aegis/repo_profile.json",
+              "server/package.json",
+              "server/src/middleware/validate.js",
+              "server/src/routes/gaokao.js",
+              "server/src/routes/planning.js",
+              "server/src/services/gaokaoService.js",
+              "server/src/services/planningService.js",
+              "server/test/gaokao-contract.test.js"
+            ],
+            "lines_added": 454,
+            "lines_deleted": 58
+          },
+          "conflicted": false,
+          "conflicts": [],
+          "default_branch_zero_pollution": true,
+          "default_head": "fd53804383f8d79cc0a84fe930414896cce8e1c5",
+          "delivery_commits_already_on_default": 0,
+          "feature_already_merged_to_default": false,
+          "head": "0a3cd4868d8193bbfadc2e910380960d5a3e3ed7",
+          "merge_base": "fd53804383f8d79cc0a84fe930414896cce8e1c5",
+          "priority": "P2",
+          "status": "mergeable"
+        }
+      ],
+      "repository": "Xiaoyu155/weixin-miniprogram",
+      "summary": {
+        "conflicts": 0,
+        "default_branch_zero_pollution": true,
+        "delivery_branches": 1,
+        "mergeable": 1
+      }
+    },
+    {
+      "default_branch": "refs/remotes/origin/main",
+      "default_head": "72582ba215c8658d52caed01939a7a58aabbf9e2",
+      "deliveries": [
+        {
+          "branch": "feat/aegis-delivery-v1",
+          "changes": {
+            "changed_files": 13,
+            "files": [
+              "package.json",
+              "src/config/api.js",
+              "src/config/storage.js",
+              "src/pages/park/index.vue",
+              "src/pages/park/result.vue",
+              "src/pages/plan/index.vue",
+              "src/pages/plan/result.vue",
+              "src/services/park.js",
+              "src/services/plan.js",
+              "tests/check_interface_contract.py",
+              "tests/esm-loader.mjs",
+              "tests/interface-contract-lock.json",
+              "tests/miniapp.contract.test.mjs"
+            ],
+            "lines_added": 927,
+            "lines_deleted": 114
+          },
+          "conflicted": false,
+          "conflicts": [],
+          "default_branch_zero_pollution": true,
+          "default_head": "72582ba215c8658d52caed01939a7a58aabbf9e2",
+          "delivery_commits_already_on_default": 0,
+          "feature_already_merged_to_default": false,
+          "head": "08c51f56faf0ba24d8b184a5b20566742ec51680",
+          "merge_base": "72582ba215c8658d52caed01939a7a58aabbf9e2",
+          "priority": "P2",
+          "status": "mergeable"
+        }
+      ],
+      "repository": "Xiaoyu155/yuansi-miniapp",
+      "summary": {
+        "conflicts": 0,
+        "default_branch_zero_pollution": true,
+        "delivery_branches": 1,
+        "mergeable": 1
+      }
+    },
+    {
+      "default_branch": "refs/remotes/origin/master",
+      "default_head": "8418afe2e41496efb4b8f7144ee168076dd6ba5d",
+      "deliveries": [
+        {
+          "branch": "feat/aegis-delivery-v1",
+          "changes": {
+            "changed_files": 7,
+            "files": [
+              "yuansi-server/python_brain/persistence/user_data_repo.py",
+              "yuansi-server/python_brain/tests/test_user_data_repo_limits.py",
+              "yuansi-server/python_brain/tests/test_user_data_routes.py",
+              "yuansi-server/rust_core/src/jwt_auth.rs",
+              "yuansi-server/rust_core/src/main.rs",
+              "yuansi-server/rust_core/src/turn_credentials.rs",
+              "yuansi-server/rust_core/src/webrtc.rs"
+            ],
+            "lines_added": 257,
+            "lines_deleted": 17
+          },
+          "conflicted": false,
+          "conflicts": [],
+          "default_branch_zero_pollution": true,
+          "default_head": "8418afe2e41496efb4b8f7144ee168076dd6ba5d",
+          "delivery_commits_already_on_default": 0,
+          "feature_already_merged_to_default": false,
+          "head": "8fd966977426c66cbac48422cf99fd8fdadd3356",
+          "merge_base": "8418afe2e41496efb4b8f7144ee168076dd6ba5d",
+          "priority": "P1",
+          "status": "mergeable"
+        }
+      ],
+      "repository": "Xiaoyu155/yuansi_app",
+      "summary": {
+        "conflicts": 0,
+        "default_branch_zero_pollution": true,
+        "delivery_branches": 1,
+        "mergeable": 1
+      }
+    }
+  ],
+  "schema_version": "aegis.fleet_audit.v1",
+  "summary": {
+    "conflicts": 0,
+    "delivery_branches": 15,
+    "excluded_repositories": [
+      "Xiaoyu155/Checkpoint",
+      "Xiaoyu155/edu-typing",
+      "Xiaoyu155/nova-agent"
+    ],
+    "mergeable": 15,
+    "p0": 0,
+    "p1": 1,
+    "p2": 14,
+    "repositories_excluded": 3,
+    "repositories_scanned": 15
+  }
+}
