@@ -1,11 +1,18 @@
 {
   "phase": 17,
-  "status": "local_verified_pending_github_ci",
+  "status": "pr_open_ci_verified_for_implementation_commit",
   "version": "1.2.0",
   "branch": "feat/aegis-v1.2-precision",
   "base_branch": "main",
   "base_commit": "d23a37eaa19bff73aff247e767ad1a42eaf3bf85",
-  "pull_request": null,
+  "pull_request": {
+    "number": 17,
+    "url": "https://github.com/Xiaoyu155/aegis-core/pull/17",
+    "head_branch": "feat/aegis-v1.2-precision",
+    "base_branch": "main",
+    "implementation_commit_sha": "7304528ef409e57c588801600fb659f5c414ce6d",
+    "implementation_commit_pull_mergeable": true
+  },
   "preservation": {
     "phase16_tests_preserved": 1338,
     "phase16_tests_still_collected": 1338,
@@ -31,17 +38,29 @@
       "loopback_http_integration": "passed with network permission enabled"
     },
     "github_actions": {
-      "expected_jobs": 8,
-      "passed": 0,
-      "status": "pending",
+      "expected_jobs_per_event": 8,
+      "passed_per_event": 8,
       "matrix": [
         "Linux/Windows",
         "Python 3.11/3.12"
       ],
-      "events": [
-        "push 4/4",
-        "pull_request 4/4"
-      ]
+      "suites": [
+        "full",
+        "v16-gates"
+      ],
+      "push_event": {
+        "run_id": 44722941631,
+        "url": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44722941631",
+        "head_sha": "7304528ef409e57c588801600fb659f5c414ce6d",
+        "result": "success"
+      },
+      "pull_request_event": {
+        "run_id": 44724920956,
+        "url": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44724920956",
+        "head_sha": "7304528ef409e57c588801600fb659f5c414ce6d",
+        "result": "success"
+      },
+      "status_commit_validation_note": "These passing runs verify the implementation commit listed above. The status metadata update will trigger the same matrix again."
     }
   },
   "milestones": {
