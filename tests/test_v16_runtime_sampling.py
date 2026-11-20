@@ -80,6 +80,9 @@ assert result["cold"] is True
     cold_edges = [item for item in report["call_edges"] if item["callee_qualname"] == "cold_branch"]
     assert tick_edges and cold_edges, json.dumps({
         "backend": report.get("backend"),
+        "completed": report.get("completed"),
+        "timed_out": report.get("timed_out"),
+        "exit_code": report.get("exit_code"),
         "function_keys": sorted(report.get("functions", {})),
         "edge_callees": [item.get("callee_qualname") for item in report.get("call_edges", [])],
         "reservoir_kinds": sorted({item.get("kind") for item in report.get("reservoir_sample", [])}),

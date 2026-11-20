@@ -26,6 +26,8 @@ root = os.path.realpath(os.environ.get("AEGIS_PROFILE_ROOT", os.getcwd()))
 limit = int(os.environ.get("AEGIS_PROFILE_MAX_EVENTS", "50000"))
 secret = re.compile(r"password|secret|token|api.?key|credential|private.?key", re.I)
 functions, edges, exceptions, heat, dynamic_attributes = {}, {}, {}, {}, {}
+path_cache = {}
+code_key_cache = {}
 raw_event_count = 0
 unique_event_count = 0
 reservoir_replacements = 0
@@ -106,25 +108,33 @@ def prune_record(record):
             item["arguments"].get(name, {}).pop(schema, None)
 
 def relpath(filename):
+    if filename in path_cache: return path_cache[filename]
     if filename.startswith("<") and filename.endswith(">"):
+        path_cache[filename] = None
         return None
     real = os.path.realpath(filename)
     try:
         common = os.path.commonpath((root, real))
-        if os.path.normcase(common) != os.path.normcase(root): return None
+        if os.path.normcase(common) != os.path.normcase(root):
+            path_cache[filename] = None
+            return None
     except ValueError:
+        path_cache[filename] = None
         return None
-    return os.path.relpath(real, root).replace(os.sep, "/")
+    result = os.path.relpath(real, root).replace(os.sep, "/")
+    path_cache[filename] = result
+    return result
 
 def key(frame):
-    path = relpath(frame.f_code.co_filename)
-    if path is None: return None
-    return path + "::" + getattr(frame.f_code, "co_qualname", frame.f_code.co_name)
+    return code_key(frame.f_code)
 
 def code_key(code):
+    cached = code_key_cache.get(code)
+    if code in code_key_cache: return cached
     path = relpath(code.co_filename)
-    if path is None: return None
-    return path + "::" + getattr(code, "co_qualname", code.co_name)
+    result = None if path is None else path + "::" + code.co_qualname
+    code_key_cache[code] = result
+    return result
 
 def shape(value, depth=0):
     if value is None: return "null"
@@ -180,7 +190,7 @@ def record_call(frame):
     else:
         schema_hash, argument_schemas = cached_schema
     item = functions.setdefault(target_key, {"file": relpath(frame.f_code.co_filename),
-        "qualname": getattr(frame.f_code, "co_qualname", frame.f_code.co_name), "calls": 0,
+        "qualname": frame.f_code.co_qualname, "calls": 0,
         "arguments": {}, "returns": {}, "hot_lines": {}})
     item["calls"] += 1
     for name, schema in argument_schemas.items():
@@ -209,7 +219,7 @@ def record_line(frame, line):
     function_key = key(frame)
     if function_key is None or not observe("line", (function_key, line)): return
     item = functions.setdefault(function_key, {"file": relpath(frame.f_code.co_filename),
-        "qualname": getattr(frame.f_code, "co_qualname", frame.f_code.co_name), "calls": 0,
+        "qualname": frame.f_code.co_qualname, "calls": 0,
         "arguments": {}, "returns": {}, "hot_lines": {}})
     item["hot_lines"][str(line)] = min(2**63 - 1, item["hot_lines"].get(str(line), 0) + 1)
 
@@ -242,7 +252,7 @@ def profile(frame, event, arg):
 def line_event(code, line):
     filename = relpath(code.co_filename)
     if filename is None: return
-    qname = getattr(code, "co_qualname", code.co_name)
+    qname = code.co_qualname
     k = filename + "::" + qname
     if not observe("line", (k, line)): return
     item = functions.setdefault(k, {"file": filename, "qualname": qname, "calls": 0,
@@ -252,7 +262,7 @@ def line_event(code, line):
 def return_event(code, offset, value):
     filename = relpath(code.co_filename)
     if filename is None: return
-    qname = getattr(code, "co_qualname", code.co_name)
+    qname = code.co_qualname
     function_key = filename + "::" + qname
     item = functions.setdefault(function_key, {"file": filename, "qualname": qname,
         "calls": 0, "arguments": {}, "returns": {}, "hot_lines": {}})
@@ -267,7 +277,7 @@ def raise_event(code, offset, exc):
     for instruction, source_line in dis.findlinestarts(code):
         if instruction > offset: break
         line = source_line
-    location = (filename + "::" + getattr(code, "co_qualname", code.co_name), line,
+    location = (filename + "::" + code.co_qualname, line,
                 type(exc).__name__[:80])
     if observe("exception", location):
         exceptions[location] = min(2**63 - 1, exceptions.get(location, 0) + 1)
