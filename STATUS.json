@@ -6,7 +6,12 @@
   "base_branch": "main",
   "base_commit": "b87ed86af752518458aa3d41a77271e6235341ee",
   "working_head_before_phase16_commit": "b87ed86af752518458aa3d41a77271e6235341ee",
-  "pull_request": null,
+  "pull_request": {
+    "number": 16,
+    "url": "https://github.com/Xiaoyu155/aegis-core/pull/16",
+    "head_branch": "feat/aegis-v1.1-fullstack",
+    "base_branch": "main"
+  },
   "preservation": {
     "baseline_tests": 1145,
     "baseline_tests_still_collected": 1145,
