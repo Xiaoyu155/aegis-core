@@ -1,0 +1,11 @@
+{
+  "voiceover": {
+    "generated": false,
+    "provider": "Microsoft Edge TTS",
+    "voice_attempted": "zh-CN-YunxiNeural",
+    "reason": "speech.platform.bing.com:443 返回网络不可达；运行环境未发现离线中文语音引擎。"
+  },
+  "music": "Python 与 NumPy 生成的立体声低频氛围、节拍脉冲与和弦。",
+  "sound_effects": "Python 与 NumPy 生成的音效：键盘敲击、红色警报、激光拦截、节点脉冲、倒带和通关提示音。",
+  "mix": "FFmpeg 混合为 48 kHz 双声道 AAC。"
+}

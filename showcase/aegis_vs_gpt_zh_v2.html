@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1920, initial-scale=1">
+  <title>Aegis Core｜GPT 工程演示</title>
+  <style>
+    @font-face { font-family: AegisCJK; src: local("Noto Sans CJK SC"), local("Microsoft YaHei"); font-weight: 100 900; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: #06101d; }
+    canvas { width: 1920px; height: 1080px; display: block; }
+  </style>
+</head>
+<body>
+<canvas id="stage" width="1920" height="1080" aria-label="Aegis Core 动态工程演示"></canvas>
+<script>
+(() => {
+  "use strict";
+  const W = 1920, H = 1080, canvas = document.getElementById("stage");
+  const c = canvas.getContext("2d", { alpha: false, willReadFrequently: true });
+  const C = { bg: "#07111f", deep: "#091a2c", ink: "#dceafa", mute: "#91a9c0", red: "#ff5266", red2: "#ff8b95", green: "#48e29a", cyan: "#58d9ff", blue: "#537bff", gold: "#ffc95e", line: "#29415b", glass: "rgba(13,28,46,.91)" };
+  const CUTS = [0, 12, 28, 46, 62, 76, 90];
+  const COPY = [
+    "代码能写出来，难的是守住接口、测试和主干。",
+    "同一任务分出四条隔离泳道，只有正确修复穿过门禁。",
+    "红探针先复现边界问题，绿探针确认修复没有带来新错。",
+    "依赖关系亮起来，十万次热调用也留下可核验画像。",
+    "回到失败那一帧，先看清，再决定是否拦截。",
+    "从一个补丁到十五个真实仓库，交付结果可见、可查。"
+  ];
+  const TITLES = [
+    "裸跑 GPT 做不到",
+    "把候选放进隔离泳道",
+    "让真实探针把漏洞照出来",
+    "让跨语言依赖图流动起来",
+    "回到失败现场，再作判断",
+    "让整支仓库舰队亮起绿灯"
+  ];
+  const VISIBLE_TEXT = [
+    ...COPY, ...TITLES,
+    "Aegis Core", "请修复边界错误，保持接口不变", "偷偷改测试", "改坏跨文件接口", "弄脏 main 分支", "确定性软件工厂",
+    "同一工单", "Git Worktree", "破坏签名", "改断言作弊", "无界内存增长", "正确修复", "已拦截", "门禁放行", "GRPO 偏好训练样本",
+    "okx-freqtrade-live", "pet-miniapp-backend", "基线探针", "ASSERTION_FAILED", "PASSED", "通过", "跳过", "PostgreSQL 连接清理",
+    "Python", "JavaScript", "TypeScript", "HTML", "InterfaceContractLock", "次热调用", "尾部冷路径已捕获", "零溢出",
+    "aegis replay", "aegis blame", "失败帧", "罪魁代码行", "样本还少，先观察", "observe", "误报", "召回率",
+    "零冲突", "主干零污染", "GPT 负责创造，Aegis 负责确定性兜底。", "数字来自本仓库账本；候选轨道依同题偏好记录复演。", "▏"
+  ];
+  let E = null;
+  const rand = (n) => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+  const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+  const smooth = (x) => { x = clamp(x); return x * x * (3 - 2 * x); };
+  const out = (x) => { x = clamp(x); return 1 - Math.pow(1 - x, 3); };
+  const mix = (a, b, t) => a + (b - a) * t;
+  const font = (size, family = "AegisCJK, 'Noto Sans CJK SC', 'Microsoft YaHei', sans-serif", weight = 500) => `${weight} ${size}px ${family}`;
+  function text(s, x, y, size = 32, color = C.ink, align = "left", weight = 500, family) {
+    c.save(); c.font = font(size, family || "AegisCJK, 'Noto Sans CJK SC', 'Microsoft YaHei', sans-serif", weight);
+    c.textAlign = align; c.textBaseline = "middle"; c.fillStyle = color; c.fillText(String(s), x, y); c.restore();
+  }
+  function wrap(s, x, y, maxWidth, size, color, lineHeight, align = "center", weight = 500) {
+    c.save(); c.font = font(size, undefined, weight); const lines = []; let row = "";
+    for (const ch of String(s)) { const next = row + ch; if (row && c.measureText(next).width > maxWidth) { lines.push(row); row = ch; } else row = next; }
+    if (row) lines.push(row); c.restore();
+    lines.forEach((line, i) => text(line, x, y + (i - (lines.length - 1) / 2) * lineHeight, size, color, align, weight));
+    return lines.length;
+  }
+  function rr(x, y, w, h, r, fill, stroke, lw = 2) {
+    c.beginPath(); c.roundRect(x, y, w, h, r); if (fill) { c.fillStyle = fill; c.fill(); } if (stroke) { c.lineWidth = lw; c.strokeStyle = stroke; c.stroke(); }
+  }
+  function glow(color, blur = 20) { c.shadowColor = color; c.shadowBlur = blur; }
+  function noGlow() { c.shadowBlur = 0; c.shadowColor = "transparent"; }
+  function line(x1, y1, x2, y2, color, width = 2, alpha = 1) {
+    c.save(); c.globalAlpha = alpha; c.strokeStyle = color; c.lineWidth = width; c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke(); c.restore();
+  }
+  function base(t, tint = C.blue) {
+    const g = c.createLinearGradient(0, 0, W, H); g.addColorStop(0, "#07111f"); g.addColorStop(.56, "#0a1b2d"); g.addColorStop(1, "#07101d");
+    c.fillStyle = g; c.fillRect(0, 0, W, H);
+    const rad = c.createRadialGradient(960, 400, 30, 960, 400, 1000); rad.addColorStop(0, tint + "20"); rad.addColorStop(1, "#07111f00"); c.fillStyle = rad; c.fillRect(0, 0, W, H);
+    for (let i = 0; i < 90; i++) {
+      const x = rand(i + 1) * W, y = rand(i + 271) * 850, tw = .35 + .55 * (1 + Math.sin(t * 2 + i)) / 2;
+      c.globalAlpha = tw; c.fillStyle = i % 9 === 0 ? C.cyan : "#7795bd"; c.fillRect(x, y, i % 9 === 0 ? 2 : 1.5, i % 9 === 0 ? 2 : 1.5);
+    }
+    c.globalAlpha = 1;
+  }
+  function title(i, pulse = 1) {
+    c.save(); c.globalAlpha = pulse; text(TITLES[i], 960, 82, 68, C.ink, "center", 760); text(`0${i + 1}  /  06`, 1822, 77, 24, C.mute, "right", 600, "'Noto Sans Mono CJK SC', monospace"); c.restore();
+  }
+  function footer(i, local, total) {
+    const top = 878;
+    const g = c.createLinearGradient(0, top, 0, H); g.addColorStop(0, "rgba(5,12,22,.24)"); g.addColorStop(.18, "rgba(5,12,22,.94)"); g.addColorStop(1, "#050c16");
+    c.fillStyle = g; c.fillRect(0, top, W, H - top);
+    line(68, top + 2, 1852, top + 2, "#304a66", 2, .9);
+    wrap(COPY[i], 960, 950, 1760, 42, C.ink, 52, "center", 680);
+    const p = (CUTS[i] + local) / 90; rr(68, 1060, 1784, 7, 4, "#16283c", null); rr(68, 1060, 1784 * clamp(p), 7, 4, tintFor(i), null);
+    if (i === 5 && local > 12.6) text("数字来自本仓库账本；候选轨道依同题偏好记录复演。", 1848, 1041, 16, "#8da2b8", "right", 450);
+  }
+  function tintFor(i) { return [C.cyan, C.green, C.red, C.gold, C.gold, C.green][i]; }
+  function drawStamp(x, y, label, color, age) {
+    const hit = out(age / .24), decay = Math.exp(-Math.max(0, age - .18) * 5.5);
+    const scale = age < .26 ? 1.36 - .36 * hit + .055 * Math.sin(age * 80) * decay : 1;
+    const angle = (1 - hit) * -.2 + Math.sin(age * 52) * .026 * decay;
+    c.save(); c.translate(x + Math.sin(age * 76) * 3 * decay, y); c.rotate(angle); c.scale(scale, scale);
+    c.globalAlpha = Math.min(1, .35 + age * 6); rr(-76, -27, 152, 54, 8, "rgba(14,24,36,.8)", color, 4);
+    glow(color, 19); text(label, 0, 0, 22, color, "center", 820); noGlow(); c.restore();
+  }
+  function gridHorizon(t) {
+    const vanX = 960, vanY = 485;
+    c.strokeStyle = "rgba(52,123,180,.23)"; c.lineWidth = 1;
+    for (let i = -13; i <= 13; i++) { c.beginPath(); c.moveTo(vanX + i * 12, vanY); c.lineTo(vanX + i * 100, 875); c.stroke(); }
+    for (let j = 0; j < 12; j++) { const p = ((j / 12 + (t * .06) % 1) % 1); const y = vanY + Math.pow(p, 1.5) * 380; c.globalAlpha = .15 + p * .3; c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke(); }
+    c.globalAlpha = 1;
+  }
+  function drawOpening(t) {
+    base(t, C.blue); gridHorizon(t); title(0, out(t / 1.3));
+    const bx = 260, by = 205, bw = 1400, bh = 345;
+    rr(bx, by, bw, bh, 22, "rgba(7,15,27,.94)", "#315776", 3);
+    rr(bx, by, bw, 62, 22, "#11243a", null);
+    for (let i = 0; i < 3; i++) { c.beginPath(); c.fillStyle = [C.red, C.gold, C.green][i]; c.arc(bx + 35 + i * 30, by + 31, 8, 0, Math.PI * 2); c.fill(); }
+    text("Aegis Core  /  工单输入", bx + 150, by + 32, 25, C.mute, "left", 600);
+    text("›", bx + 62, by + 154, 54, C.cyan, "left", 700, "monospace");
+    const prompt = "请修复边界错误，保持接口不变";
+    const charCount = Math.floor(clamp((t - .7) / 2.25) * prompt.length);
+    text(prompt.slice(0, charCount) + (t < 4.4 && Math.floor(t * 2) % 2 === 0 ? "▏" : ""), bx + 124, by + 154, 45, C.ink, "left", 560);
+    text("目标：安全修复  /  约束：接口与测试必须保持可信", bx + 126, by + 235, 28, C.mute, "left", 450);
+    const alerts = [
+      { x: 160, y: 585, w: 450, label: "偷偷改测试" },
+      { x: 735, y: 610, w: 480, label: "改坏跨文件接口" },
+      { x: 1310, y: 575, w: 445, label: "弄脏 main 分支" }
+    ];
+    alerts.forEach((a, j) => {
+      const k = out((t - (3.4 + j * .78)) / .4); if (!k) return;
+      c.save(); c.globalAlpha = k; const shake = t < 7.2 ? Math.sin(t * 41 + j) * 3 * (1 - k) : 0;
+      rr(a.x, a.y + shake, a.w, 82, 14, "rgba(77,16,32,.93)", C.red, 3);
+      glow(C.red, 25); text("警告", a.x + 26, a.y + 41 + shake, 25, C.red, "left", 800); noGlow(); text(a.label, a.x + 112, a.y + 41 + shake, 31, C.ink, "left", 670); c.restore();
+    });
+    const shield = out((t - 7.1) / 2.1), sx = 960, sy = 715, radius = 60 + 210 * shield;
+    if (shield > 0) {
+      c.save(); c.globalAlpha = .22 + shield * .72; c.lineWidth = 8; glow(C.cyan, 35); c.strokeStyle = C.cyan; c.beginPath(); c.arc(sx, sy, radius, -.25, Math.PI * 1.75); c.stroke();
+      c.globalAlpha = .28 * (1 - shield); c.lineWidth = 5; c.beginPath(); c.arc(sx, sy, radius + 35, 0, Math.PI * 2); c.stroke(); noGlow();
+      if (t > 9.1) { text("Aegis Core", 960, 715, 65, C.ink, "center", 800); text("把生成能力，接进确定性门禁", 960, 784, 28, C.cyan, "center", 600); }
+      c.restore();
+    }
+    footer(0, t, 12);
+  }
+  function drawLanes(t) {
+    base(t, C.green); title(1, out(t / 1.1));
+    const hub = { x: 135, y: 465 }, startX = 445, endX = 1540, ys = [270, 410, 550, 690];
+    const candidates = [
+      { id: "job10_signature", label: "破坏签名", score: E.candidates.job10_signature.score, rejected: true },
+      { id: "job10_test_cheat", label: "改断言作弊", score: E.candidates.job10_test_cheat.score, rejected: true },
+      { id: "job10_memory_leak", label: "无界内存增长", score: E.candidates.job10_memory_leak.score, rejected: true },
+      { id: "job10_correct", label: "正确修复", score: E.chosen_score, rejected: false }
+    ];
+    rr(72, 408, 260, 112, 19, "#102743", "#4b8dca", 3); text("工单", 202, 444, 25, C.cyan, "center", 600); text("任务 10", 202, 484, 35, C.ink, "center", 700);
+    const finish = [5.4, 7.7, 10.0, 13.25];
+    candidates.forEach((a, i) => {
+      const y = ys[i], prog = out((t - .7) / finish[i]), x = mix(startX, endX, prog), failed = a.rejected && t >= finish[i], cleared = !a.rejected && t >= finish[i];
+      c.save(); c.globalAlpha = failed ? .42 : 1;
+      c.beginPath(); c.moveTo(hub.x + 130, hub.y); c.bezierCurveTo(350, hub.y, 370, y, startX, y); c.strokeStyle = a.rejected ? "#e85d71" : C.green; c.lineWidth = 4; glow(a.rejected ? C.red : C.green, 16); c.stroke(); noGlow();
+      line(startX, y, 1690, y, "#1d344b", 3);
+      const particles = 4;
+      for (let p = 0; p < particles; p++) { const q = (t * .72 + p / particles + i * .17) % 1; const px = startX + q * (x - startX); c.beginPath(); c.fillStyle = a.rejected ? C.red2 : C.cyan; c.arc(px, y, 4 + 2 * Math.sin(t * 6 + p), 0, Math.PI * 2); c.fill(); }
+      rr(startX, y - 19, Math.max(4, (x - startX) * .64), 38, 8, a.rejected ? "#582333" : "#12533d", null);
+      text(a.label, startX + 20, y - 42, 29, a.rejected ? C.red2 : C.green, "left", 680);
+      text(`${a.rejected ? "拒绝" : "胜出"} ${Number(a.score).toFixed(3)}`, 1505, y - 42, 24, a.rejected ? C.red2 : C.green, "right", 650, "'Noto Sans Mono CJK SC', monospace");
+      if (a.rejected) {
+        const beam = clamp((t - finish[i] + .13) / .3); const laserX = 1535;
+        if (beam > 0) { c.globalAlpha = .9; line(laserX, y - 51, laserX, y + 51, C.red, 7, beam); glow(C.red, 22); line(laserX - 18, y, laserX + 18, y, C.red2, 4, beam); noGlow(); if (failed) drawStamp(1740, y + 8, "已拦截", C.red2, t - finish[i]); }
+      }
+      if (cleared) { c.globalAlpha = 1; c.beginPath(); c.arc(1650, y, 28 + 5 * Math.sin(t * 8), 0, Math.PI * 2); c.strokeStyle = C.green; c.lineWidth = 4; glow(C.green, 18); c.stroke(); noGlow(); drawStamp(1740, y + 8, "门禁放行", C.green, t - finish[i]); }
+      c.restore();
+    });
+    if (t > 13.4) { const p = out((t - 13.4) / .75); c.save(); c.globalAlpha = p; rr(1390, 740, 420, 88, 15, "#123b34", C.green, 3); text("GRPO 偏好训练样本", 1600, 766, 28, C.ink, "center", 760); text("正确修复  /  三类拒绝记录", 1600, 802, 21, C.green, "center", 550); c.restore(); }
+    footer(1, t, 16);
+  }
+  function codeLine(x, y, num, value, color, size = 22, reveal = 1) {
+    if (reveal <= 0) return;
+    c.save(); c.globalAlpha = reveal; text(String(num).padStart(2, "0"), x, y, 19, "#688098", "left", 500, "'Noto Sans Mono CJK SC', monospace");
+    c.fillStyle = color; c.font = font(size, "'Noto Sans Mono CJK SC', 'DejaVu Sans Mono', monospace", 500); c.textAlign = "left"; c.textBaseline = "middle";
+    const max = 800, lines = []; let row = "";
+    for (const ch of value) { const nx = row + ch; if (row && c.measureText(nx).width > max) { lines.push(row); row = ch; } else row = nx; } if (row) lines.push(row);
+    lines.forEach((s, i) => c.fillText(s, x + 44, y + i * 26)); c.restore();
+  }
+  function drawCode(t) {
+    base(t, C.red); title(2, out(t / 1.1));
+    const y0 = 150, h = 530, x1 = 58, x2 = 976, w = 886;
+    rr(x1, y0, w, h, 16, "#0b1421", "#31445b", 2); rr(x2, y0, w, h, 16, "#0b1421", "#31445b", 2);
+    rr(x1, y0, w, 59, 16, "#15263a", null); rr(x2, y0, w, 59, 16, "#15263a", null);
+    text("真实补丁  /  freqtrade/exchange/okx.py", x1 + 27, y0 + 30, 24, C.ink, "left", 650);
+    text("真实补丁  /  pet-miniapp-backend/src/services/db.js", x2 + 27, y0 + 30, 22, C.ink, "left", 650);
+    const red = clamp((t - 1.2) / .5), green = out((t - 5.1) / 2.2);
+    const oldOKX = E.old_okx_division || 'return {"max_stake": payload["max_notional"] / payload["leverage"]}';
+    const oldDB = E.old_db_release || "client.release();";
+    if (t < 5.05) {
+      rr(x1 + 22, y0 + 88, w - 44, 51, 5, `rgba(128,24,45,${.16 + .15 * Math.sin(t * 9)})`, null);
+      codeLine(x1 + 33, y0 + 112, 25, oldOKX, C.red2, 21, red);
+      rr(x2 + 22, y0 + 88, w - 44, 51, 5, `rgba(128,24,45,${.16 + .15 * Math.sin(t * 9 + 1)})`, null);
+      codeLine(x2 + 33, y0 + 112, 87, oldDB, C.red2, 24, red);
+      codeLine(x1 + 33, y0 + 185, 26, "# 零值杠杆会触发红探针", C.mute, 22, .9);
+      codeLine(x2 + 33, y0 + 185, 88, "// 连接异常可能把客户端留在池里", C.mute, 22, .9);
+    }
+    const okx = E.okx_added;
+    okx.forEach((s, i) => { const reveal = out((t - (4.5 + i * .6)) / .45); if (reveal > 0) { rr(x1 + 22, y0 + 92 + i * 53, w - 44, 48, 4, `rgba(26,118,73,${.15 + .35 * reveal})`, null); codeLine(x1 + 33, y0 + 112 + i * 53, 26 + i, s, C.green, 21, reveal); } });
+    const pet = E.pet_added;
+    pet.forEach((s, i) => { const reveal = out((t - (5.4 + i * .7)) / .5); if (reveal > 0) { rr(x2 + 22, y0 + 92 + i * 62, w - 44, 52, 4, `rgba(26,118,73,${.16 + .33 * reveal})`, null); codeLine(x2 + 33, y0 + 113 + i * 62, 88 + i, s, C.green, 22, reveal); } });
+    const termY = 707; rr(60, termY, 1800, 138, 13, "rgba(4,12,21,.96)", "#314760", 2);
+    text("验证终端", 92, termY + 28, 23, C.cyan, "left", 650);
+    if (t < 8.2) {
+      const a = out((t - 2.5) / .45), b = out((t - 3.45) / .45);
+      text(`红探针｜OKX ${E.okx_case_count} 类边界：${E.okx_baseline_red}`, 310, termY + 28, 24, C.red2, "left", 650);
+      text(`红探针｜PostgreSQL ${E.pet_case_count} 类故障：${E.pet_baseline_red}`, 310, termY + 73, 24, C.red2, "left", 650);
+      if (a > 0) text("AssertionError", 1640, termY + 28, 20, C.red, "right", 700, "'Noto Sans Mono CJK SC', monospace");
+      if (b > 0) text("AssertionError", 1640, termY + 73, 20, C.red, "right", 700, "'Noto Sans Mono CJK SC', monospace");
+    } else {
+      text("PASSED", 150, termY + 49, 28, C.green, "left", 800, "'Noto Sans Mono CJK SC', monospace");
+      text(`OKX  ${E.okx_tests.passed} / ${E.okx_tests.total} 项通过`, 310, termY + 49, 25, C.green, "left", 700);
+      text(`后端 ${E.pet_tests.passed} 项通过  ·  ${E.pet_tests.skipped} 项跳过  ·  PostgreSQL 故障集成 ${E.pet_integration.passed} / ${E.pet_integration.total}`, 850, termY + 49, 23, C.green, "left", 650);
+      if (t > 10.2) { const a = (t - 10.2) / 7.8; line(120, termY + 107, 120 + 1650 * clamp(a), termY + 107, C.green, 4, .9); }
+    }
+    footer(2, t, 18);
+  }
+  function drawNode(x, y, label, color, r = 64, pulse = 0) {
+    c.save(); const rradius = r + 8 * pulse; c.beginPath(); c.arc(x, y, rradius, 0, Math.PI * 2); c.fillStyle = "#0e2135"; c.fill(); c.lineWidth = 4; glow(color, 22); c.strokeStyle = color; c.stroke(); noGlow();
+    text(label, x, y, label.length > 5 ? 26 : 31, C.ink, "center", 720); c.restore();
+  }
+  function drawTopology(t) {
+    base(t, C.cyan); title(3, out(t / 1.1));
+    const nodes = [
+      { x: 235, y: 335, n: "Python", c: C.cyan }, { x: 570, y: 255, n: "JavaScript", c: C.green },
+      { x: 865, y: 400, n: "TypeScript", c: C.blue }, { x: 560, y: 605, n: "HTML", c: C.gold },
+      { x: 230, y: 665, n: "接口契约", c: C.cyan }
+    ];
+    const edges = [[0,1],[1,2],[2,3],[3,0],[0,2],[4,0],[4,3],[1,3]];
+    edges.forEach(([a,b],i) => {
+      const A=nodes[a],B=nodes[b], active=out((t-(1+i*.62))/.55); c.save(); c.globalAlpha=.16+.75*active;
+      c.beginPath(); c.moveTo(A.x,A.y); c.bezierCurveTo((A.x+B.x)/2,A.y-65,(A.x+B.x)/2,B.y+65,B.x,B.y); c.strokeStyle=i%2?"#49d6e7":"#8296ff"; c.lineWidth=2+active*1.5; glow(i%2?C.cyan:C.blue,14); c.stroke(); noGlow();
+      const q=(t*.19+i*.13)%1, px=mix(A.x,B.x,q), py=mix(A.y,B.y,q); c.beginPath(); c.arc(px,py,5+active*2,0,Math.PI*2); c.fillStyle=C.ink; glow(C.cyan,16); c.fill(); noGlow(); c.restore();
+    });
+    nodes.forEach((n,i)=>drawNode(n.x,n.y,n.n,n.c,64, .5+.5*Math.sin(t*3+i)));
+    const lock = out((t-8.5)/1.6), lx=770, ly=625;
+    if(lock>0){c.save();c.globalAlpha=lock; c.strokeStyle=C.gold;c.lineWidth=9;glow(C.gold,28);c.beginPath();c.arc(lx,ly-15,30,Math.PI,Math.PI*2);c.stroke();noGlow();rr(lx-43,ly-17,86,66,12,"#443719",C.gold,4);c.beginPath();c.arc(lx,ly+12,7,0,Math.PI*2);c.fillStyle=C.gold;c.fill();text("契约已锁",lx,ly+83,22,C.gold,"center",700);c.restore();}
+    const dx=1420,dy=475,r=220, count=Math.round(E.profiler.hot_calls*out(t/7.2));
+    c.save(); c.lineWidth=20; c.strokeStyle="#1a3047"; c.beginPath(); c.arc(dx,dy,r,Math.PI*.75,Math.PI*2.25);c.stroke();
+    const arc=out(t/7.2);c.strokeStyle=C.cyan;glow(C.cyan,22);c.beginPath();c.arc(dx,dy,r,Math.PI*.75,Math.PI*.75+Math.PI*1.5*arc);c.stroke();noGlow();
+    text(count.toLocaleString("en-US"),dx,dy-22,82,C.ink,"center",760,"'Noto Sans Mono CJK SC', monospace");
+    text("次热调用",dx,dy+49,30,C.cyan,"center",650);
+    text(`${E.profiler.compatibility_backend_elapsed_seconds.toFixed(3)} s`,dx,dy+150,58,C.gold,"center",750,"'Noto Sans Mono CJK SC', monospace");
+    text("零溢出  ·  尾部冷路径已捕获",dx,dy+205,24,C.ink,"center",580);c.restore();
+    footer(3,t,16);
+  }
+  function drawLock(cx,cy,scale,color,turn=0){
+    c.save();c.translate(cx,cy);c.rotate(turn);c.scale(scale,scale);c.lineWidth=7;c.strokeStyle=color;glow(color,23);c.beginPath();c.arc(0,-22,46,Math.PI,Math.PI*2);c.stroke();noGlow();rr(-62,-20,124,112,18,"#332b18",color,5);c.beginPath();c.arc(0,24,11,0,Math.PI*2);c.fillStyle=color;c.fill();c.fillRect(-4,30,8,20);c.restore();
+  }
+  function drawReplay(t) {
+    base(t, C.gold); title(4, out(t / 1.1));
+    const sx=80, sy=335, sw=1100, sh=280;
+    text("aegis replay  /  冻结探针与失败现场", sx+8, 190, 31, C.cyan, "left", 700);
+    rr(sx,sy,sw,sh,16,"rgba(8,18,30,.94)","#38506c",2);
+    line(sx+55,sy+130,sx+sw-55,sy+130,"#506680",6);
+    for(let i=0;i<15;i++){const x=sx+60+i*(sw-120)/14;line(x,sy+114,x,sy+146,i%3===0?C.cyan:"#5a7087",i%3===0?3:1,.7);}
+    const rewind=out(t/7), cursor=mix(sx+sw-90,sx+230,rewind);
+    c.beginPath();c.arc(cursor,sy+130,18+4*Math.sin(t*7),0,Math.PI*2);c.fillStyle=C.red;glow(C.red,20);c.fill();noGlow();
+    rr(sx+95,sy+183,880,57,8,"#101e30","#2c425a",1);text(`aegis replay --ticket ${E.replay_ticket}`,sx+122,sy+212,22,C.ink,"left",600,"'Noto Sans Mono CJK SC', monospace");
+    text("aegis blame  →  变更行归因",sx+55,sy+90,25,C.mute,"left",600);
+    const hit=out((t-7.1)/.7);rr(sx+100,sy+sh+56,1010,82,8,`rgba(122,24,43,${.18+.52*hit})`,hit?C.red:null,2);
+    text("原始代码行",sx+125,sy+sh+82,20,C.red2,"left",600);text(E.old_okx_division,sx+285,sy+sh+82,20,C.ink,"left",560,"'Noto Sans Mono CJK SC', monospace");
+    const cx=1515,cy=480,r=235; c.save();c.lineWidth=28;c.strokeStyle="#203249";c.beginPath();c.arc(cx,cy,r,Math.PI,Math.PI*2);c.stroke();
+    c.strokeStyle=C.gold;glow(C.gold,24);c.beginPath();c.arc(cx,cy,r,Math.PI,Math.PI+Math.PI*clamp(t/8));c.stroke();noGlow();
+    const angle=Math.PI+Math.PI*clamp(t/8);line(cx,cy,cx+Math.cos(angle)*(r-30),cy+Math.sin(angle)*(r-30),C.ink,7);c.beginPath();c.arc(cx,cy,14,0,Math.PI*2);c.fillStyle=C.ink;c.fill();
+    text("模型验证样本",cx,cy-42,25,C.mute,"center",570);text(String(E.risk_validation.support),cx,cy+15,76,C.ink,"center",780,"'Noto Sans Mono CJK SC', monospace");
+    text(`误报 ${E.risk_validation.false_positive}  ·  召回率 ${(E.risk_validation.recall*100).toFixed(0)}%`,cx,cy+83,26,C.gold,"center",650);
+    const lockP=out((t-8)/1.3);drawLock(cx,cy+260,.72*lockP,C.gold, .05*Math.sin(t*3));
+    if(t>9.1){rr(cx-220,cy+275,440,62,12,"#332b18",C.gold,2);text(`安全观察  /  ${E.model_mode}`,cx,cy+306,24,C.gold,"center",720);}
+    text("样本还少，先观察",cx,cy+372,22,C.ink,"center",650);footer(4,t,14);
+  }
+  function drawFleet(t) {
+    base(t,C.green); title(5,out(t/1.1));
+    const repos=E.fleet_repositories, cols=5, cardW=344, cardH=142, gapX=20, gapY=17, x0=58, y0=174;
+    const lit=clamp(t/7.8)*repos.length;
+    repos.forEach((repo,i)=>{
+      const col=i%cols,row=Math.floor(i/cols),x=x0+col*(cardW+gapX),y=y0+row*(cardH+gapY),k=out(lit-i);
+      const active=k>0; c.save();c.globalAlpha=.45+.55*k;
+      rr(x,y,cardW,cardH,15,active?"#0d2c27":"#102033",active?"#33b981":"#2c4257",2);
+      c.beginPath();c.arc(x+cardW-30,y+27,8,0,Math.PI*2);c.fillStyle=active?C.green:"#53667c";if(active)glow(C.green,18);c.fill();noGlow();
+      wrap(repo,x+22,y+40,cardW-58,24,C.ink,29,"left",640);
+      text(active?"零冲突":"待点亮",x+25,y+89,22,active?C.green:C.mute,"left",700);
+      text(active?"主干零污染":"交付分支",x+cardW-25,y+89,20,active?C.green:C.mute,"right",600);
+      c.restore();
+    });
+    const end=out((t-9.2)/1.6);if(end>0){c.save();c.globalAlpha=end;const g=c.createRadialGradient(960,578,20,960,578,740);g.addColorStop(0,"rgba(9,39,38,.78)");g.addColorStop(1,"rgba(5,12,22,.68)");c.fillStyle=g;c.fillRect(0,135,W,730);text("15 个真实交付分支",960,407,33,C.green,"center",620);text("GPT 负责创造，Aegis 负责确定性兜底。",960,553,76,C.ink,"center",790);text("0 冲突  ·  主干 0 污染",960,657,34,C.cyan,"center",660);c.restore();}
+    footer(5,t,14);
+  }
+  function drawAt(sec) {
+    const t=clamp(sec,0,89.999);let i=0;while(i<5&&t>=CUTS[i+1])i++;const local=t-CUTS[i];
+    [drawOpening,drawLanes,drawCode,drawTopology,drawReplay,drawFleet][i](local);
+    return i;
+  }
+  function glyphMask(ch) {
+    const tmp=document.createElement("canvas");tmp.width=128;tmp.height=128;const x=tmp.getContext("2d",{willReadFrequently:true});x.clearRect(0,0,128,128);x.font=font(72);x.textBaseline="top";x.fillStyle="#fff";x.fillText(ch,12,8);return x.getImageData(0,0,128,128).data;
+  }
+  window.setEvidence = async (e) => { E=e; await document.fonts.load('72px AegisCJK', '中文测试'); await document.fonts.ready; return { font: document.fonts.check('72px AegisCJK','中文测试'), width: canvas.width, height: canvas.height }; };
+  window.validateGlyphs = () => {
+    const chars=new Set((VISIBLE_TEXT.join("")+JSON.stringify(E)).split("").filter(ch=>ch.codePointAt(0)>=128));
+    const missing=glyphMask("\u{10ffff}");let ink=false;for(let j=3;j<missing.length;j+=4)if(missing[j]){ink=true;break;}if(!ink)throw new Error("缺字框像素基准为空");
+    const bad=[];for(const ch of chars){const a=glyphMask(ch);let diff=false;for(let j=0;j<a.length;j+=4){if(a[j+3]!==missing[j+3]){diff=true;break;}}if(!diff)bad.push(ch);}
+    if(bad.length)throw new Error("浏览器字形像素与缺字框一致："+bad.join(""));return {checked:chars.size, noTofu:true};
+  };
+  window.renderDataUrl = (t, kind="jpeg") => { drawAt(t); return canvas.toDataURL(kind==="png"?"image/png":"image/jpeg", kind==="png"?undefined:.94); };
+  window.drawAt = drawAt;
+  window.getDimensions = () => ({width:canvas.width,height:canvas.height});
+})();
+</script>
+</body>
+</html>
