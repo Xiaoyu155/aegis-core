@@ -76,8 +76,16 @@ assert result["cold"] is True
     path = tmp_path / "load.py"
     path.write_text(source, encoding="utf-8")
     report = RuntimeProfiler(tmp_path, timeout_sec=45, max_events=128).run([sys.executable, str(path)])
-    tick = next(item for item in report["call_edges"] if item["callee_qualname"] == "tick")
-    cold = next(item for item in report["call_edges"] if item["callee_qualname"] == "cold_branch")
+    tick_edges = [item for item in report["call_edges"] if item["callee_qualname"] == "tick"]
+    cold_edges = [item for item in report["call_edges"] if item["callee_qualname"] == "cold_branch"]
+    assert tick_edges and cold_edges, json.dumps({
+        "backend": report.get("backend"),
+        "function_keys": sorted(report.get("functions", {})),
+        "edge_callees": [item.get("callee_qualname") for item in report.get("call_edges", [])],
+        "reservoir_kinds": sorted({item.get("kind") for item in report.get("reservoir_sample", [])}),
+    }, sort_keys=True)
+    tick = tick_edges[0]
+    cold = cold_edges[0]
     assert report["completed"] is True
     assert report["functions"]["load.py::tick"]["calls"] == 100_000
     assert tick["count"] == 100_000

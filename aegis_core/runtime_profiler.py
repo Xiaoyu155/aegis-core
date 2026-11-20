@@ -110,7 +110,8 @@ def relpath(filename):
         return None
     real = os.path.realpath(filename)
     try:
-        if os.path.commonpath((root, real)) != root: return None
+        common = os.path.commonpath((root, real))
+        if os.path.normcase(common) != os.path.normcase(root): return None
     except ValueError:
         return None
     return os.path.relpath(real, root).replace(os.sep, "/")
