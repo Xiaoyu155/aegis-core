@@ -349,6 +349,9 @@ def rollback_file_patch(evidence: dict) -> None:
     """Restore the saved bytes when the file still has the expected result."""
     from pathlib import Path
     target = Path(evidence["path"])
-    current = target.read_text(encoding="utf-8")
+    try:
+        current = target.read_bytes().decode("utf-8")
+    except UnicodeDecodeError as error:
+        raise SemanticPatchError("source file is no longer UTF-8") from error
     rollback_structured_patch(current, evidence["original"], expected_updated=evidence["updated"])
     target.write_text(evidence["original"], encoding="utf-8", newline="")

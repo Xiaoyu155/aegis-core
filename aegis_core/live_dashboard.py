@@ -96,7 +96,7 @@ class DashboardReadModel:
             return {"status": gate.get("status", payload.get("status", "reported")),
                     "samples": payload.get("dataset", {}).get("total_samples"),
                     "allowed_mode_transition": bool(gate.get("allowed_mode_transition")),
-                    "source": str(path.relative_to(self.repo_root))}
+                    "source": path.relative_to(self.repo_root).as_posix()}
         return None
 
     def _fleet(self) -> dict:
@@ -108,7 +108,7 @@ class DashboardReadModel:
             except (OSError, json.JSONDecodeError):
                 continue
             if isinstance(payload, dict):
-                payload.setdefault("source", str(path.relative_to(self.repo_root)))
+                payload.setdefault("source", path.relative_to(self.repo_root).as_posix())
                 return payload
         status = self.repo_root / "STATUS.json"
         if status.is_file():

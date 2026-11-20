@@ -145,8 +145,8 @@ class EnvDoctor:
             self._temporary_dirs.append(str(temporary_root))
             temp_target = temporary_root / destination.name
             shutil.copyfile(template, temp_target)
-            pairs.append({"template": str(template.relative_to(self.repo_root)),
-                          "expected_path": str(destination.relative_to(self.repo_root)),
+            pairs.append({"template": template.relative_to(self.repo_root).as_posix(),
+                          "expected_path": destination.relative_to(self.repo_root).as_posix(),
                           "temporary_path": str(temp_target), "isolated": True})
         return pairs
 
@@ -176,7 +176,7 @@ class EnvDoctor:
                     continue
                 if name in _CACHE_NAMES and not target.is_symlink():
                     shutil.rmtree(target, ignore_errors=True)
-                    removed.append({"path": str(target.relative_to(self.repo_root)), "kind": "cache"})
+                    removed.append({"path": target.relative_to(self.repo_root).as_posix(), "kind": "cache"})
                     continue
                 if target.is_symlink():
                     continue
@@ -200,7 +200,7 @@ class EnvDoctor:
                     admin = None
                 if (admin is not None and admin_dir in admin.parents and not admin.exists()):
                     shutil.rmtree(candidate)
-                    removed.append({"path": str(candidate.relative_to(self.repo_root)), "kind": "orphan_worktree"})
+                    removed.append({"path": candidate.relative_to(self.repo_root).as_posix(), "kind": "orphan_worktree"})
         if (self.repo_root / ".git").exists():
             subprocess.run(["git", "worktree", "prune", "--expire=now"], cwd=self.repo_root,
                            capture_output=True, timeout=5, check=False)
@@ -234,15 +234,16 @@ class EnvDoctor:
         python_tests = sorted(item for item in selected if item.suffix == ".py")
         js_tests = sorted(item for item in selected if item.suffix != ".py")
         if python_tests:
-            commands.append([sys.executable, "-m", "pytest", "-q", *[str(item.relative_to(self.repo_root)) for item in python_tests]])
+            commands.append([sys.executable, "-m", "pytest", "-q", *[item.relative_to(self.repo_root).as_posix() for item in python_tests]])
         if js_tests:
             node = shutil.which("node")
-            commands.append(([node or "node", "--test", *[str(item.relative_to(self.repo_root)) for item in js_tests]]))
+            commands.append([node or "node", "--test",
+                             *[item.relative_to(self.repo_root).as_posix() for item in js_tests]])
         boundary = {"changed_files": changed,
-                    "selected_test_files": [str(item.relative_to(self.repo_root)) for item in sorted(selected)],
+                    "selected_test_files": [item.relative_to(self.repo_root).as_posix() for item in sorted(selected)],
                     "untested_changed_files": [item for item in changed if not any(
                         Path(item).stem.lower() in Path(test).stem.lower() for test in
-                        (str(path.relative_to(self.repo_root)) for path in selected))],
+                        (path.relative_to(self.repo_root).as_posix() for path in selected))],
                     "full_repository_suite_run": False}
         return {"commands": commands, "coverage_boundary": boundary}
 

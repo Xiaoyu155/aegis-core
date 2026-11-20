@@ -3,13 +3,13 @@ from concurrent.futures import ThreadPoolExecutor
 import http.client
 import json
 from pathlib import Path
-import re
-import select
+import socket
 import sqlite3
 import subprocess
 import sys
 import threading
 import time
+from urllib.error import URLError
 from urllib.request import urlopen
 from urllib.parse import urlsplit
 
@@ -298,21 +298,30 @@ def test_serve_cli_starts_a_real_loopback_http_process(tmp_path):
     database = tmp_path / ".aegis" / "ledger.sqlite3"
     database.parent.mkdir(parents=True)
     Ledger(database).create_ticket("cli-ticket", "serve", {}, "frozen")
+    with socket.socket() as probe:
+        probe.bind(("127.0.0.1", 0))
+        port = probe.getsockname()[1]
     process = subprocess.Popen([sys.executable, "-m", "aegis_core.cli", "serve", "--repo", str(tmp_path),
-                                "--db", str(database), "--port", "0"],
-                               stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                                "--db", str(database), "--port", str(port)],
+                               stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
     try:
-        ready, _, _ = select.select([process.stdout], [], [], 5)
-        assert ready, "serve command did not announce its loopback listener"
-        line = process.stdout.readline()
-        match = re.search(r"http://127\.0\.0\.1:(\d+)/", line)
-        assert match, line
-        with urlopen(f"http://127.0.0.1:{match.group(1)}/api/overview", timeout=3) as response:
-            data = json.loads(response.read())
-            assert response.status == 200
-            assert data["data"]["tickets"] == 1
+        deadline = time.monotonic() + 5
+        while True:
+            if process.poll() is not None:
+                detail = process.stderr.read() if process.stderr else ""
+                raise AssertionError(f"serve command exited early: {detail}")
+            try:
+                with urlopen(f"http://127.0.0.1:{port}/api/overview", timeout=0.2) as response:
+                    data = json.loads(response.read())
+                    assert response.status == 200
+                    assert data["data"]["tickets"] == 1
+                    break
+            except URLError:
+                if time.monotonic() >= deadline:
+                    raise AssertionError("serve command did not open its loopback listener")
+                time.sleep(0.05)
     finally:
         process.terminate()
         process.wait(timeout=5)
-        process.stdout.close()
-        process.stderr.close()
+        if process.stderr:
+            process.stderr.close()

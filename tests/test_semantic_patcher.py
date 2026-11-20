@@ -156,13 +156,14 @@ def test_unified_diff_fallback_supports_javascript_block_scopes(tmp_path):
 @pytest.mark.parametrize("case", range(3))
 def test_file_patch_writes_atomically_and_rolls_back_only_unchanged_result(tmp_path, case):
     path = tmp_path / f"module_{case}.py"
-    original = f"def value_{case}():\n    return {case}\n"
-    path.write_text(original, encoding="utf-8")
+    newline = "\r\n" if case % 2 else "\n"
+    original = f"def value_{case}():\n    return {case}\n".replace("\n", newline)
+    path.write_bytes(original.encode("utf-8"))
     evidence = apply_file_patch(path, symbol_name=f"value_{case}",
                                 code=f"def value_{case}():\n    return {case + 1}")
-    assert path.read_text(encoding="utf-8") == evidence["updated"]
+    assert path.read_bytes().decode("utf-8") == evidence["updated"]
     rollback_file_patch(evidence)
-    assert path.read_text(encoding="utf-8") == original
+    assert path.read_bytes().decode("utf-8") == original
 
 
 def test_file_rollback_does_not_overwrite_a_later_independent_edit(tmp_path):
