@@ -652,3 +652,44 @@ def scan_repository(root: str | Path, *, baseline: str | None = None) -> dict:
     tracked = result.stdout.decode("utf-8", errors="replace").split("\0")
     return scan_changed_files(root, tracked, baseline=baseline)
 
+
+def inspect_test_assertion_delta(baseline: str, candidate: str, *, path: str = "tests") -> dict:
+    """Fail when a candidate removes or trivially weakens Python assertions.
+
+    This narrow comparison is used for generated mutation evidence and review
+    of test edits. It parses both versions without importing either module.
+    """
+    try:
+        before_tree = ast.parse(baseline, filename=f"{path}:baseline")
+        after_tree = ast.parse(candidate, filename=f"{path}:candidate")
+    except SyntaxError as error:
+        return {"passed": False, "findings": [{"code": "TEST_SOURCE_SYNTAX_ERROR",
+                "path": path, "detail": str(error)}]}
+    before = [node for node in ast.walk(before_tree) if isinstance(node, ast.Assert)]
+    after = [node for node in ast.walk(after_tree) if isinstance(node, ast.Assert)]
+    findings = []
+    if len(after) < len(before):
+        findings.append({"code": "TEST_ASSERTION_REMOVED", "path": path,
+                         "detail": f"assertion count decreased from {len(before)} to {len(after)}"})
+
+    def contains_true(node):
+        return any(isinstance(item, ast.Constant) and item.value is True for item in ast.walk(node))
+
+    for node in after:
+        if isinstance(node.test, ast.Constant) and node.test.value is True:
+            findings.append({"code": "TEST_ASSERTION_ALWAYS_TRUE", "path": path,
+                             "line": node.lineno, "detail": "assert True cannot detect a regression"})
+        elif isinstance(node.test, ast.BoolOp) and isinstance(node.test.op, ast.Or) and contains_true(node.test):
+            findings.append({"code": "TEST_ASSERTION_ALWAYS_TRUE", "path": path,
+                             "line": node.lineno, "detail": "assertion is made unconditional by `or True`"})
+
+    def complexity(node):
+        return sum(1 for _ in ast.walk(node))
+
+    if len(after) >= len(before) and sum(complexity(item.test) for item in after) < sum(
+            complexity(item.test) for item in before):
+        findings.append({"code": "TEST_ASSERTION_SIMPLIFIED", "path": path,
+                         "detail": "candidate assertions contain fewer predicate nodes"})
+    return {"passed": not findings, "findings": findings,
+            "baseline_assertions": len(before), "candidate_assertions": len(after)}
+

@@ -1,0 +1,17 @@
+{
+  "official_tokenizer": "Qwen/Qwen2.5-Coder-3B-Instruct",
+  "pair_count": 400,
+  "redlight_verified_pairs": 400,
+  "rejected_candidates_by_reason": {
+    "no_break_idempotency_key_site": 187,
+    "no_off_by_one_boundary_site": 62,
+    "no_remove_timeout_validation_site": 187,
+    "no_swallow_exception_site": 187,
+    "no_unbounded_memory_growth_site": 187,
+    "off_by_one_boundary_not_caught": 110
+  },
+  "schema_version": "aegis.hard_negative_manifest.v1",
+  "sha256": "2acbdcfc5d93f7554850e10b5c875a13ec3346a3c0f324870d05e3887152b7bb",
+  "target_pairs": 400,
+  "zero_truncation_verified": true
+}

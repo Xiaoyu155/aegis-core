@@ -615,6 +615,9 @@ def main(argv: list[str] | None = None) -> int:
     batch.add_argument("--config", required=True)
     batch.add_argument("--workers", type=int, default=4)
     batch.add_argument("--out", "--output")
+    batch.add_argument("--repo", default=".")
+    batch.add_argument("--sparse-mode", choices=("auto", "on", "off"), default="auto")
+    batch.add_argument("--changed-file", action="append", default=[])
     plan = commands.add_parser("plan")
     plan.add_argument("text")
     plan.add_argument("--repo", default=".")
@@ -646,6 +649,7 @@ def main(argv: list[str] | None = None) -> int:
     autopilot.add_argument("--repo", default=".")
     autopilot.add_argument("--db")
     autopilot.add_argument("--out", "--output")
+    autopilot.add_argument("--sparse-mode", choices=("auto", "on", "off"), default="auto")
     replay = commands.add_parser("replay", help="restore and physically execute a frozen ticket snapshot")
     replay.add_argument("--ticket", required=True)
     replay.add_argument("--repo", default=".")
@@ -715,6 +719,27 @@ def main(argv: list[str] | None = None) -> int:
     bench.add_argument("--signing-key-env", default="AEGIS_CALIBRATION_SIGNING_KEY",
                        help="Environment variable used to sign an eligible enforce permit")
     bench.add_argument("--out", help="Optional path for the JSON calibration report")
+    doctor = commands.add_parser("doctor", help="preflight runtimes, dependencies, disk space, and local config templates")
+    doctor.add_argument("--repo", default=".")
+    doctor.add_argument("--min-free-bytes", type=int, default=2 * 1024**3)
+    doctor.add_argument("--changed-file", action="append", default=[])
+    doctor.add_argument("--sparse-mode", choices=("auto", "on", "off"), default="auto")
+    doctor.add_argument("--run-sparse", action="store_true", help="run only the targeted tests in SPARSE_MODE")
+    doctor.add_argument("--no-cleanup", action="store_true", help="report low disk without pruning caches or orphan worktrees")
+    doctor.add_argument("--out", "--output")
+    serve = commands.add_parser("serve", help="start the local read-only Chinese control dashboard")
+    serve.add_argument("--repo", default=".")
+    serve.add_argument("--db")
+    serve.add_argument("--port", type=int, default=8765)
+    synth = commands.add_parser("synthesize-hard-negatives", help="generate red-light-verified calibration pairs")
+    synth.add_argument("--repo", default=".")
+    synth.add_argument("--source-dataset")
+    synth.add_argument("--out")
+    synth.add_argument("--pairs", type=int, default=400)
+    synth.add_argument("--tokenizer", default="Qwen/Qwen2.5-Coder-3B-Instruct")
+    synth.add_argument("--max-tokens", type=int, default=4096)
+    synth.add_argument("--timeout", type=float, default=45)
+    synth.add_argument("--bench-out")
     for name in ("stats", "export-traces"):
         command = commands.add_parser(name)
         command.add_argument("--repo", default=".")
@@ -741,7 +766,19 @@ def main(argv: list[str] | None = None) -> int:
                 result, code = _run(args)
         elif args.command == "batch":
             from .factory_queue import run_factory_queue
-            result, code = run_factory_queue(args.config, workers=args.workers)
+            from .env_doctor import EnvDoctor
+            doctor = EnvDoctor(args.repo)
+            environment = doctor.check(changed_files=args.changed_file, sparse_mode=args.sparse_mode)
+            if args.changed_file and environment["sparse_mode"]["enabled"]:
+                environment["sparse_gate"] = doctor.run_sparse_gate(args.changed_file)
+            if environment["blocking"]:
+                result, code = {"status": "environment_blocked", "environment": environment}, 2
+            elif environment.get("sparse_gate", {}).get("status") == "failed":
+                result, code = {"status": "SPARSE_MODE_FAILED", "environment": environment}, 1
+            else:
+                result, code = run_factory_queue(args.config, workers=args.workers)
+                result["environment"] = environment
+            doctor.cleanup_temporary_configs()
             if args.out:
                 _save(args.out, result)
         elif args.command == "plan":
@@ -794,6 +831,25 @@ def main(argv: list[str] | None = None) -> int:
             rounds = config.get("candidate_rounds", config.get("rounds"))
             if type(rounds) is not list:
                 raise ValueError("autopilot config requires candidate_rounds")
+            from .env_doctor import EnvDoctor
+            doctor = EnvDoctor(root)
+            changed_files = config.get("changed_files", config.get("allowed_paths", []))
+            environment = doctor.check(changed_files=changed_files, sparse_mode=args.sparse_mode)
+            if environment["blocking"]:
+                result, code = {"status": "environment_blocked", "environment": environment}, 2
+                if args.out:
+                    _save(args.out, result)
+                print(json.dumps(result, ensure_ascii=False, allow_nan=False))
+                return code
+            if environment["sparse_mode"]["enabled"] and changed_files:
+                environment["sparse_gate"] = doctor.run_sparse_gate(changed_files)
+                if environment["sparse_gate"]["status"] != "passed":
+                    result = {"status": "SPARSE_MODE_FAILED", "environment": environment}
+                    if args.out:
+                        _save(args.out, result)
+                    print(json.dumps(result, ensure_ascii=False, allow_nan=False))
+                    doctor.cleanup_temporary_configs()
+                    return 1
             normalized_rounds = []
             for round_items in rounds:
                 if type(round_items) is not list:
@@ -824,6 +880,8 @@ def main(argv: list[str] | None = None) -> int:
                 ticket_id=config.get("ticket_id"), answers=config.get("answers"),
                 database_path=args.db,
                 dataset_path=(root / dataset_path).resolve() if dataset_path else None)
+            result["environment"] = environment
+            doctor.cleanup_temporary_configs()
             if args.out:
                 _save(args.out, result)
             code = 0 if result["status"] == "succeeded" else 1
@@ -918,6 +976,36 @@ def main(argv: list[str] | None = None) -> int:
             if args.out:
                 _save(args.out, result)
             code = 0 if result["gate"]["allowed_mode_transition"] else 1
+        elif args.command == "doctor":
+            from .env_doctor import EnvDoctor
+            doctor_instance = EnvDoctor(args.repo, min_free_bytes=args.min_free_bytes,
+                                        cleanup=not args.no_cleanup)
+            result = doctor_instance.check(changed_files=args.changed_file, sparse_mode=args.sparse_mode)
+            if args.run_sparse and result["sparse_mode"]["enabled"]:
+                result["sparse_gate"] = doctor_instance.run_sparse_gate(args.changed_file)
+            if args.out:
+                _save(args.out, result)
+            code = 0 if result["ready"] and result.get("sparse_gate", {}).get("status", "passed") == "passed" else 2
+        elif args.command == "serve":
+            from .live_dashboard import serve as serve_dashboard
+            serve_dashboard(args.repo, port=args.port, db_path=args.db)
+            return 0
+        elif args.command == "synthesize-hard-negatives":
+            from .synthetic_hard_negatives import generate_release
+            from .world_model_bench import run_benchmark
+            result = generate_release(args.repo, source_dataset=args.source_dataset, output_dir=args.out,
+                                      target_pairs=args.pairs, tokenizer_id=args.tokenizer,
+                                      max_tokens=args.max_tokens, timeout=args.timeout)
+            benchmark_path = Path(result["output"]) / "world_model_bench_v13.json"
+            calibration = run_benchmark(args.repo,
+                                        tournament_path=Path(result["output"]) / "hard_negative_pairs.jsonl")
+            _save(benchmark_path, calibration)
+            result["calibration"] = {"report": str(benchmark_path), "status": calibration["gate"]["status"],
+                                     "validation_samples": calibration["dataset"]["validation_samples"],
+                                     "allowed_mode_transition": calibration["gate"]["allowed_mode_transition"]}
+            if args.bench_out:
+                _save(args.bench_out, calibration)
+            code = 0
         else:
             ledger = _ledger(_repo(args.repo), args.db)
             if args.command == "stats":

@@ -1,4 +1,4 @@
-# aegis-core V1.2
+# aegis-core V1.3
 
 Python 3.11+ 的确定性控制面与因果轨迹骨架。运行时仅依赖标准库；Git
 Worktree 需要系统安装 Git，验收测试需要 pytest。不调用模型、不导入目标业务模块。
@@ -30,6 +30,13 @@ pytest -v
 - `inspect_source` 为每条发现增加 `confidence`、`confidence_score`、`scope`、`asset_type` 和 `suppression_reason`。`scan_changed_files` 把被抑制的依赖、测试夹具、静态原型、离线脚本、生命周期清理与框架默认超时发现单独列入 `suppressed_findings`，不让它们阻塞门禁。
 - `aegis ship-fleet --owner Xiaoyu155` 默认只生成完整 PR 计划；它读取 `feat/aegis-*` 的提交、变更、冲突预检和 GitHub 检查状态，并对已有 PR 做幂等复用。只有显式 `--execute` 且检查全绿时才创建 PR。`nova-agent`、`Checkpoint`、`edu-typing` 默认排除。
 - `aegis world-model-bench` 用锦标赛正负样本和已验证因果轨迹做分组留出校准。只有同一阈值同时达到正确补丁误拦率低于 1%、风险样本召回率至少 85%，并提供至少 16 字节 `AEGIS_CALIBRATION_SIGNING_KEY` 时，报告才签发 `observe -> enforce` 许可。
+
+## v1.3 结构化补丁、环境自愈与实时监控
+
+- `Sandbox.apply_patch` 先校验并应用 unified diff；上下文失败时按 Python AST 符号或 JS/TS 花括号块定位补丁，完成语法校验并保留 compare-and-swap 回滚能力。
+- `aegis doctor --repo .` 检查磁盘、Python/Node 运行时、声明依赖和本地配置模板。`--sparse-mode auto --changed-file path/to/module.py --run-sparse` 会运行定向门禁，并在诊断 JSON 中列出覆盖边界。
+- `aegis serve --repo . --port 8765` 启动仅绑定本机的只读控制台；JSON API 提供 `/api/overview`、`/api/tickets`、`/api/traces` 和 `/api/fleet`。
+- `aegis synthesize-hard-negatives --repo . --pairs 400` 只输出经过真实绿灯/红灯证据与官方 Qwen tokenizer 零截断验证的样本；需要 `transformers` 和本地已缓存的 `Qwen/Qwen2.5-Coder-3B-Instruct` tokenizer，清单记录 SHA-256。校准结果如实写入 `world_model_bench_v13.json`，未达门槛时保持阻断。
 
 ## 第十二阶段工厂
 
