@@ -693,6 +693,28 @@ def main(argv: list[str] | None = None) -> int:
     fleet.add_argument("--token-env", default="GITHUB_TOKEN", help="Environment variable holding an optional GitHub token")
     fleet.add_argument("--exclude-repo", action="append", default=[],
                        help="Skip an account repository by full name or short name; repeat as needed")
+    ship = commands.add_parser("ship-fleet", help="build an idempotent PR delivery plan for feat/aegis-* branches")
+    ship_scope = ship.add_mutually_exclusive_group(required=True)
+    ship_scope.add_argument("--owner", help="GitHub account or organization to inspect read-only")
+    ship_scope.add_argument("--repo", action="append", dest="repositories",
+                            help="Local repository to plan; repeat for a local fleet")
+    ship.add_argument("--base-branch", default="main", help="Default branch used for local repository plans")
+    ship.add_argument("--exclude-repo", action="append", default=[],
+                      help="Skip a repository by full name or short name; repeat as needed")
+    ship.add_argument("--token-env", default="GITHUB_TOKEN", help="Environment variable holding a GitHub token")
+    ship.add_argument("--out", help="Optional path for the complete JSON delivery plan")
+    ship.add_argument("--execute", action="store_true",
+                      help="Create ready GitHub PRs; requires --owner and a token. Default is a dry run.")
+    bench = commands.add_parser("world-model-bench", help="calibrate the world-model observe-to-enforce gate")
+    bench.add_argument("--repo", default=".")
+    bench.add_argument("--tournament-dataset", help="JSONL tournament winner/loser dataset")
+    bench.add_argument("--causal-traces", help="Optional causal trace JSONL dataset")
+    bench.add_argument("--validation-fraction", type=float, default=0.2)
+    bench.add_argument("--threshold", type=float, action="append", dest="thresholds",
+                       help="Evaluate a threshold; repeat to specify a fixed sweep")
+    bench.add_argument("--signing-key-env", default="AEGIS_CALIBRATION_SIGNING_KEY",
+                       help="Environment variable used to sign an eligible enforce permit")
+    bench.add_argument("--out", help="Optional path for the JSON calibration report")
     for name in ("stats", "export-traces"):
         command = commands.add_parser(name)
         command.add_argument("--repo", default=".")
@@ -871,6 +893,31 @@ def main(argv: list[str] | None = None) -> int:
                                  exclude_repositories=args.exclude_repo)
             result["artifacts"] = write_fleet_artifacts(result, args.out_dir)
             code = 0 if result["summary"]["conflicts"] == 0 else 1
+        elif args.command == "ship-fleet":
+            from .fleet_shipper import execute_ship_plan, plan_github_fleet, plan_local_fleet
+            token = os.environ.get(args.token_env)
+            if args.owner:
+                result = plan_github_fleet(args.owner, token=token, exclude_repositories=args.exclude_repo)
+            else:
+                if args.execute:
+                    raise ValueError("--execute requires --owner so remote PR creation can be idempotency-checked")
+                result = plan_local_fleet(args.repositories, default_branch=args.base_branch,
+                                          exclude_repositories=args.exclude_repo)
+            if args.execute:
+                result = execute_ship_plan(result, token=token)
+            if args.out:
+                _save(args.out, result)
+            code = 0 if result["summary"].get("conflicts", 0) == 0 else 1
+        elif args.command == "world-model-bench":
+            from .world_model_bench import run_benchmark
+            result = run_benchmark(args.repo, tournament_path=args.tournament_dataset,
+                                   causal_trace_path=args.causal_traces,
+                                   validation_fraction=args.validation_fraction,
+                                   thresholds=args.thresholds,
+                                   signing_key=os.environ.get(args.signing_key_env))
+            if args.out:
+                _save(args.out, result)
+            code = 0 if result["gate"]["allowed_mode_transition"] else 1
         else:
             ledger = _ledger(_repo(args.repo), args.db)
             if args.command == "stats":

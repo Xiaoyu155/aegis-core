@@ -1,4 +1,4 @@
-# aegis-core V1
+# aegis-core V1.2
 
 Python 3.11+ 的确定性控制面与因果轨迹骨架。运行时仅依赖标准库；Git
 Worktree 需要系统安装 Git，验收测试需要 pytest。不调用模型、不导入目标业务模块。
@@ -24,6 +24,12 @@ pytest -v
 - attach 会识别包含可执行脚本的 HTML 入口，并保留 .aegis/repo_profile.json 中的 tool_source_globs。默认涵盖根目录和子项目 tools/ 下的 Python、JavaScript/TypeScript、HTML 及 CSS，测试和配置仍受保护。用 aegis attach --tool-source-glob 重设工具范围。
 - 浏览器修复工单在 DAG 中声明 "probe_kind": "browser_visual"，也可用 aegis wish --no-auto-probe --probe-kind browser_visual 冻结契约。至少要锁定一个探针脚本。直接传入的脚本参数会自动锁定；间接入口或额外夹具可用 probe_scripts（CLI 为重复 --probe-script）显式指定。probe_script_sha256 对仓内文本脚本统一使用 LF，其余路径按原始字节计算。门禁在每次执行前后核验，红绿两次探针在同一个 worktree 内还须具有相同的 probe_runtime_sha256 原始字节摘要。验证节点也支持相同声明。
 - 浏览器探针自行运行项目的浏览器脚本，断言布局、像素或帧时；Aegis 记录退出和证据。FailureDiagnosis.failure_code 区分断言失败、模块未实现、浏览器等待超时和环境不可用。HTML 内联 JS 与 CSS 引用可由 L3 原生审查，静态规则只覆盖可识别的源码模式。
+
+## v1.2 高信噪比扫描与交付门禁
+
+- `inspect_source` 为每条发现增加 `confidence`、`confidence_score`、`scope`、`asset_type` 和 `suppression_reason`。`scan_changed_files` 把被抑制的依赖、测试夹具、静态原型、离线脚本、生命周期清理与框架默认超时发现单独列入 `suppressed_findings`，不让它们阻塞门禁。
+- `aegis ship-fleet --owner Xiaoyu155` 默认只生成完整 PR 计划；它读取 `feat/aegis-*` 的提交、变更、冲突预检和 GitHub 检查状态，并对已有 PR 做幂等复用。只有显式 `--execute` 且检查全绿时才创建 PR。`nova-agent`、`Checkpoint`、`edu-typing` 默认排除。
+- `aegis world-model-bench` 用锦标赛正负样本和已验证因果轨迹做分组留出校准。只有同一阈值同时达到正确补丁误拦率低于 1%、风险样本召回率至少 85%，并提供至少 16 字节 `AEGIS_CALIBRATION_SIGNING_KEY` 时，报告才签发 `observe -> enforce` 许可。
 
 ## 第十二阶段工厂
 
