@@ -1,6 +1,6 @@
 {
   "phase": 16,
-  "status": "local_full_suite_green_remote_ci_rerun_pending",
+  "status": "local_full_suite_green_final_branch_ci_pending",
   "version": "1.1.0",
   "branch": "feat/aegis-v1.1-fullstack",
   "base_branch": "main",
@@ -30,7 +30,7 @@
     "local_verification": {
       "command": "./.venv/bin/python -m pytest -q",
       "python": "3.12.14",
-      "elapsed_seconds": 292.3,
+      "elapsed_seconds": 220.75,
       "result": "1338 passed",
       "loopback_http_integration": "passed with network permission enabled"
     }
@@ -59,7 +59,7 @@
     "m2_runtime_profiler_sampling": {
       "module": "aegis_core/runtime_profiler.py",
       "signature": "(caller, callee, arg_schema_hash); caller_line is location metadata",
-      "sampling": "deterministic stratified reservoir; up to 75% reserved for call edges and dynamic getattr; repeated hits increment counts without consuming slots",
+      "sampling": "deterministic stratified reservoir; up to 75% reserved for call edges and dynamic getattr; repeated hits increment counts without consuming slots; code paths and names are cached for trace-backend performance",
       "tests": 50,
       "high_frequency_probe": {
         "hot_calls": 100000,
@@ -70,7 +70,9 @@
         "tail_cold_branch_captured": true,
         "reservoir_size_observed": 15,
         "reservoir_replacements": 0,
-        "unique_sites_observed": 15
+        "unique_sites_observed": 15,
+        "compatibility_backend": "sys.settrace",
+        "compatibility_backend_elapsed_seconds": 1.418
       }
     },
     "m3_pr_orchestrator": {
@@ -141,12 +143,30 @@
         "v16-gates"
       ]
     },
-    "status": "pending rerun after profiler sampling fix",
+    "status": "See workflow_url for live status of branch-head checks",
     "previous_run": {
       "run_id": 44677431133,
       "url": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44677431133",
       "result": "failed on high-frequency call-edge retention across Windows and Python 3.11; corrected locally and rerun required"
-    }
+    },
+    "workflow_url": "https://github.com/Xiaoyu155/aegis-core/actions",
+    "previous_attempts": [
+      {
+        "run_id": 44677431133,
+        "commit": "eab8609ed093d05655588cc800e656cc265ceeb8",
+        "result": "hot call edge was evicted from the global reservoir; fixed with priority strata and line-independent call signatures"
+      },
+      {
+        "run_id": 44679294614,
+        "commit": "9f29da11454d8736e9a28b0d5f08ff1119fd6e66",
+        "result": "trace profile exceeded the 45-second probe timeout on Python 3.11; fixed by caching code paths and names"
+      },
+      {
+        "run_id": 44680156053,
+        "commit": "5f993450440ea9f4ee07a9f316ec0ec69bde0278",
+        "result": "same trace timeout remained before the cache optimization"
+      }
+    ]
   },
   "previous_phase_15": {
     "phase": 15,
