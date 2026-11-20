@@ -19,17 +19,79 @@ import textwrap
 from typing import Iterable
 
 
-_BOOTSTRAP = r'''import atexit, builtins, dis, json, os, re, sys, types
+_BOOTSTRAP = r'''import atexit, builtins, dis, hashlib, json, os, random, re, sys, types
 
 output = os.environ.get("AEGIS_PROFILE_OUTPUT")
 root = os.path.realpath(os.environ.get("AEGIS_PROFILE_ROOT", os.getcwd()))
 limit = int(os.environ.get("AEGIS_PROFILE_MAX_EVENTS", "50000"))
 secret = re.compile(r"password|secret|token|api.?key|credential|private.?key", re.I)
 functions, edges, exceptions, heat, dynamic_attributes = {}, {}, {}, {}, {}
-event_count = 0
+raw_event_count = 0
+unique_event_count = 0
+reservoir_replacements = 0
+seen_sites = set()
+reservoir = {}
+sampled_sites = {}
+reservoir_rng = random.Random(0)
+argument_schema_cache = {}
 tool_id = None
 events = None
 backend = "trace"
+
+def observe(kind, site):
+    """Deduplicate repeated sites and reservoir-sample only novel signatures."""
+    global raw_event_count, unique_event_count, reservoir_replacements
+    raw_event_count = min(2**63 - 1, raw_event_count + 1)
+    signature = (kind, site)
+    token = sampled_sites.get(signature)
+    if token is not None:
+        reservoir[token]["count"] = min(2**63 - 1, reservoir[token]["count"] + 1)
+        return True
+    if signature in seen_sites:
+        return False
+    seen_sites.add(signature)
+    unique_event_count += 1
+    encoded = json.dumps([kind, site], sort_keys=True, separators=(",", ":"), default=str)
+    token = hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+    if len(reservoir) < limit:
+        reservoir[token] = {"kind": kind, "site": site, "count": 1}
+        sampled_sites[signature] = token
+        return True
+    slot = reservoir_rng.randrange(unique_event_count)
+    if slot >= limit:
+        return False
+    evicted = list(reservoir)[slot]
+    evicted_record = reservoir.pop(evicted)
+    sampled_sites.pop((evicted_record["kind"], evicted_record["site"]), None)
+    prune_record(evicted_record)
+    reservoir_replacements += 1
+    reservoir[token] = {"kind": kind, "site": site, "count": 1}
+    sampled_sites[signature] = token
+    return True
+
+def prune_record(record):
+    kind, site = record["kind"], record["site"]
+    if kind == "call_edge":
+        caller, callee, line, schema_hash = site
+        edges.pop((caller, callee, line, schema_hash), None)
+    elif kind == "line":
+        function_key, line = site
+        heat.pop((function_key, line), None)
+        item = functions.get(function_key)
+        if item is not None: item["hot_lines"].pop(str(line), None)
+    elif kind == "return":
+        function_key, schema = site
+        item = functions.get(function_key)
+        if item is not None: item["returns"].pop(schema, None)
+    elif kind == "exception":
+        exceptions.pop(site, None)
+    elif kind == "dynamic_getattr":
+        dynamic_attributes.pop(site, None)
+    elif kind == "argument_schema":
+        function_key, name, schema = site
+        item = functions.get(function_key)
+        if item is not None:
+            item["arguments"].get(name, {}).pop(schema, None)
 
 def relpath(filename):
     if filename.startswith("<") and filename.endswith(">"):
@@ -74,66 +136,85 @@ def shape(value, depth=0):
         return {"type": "array", "items": sorted(kinds) or ["unknown"], "truncated": len(value) > 16}
     return type(value).__name__[:80]
 
+def shape_json(value):
+    if value is None: return '"null"'
+    if type(value) is bool: return '"boolean"'
+    if type(value) is int: return '"integer"'
+    if type(value) is float: return '"number"'
+    if type(value) is str: return '"string"'
+    return json.dumps(shape(value), sort_keys=True, separators=(",", ":"))
+
 def record_call(frame):
-    global event_count
-    if event_count >= limit: return
     caller = frame.f_back
     target_key = key(frame)
     if target_key is None: return
-    event_count += 1
+    arg_count = frame.f_code.co_argcount + frame.f_code.co_kwonlyargcount
+    if frame.f_code.co_flags & 0x04: arg_count += 1
+    if frame.f_code.co_flags & 0x08: arg_count += 1
+    argument_names = [name for name in frame.f_code.co_varnames[:arg_count] if not secret.search(name)]
+    argument_values = [frame.f_locals.get(name) for name in argument_names]
+    cacheable = all(value is None or type(value) in (bool, int, float, str) for value in argument_values)
+    cache_key = (frame.f_code, tuple(type(value) for value in argument_values)) if cacheable else None
+    cached_schema = argument_schema_cache.get(cache_key) if cacheable else None
+    if cached_schema is None:
+        argument_schemas = {name: shape_json(value) for name, value in zip(argument_names, argument_values)}
+        schema_fields = {name: json.loads(schema) for name, schema in argument_schemas.items()}
+        schema_json = json.dumps(schema_fields, sort_keys=True, separators=(",", ":"))
+        schema_hash = hashlib.sha256(schema_json.encode("utf-8")).hexdigest()
+        if cacheable:
+            cached_schema = (schema_hash, argument_schemas)
+            argument_schema_cache[cache_key] = cached_schema
+    else:
+        schema_hash, argument_schemas = cached_schema
     item = functions.setdefault(target_key, {"file": relpath(frame.f_code.co_filename),
         "qualname": getattr(frame.f_code, "co_qualname", frame.f_code.co_name), "calls": 0,
         "arguments": {}, "returns": {}, "hot_lines": {}})
     item["calls"] += 1
-    arg_count = frame.f_code.co_argcount + frame.f_code.co_kwonlyargcount
-    if frame.f_code.co_flags & 0x04: arg_count += 1
-    if frame.f_code.co_flags & 0x08: arg_count += 1
-    for name in frame.f_code.co_varnames[:arg_count]:
-        if secret.search(name): continue
-        value = frame.f_locals.get(name)
-        schema = json.dumps(shape(value), sort_keys=True, separators=(",", ":"))
-        kinds = item["arguments"].setdefault(name, {})
-        kinds[schema] = min(limit, kinds.get(schema, 0) + 1)
+    for name, schema in argument_schemas.items():
+        if observe("argument_schema", (target_key, name, schema)):
+            kinds = item["arguments"].setdefault(name, {})
+            kinds[schema] = min(2**63 - 1, kinds.get(schema, 0) + 1)
+    caller_key = key(caller) if caller is not None else None
+    line = caller.f_lineno if caller_key is not None else 0
+    signature = (caller_key or "<entry>", target_key, line, schema_hash)
+    retained = observe("call_edge", signature)
     if caller is not None:
-        caller_key = key(caller)
-        if caller_key is not None:
-            line = caller.f_lineno
-            edge_key = (caller_key, target_key, line)
-            edges[edge_key] = min(limit, edges.get(edge_key, 0) + 1)
+        if caller_key is not None and retained:
+            edge_key = (caller_key, target_key, line, schema_hash)
+            edges[edge_key] = min(2**63 - 1, edges.get(edge_key, 0) + 1)
 
 def record_return(frame, value):
     item = functions.get(key(frame))
     if item is None: return
-    schema = json.dumps(shape(value), sort_keys=True, separators=(",", ":"))
-    item["returns"][schema] = min(limit, item["returns"].get(schema, 0) + 1)
+    schema = shape_json(value)
+    if observe("return", (key(frame), schema)):
+        item["returns"][schema] = min(2**63 - 1, item["returns"].get(schema, 0) + 1)
 
 def record_line(frame, line):
     function_key = key(frame)
-    if function_key is None or event_count >= limit: return
+    if function_key is None or not observe("line", (function_key, line)): return
     item = functions.setdefault(function_key, {"file": relpath(frame.f_code.co_filename),
         "qualname": getattr(frame.f_code, "co_qualname", frame.f_code.co_name), "calls": 0,
         "arguments": {}, "returns": {}, "hot_lines": {}})
-    item["hot_lines"][str(line)] = min(limit, item["hot_lines"].get(str(line), 0) + 1)
+    item["hot_lines"][str(line)] = min(2**63 - 1, item["hot_lines"].get(str(line), 0) + 1)
 
 def trace(frame, event, arg):
-    global event_count
-    if event_count >= limit: return None
     if event == "call":
         if relpath(frame.f_code.co_filename) is None: return None
         record_call(frame)
         return trace
     if relpath(frame.f_code.co_filename) is None: return None
-    event_count += 1
     if event == "line": record_line(frame, frame.f_lineno)
     elif event == "return": record_return(frame, arg)
     elif event == "exception":
         exc_type, exc, _ = arg
         location = (key(frame), frame.f_lineno, getattr(exc_type, "__name__", "Exception"))
-        exceptions[location] = min(limit, exceptions.get(location, 0) + 1)
+        if observe("exception", location):
+            exceptions[location] = min(2**63 - 1, exceptions.get(location, 0) + 1)
     return trace
 
 def profile(frame, event, arg):
-    if event != "call" or event_count >= limit or relpath(frame.f_code.co_filename) is None:
+    if event != "call" or relpath(frame.f_code.co_filename) is None:
         return
     if tool_id is not None and events is not None:
         try:
@@ -144,48 +225,42 @@ def profile(frame, event, arg):
     record_call(frame)
 
 def line_event(code, line):
-    global event_count
-    if event_count >= limit: return
     filename = relpath(code.co_filename)
     if filename is None: return
-    event_count += 1
     qname = getattr(code, "co_qualname", code.co_name)
     k = filename + "::" + qname
+    if not observe("line", (k, line)): return
     item = functions.setdefault(k, {"file": filename, "qualname": qname, "calls": 0,
         "arguments": {}, "returns": {}, "hot_lines": {}})
-    item["hot_lines"][str(line)] = min(limit, item["hot_lines"].get(str(line), 0) + 1)
+    item["hot_lines"][str(line)] = min(2**63 - 1, item["hot_lines"].get(str(line), 0) + 1)
 
 def return_event(code, offset, value):
-    global event_count
-    if event_count >= limit: return
     filename = relpath(code.co_filename)
     if filename is None: return
-    event_count += 1
     qname = getattr(code, "co_qualname", code.co_name)
-    item = functions.setdefault(filename + "::" + qname, {"file": filename, "qualname": qname,
+    function_key = filename + "::" + qname
+    item = functions.setdefault(function_key, {"file": filename, "qualname": qname,
         "calls": 0, "arguments": {}, "returns": {}, "hot_lines": {}})
-    schema = json.dumps(shape(value), sort_keys=True, separators=(",", ":"))
-    item["returns"][schema] = min(limit, item["returns"].get(schema, 0) + 1)
+    schema = shape_json(value)
+    if observe("return", (function_key, schema)):
+        item["returns"][schema] = min(2**63 - 1, item["returns"].get(schema, 0) + 1)
 
 def raise_event(code, offset, exc):
-    global event_count
-    if event_count >= limit: return
     filename = relpath(code.co_filename)
     if filename is None: return
-    event_count += 1
     line = code.co_firstlineno
     for instruction, source_line in dis.findlinestarts(code):
         if instruction > offset: break
         line = source_line
     location = (filename + "::" + getattr(code, "co_qualname", code.co_name), line,
                 type(exc).__name__[:80])
-    exceptions[location] = min(limit, exceptions.get(location, 0) + 1)
+    if observe("exception", location):
+        exceptions[location] = min(2**63 - 1, exceptions.get(location, 0) + 1)
 
 _original_getattr = builtins.getattr
 def observed_getattr(obj, name, *default):
-    global event_count
     result = _original_getattr(obj, name, *default)
-    if event_count >= limit or type(name) is not str or secret.search(name):
+    if type(name) is not str or secret.search(name):
         return result
     caller = sys._getframe(1)
     caller_key = key(caller)
@@ -200,8 +275,8 @@ def observed_getattr(obj, name, *default):
         target = "type:" + str(module)[:80] + "." + str(qualname)[:80]
     schema = json.dumps(shape(result), sort_keys=True, separators=(",", ":"))
     event_key = (caller_key, caller.f_lineno, name[:80], target, schema)
-    dynamic_attributes[event_key] = min(limit, dynamic_attributes.get(event_key, 0) + 1)
-    event_count += 1
+    if observe("dynamic_getattr", event_key):
+        dynamic_attributes[event_key] = min(2**63 - 1, dynamic_attributes.get(event_key, 0) + 1)
     return result
 
 builtins.getattr = observed_getattr
@@ -211,8 +286,8 @@ def finish():
     edge_rows = [{"caller": caller, "caller_file": caller.split("::", 1)[0],
         "caller_qualname": caller.split("::", 1)[1], "caller_line": line,
         "callee": callee, "callee_file": callee.split("::", 1)[0],
-        "callee_qualname": callee.split("::", 1)[1], "count": count}
-        for (caller, callee, line), count in sorted(edges.items())]
+        "callee_qualname": callee.split("::", 1)[1], "arg_schema_hash": schema_hash, "count": count}
+        for (caller, callee, line, schema_hash), count in sorted(edges.items())]
     exception_rows = [{"symbol": symbol, "line": line, "type": name, "count": count}
         for (symbol, line, name), count in sorted(exceptions.items())]
     dynamic_rows = [{"caller": caller, "caller_file": caller.split("::", 1)[0],
@@ -222,8 +297,18 @@ def finish():
     doc = {"schema_version": "aegis.runtime_profile.v1", "backend": backend,
         "functions": dict(sorted(functions.items())), "call_edges": edge_rows,
         "exceptions": exception_rows, "dynamic_attributes": dynamic_rows,
-        "event_count": min(event_count, limit),
-        "event_limit_reached": event_count >= limit}
+        "event_count": min(raw_event_count, limit),
+        "event_limit_reached": raw_event_count >= limit,
+        "call_edge_unique_count": len(edges),
+        "call_edge_repeat_hits": sum(max(0, count - 1) for count in edges.values()),
+        "dynamic_getattr_unique_count": len(dynamic_attributes),
+        "dynamic_getattr_repeat_hits": sum(max(0, count - 1) for count in dynamic_attributes.values()),
+        "unique_event_count": unique_event_count,
+        "unique_event_limit_reached": unique_event_count > limit,
+        "reservoir_size": len(reservoir),
+        "reservoir_replacements": reservoir_replacements,
+        "dropped_unique_site_count": max(0, unique_event_count - len(reservoir) - reservoir_replacements),
+        "reservoir_sample": [{"signature": token, **value} for token, value in sorted(reservoir.items())]}
     try:
         with open(output + ".tmp", "w", encoding="utf-8") as stream:
             json.dump(doc, stream, ensure_ascii=False, sort_keys=True, separators=(",", ":"))

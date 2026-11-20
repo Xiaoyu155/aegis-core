@@ -30,6 +30,292 @@ _SENSITIVE = re.compile(r"(?:^|_)(?:api_?key|access_?token|secret(?:_?key)?|pass
 _MONEY = re.compile(r"price|balance|notional|amount|quantity|equity|pnl|profit|fee", re.I)
 _NETWORK_MODULES = {"requests", "httpx", "urllib3"}
 _RESOURCE_CALLS = {"connect", "acquire", "open", "Popen", "create_connection"}
+_JS_EXTENSIONS = {".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", ".html"}
+_JS_CALL = re.compile(r"\b(?:fetch|axios\.(?:get|post|put|patch|delete|request)|(?:wx|tt|ks|my)\.request)\s*\(")
+_JS_NUMBER = re.compile(r"price|amount|balance|fee|rate|ratio|leverage|quantity|money|cost|profit|pnl|equity|latitude|longitude|coordinate|\b(?:x|y|z)\b", re.I)
+
+
+def _mask_js(source: str) -> str:
+    """Blank comments and string contents while retaining offsets and line breaks."""
+    chars = list(source)
+    index = 0
+    state = "code"
+    quote = ""
+    while index < len(source):
+        char = source[index]
+        nxt = source[index + 1] if index + 1 < len(source) else ""
+        if state == "code":
+            if char in "'\"`":
+                state, quote = "string", char
+                chars[index] = " "
+            elif char == "/" and nxt == "/":
+                state = "line"
+                chars[index] = chars[index + 1] = " "
+                index += 1
+            elif char == "/" and nxt == "*":
+                state = "block"
+                chars[index] = chars[index + 1] = " "
+                index += 1
+        elif state == "string":
+            if char != "\n":
+                chars[index] = " "
+            if char == "\\":
+                if index + 1 < len(source) and source[index + 1] != "\n":
+                    chars[index + 1] = " "
+                    index += 1
+            elif char == quote:
+                state = "code"
+        elif state == "line":
+            if char == "\n":
+                state = "code"
+            else:
+                chars[index] = " "
+        elif state == "block":
+            if char == "*" and nxt == "/":
+                chars[index] = chars[index + 1] = " "
+                index += 1
+                state = "code"
+            elif char != "\n":
+                chars[index] = " "
+        index += 1
+    return "".join(chars)
+
+
+def _js_matching(masked: str, start: int, opening="(", closing=")") -> int:
+    depth = 0
+    for index in range(start, len(masked)):
+        if masked[index] == opening:
+            depth += 1
+        elif masked[index] == closing:
+            depth -= 1
+            if depth == 0:
+                return index
+    return len(masked)
+
+
+def _js_arguments(source: str, masked: str, match) -> list[str]:
+    opening = masked.find("(", match.start(), match.end())
+    closing = _js_matching(masked, opening)
+    ranges = []
+    start = opening + 1
+    stack = []
+    for index in range(start, closing):
+        char = masked[index]
+        if char in "([{":
+            stack.append(char)
+        elif char in ")]}" and stack:
+            stack.pop()
+        elif char == "," and not stack:
+            ranges.append((start, index))
+            start = index + 1
+    if start < closing:
+        ranges.append((start, closing))
+    return [source[left:right].strip() for left, right in ranges]
+
+
+def _js_scopes(masked: str):
+    stack = []
+    scopes = []
+    for index, char in enumerate(masked):
+        if char == "{":
+            stack.append(index)
+        elif char == "}" and stack:
+            start = stack.pop()
+            scopes.append((start, index + 1))
+    return sorted(scopes, key=lambda span: (span[0], -span[1]))
+
+
+def _js_scope_bounds(masked: str, scopes, position: int) -> tuple[int, int]:
+    containing = [(start, end) for start, end in scopes if start < position < end]
+    if not containing:
+        return 0, len(masked)
+    containing.sort(key=lambda span: span[1] - span[0])
+    for start, end in containing:
+        prefix = masked[max(0, start - 240):start]
+        if re.search(r"\bfunction\b[^{}]*\)\s*$|=>\s*$", prefix):
+            return start, end
+    return containing[0]
+
+
+def _js_scope(masked: str, scopes, position: int) -> str:
+    start, end = _js_scope_bounds(masked, scopes, position)
+    return masked[start:end]
+
+
+def _js_has_try(masked: str, position: int, scopes) -> bool:
+    # A storage/parse operation is protected only when it is inside a try body.
+    for match in re.finditer(r"\btry\s*\{", masked[:position]):
+        opening = masked.find("{", match.start(), match.end())
+        if _js_matching(masked, opening, "{", "}") >= position:
+            return True
+    return False
+
+
+def _inspect_javascript(source: str, path: str, *, line_offset: int = 0) -> list[dict]:
+    masked = _mask_js(source)
+    scopes = _js_scopes(masked)
+    findings: list[InvariantFinding] = []
+
+    def add(code, domain, position, detail, severity="high"):
+        line = line_offset + masked.count("\n", 0, position) + 1
+        prefix = masked[:position]
+        functions = list(re.finditer(r"\bfunction\s+([\w$]+)\s*\(|\b(?:const|let|var)\s+([\w$]+)\s*=\s*(?:async\s*)?(?:\([^)]*\)|[\w$]+)\s*=>", prefix))
+        symbol = next((item.group(1) or item.group(2) for item in reversed(functions)), "<module>")
+        findings.append(InvariantFinding(code, domain, path, symbol, line, severity, detail))
+
+    # Network calls: option text is read from the original source after locating
+    # each call in the comment/string-masked representation.
+    for match in _JS_CALL.finditer(masked):
+        opening = masked.find("(", match.start(), match.end())
+        end = _js_matching(masked, opening)
+        call = source[match.start():min(end + 1, len(source))]
+        call_name = match.group(0).split("(", 1)[0].strip()
+        if call_name == "fetch":
+            bounded = bool(re.search(r"\bsignal\s*(?::|[,}])", call))
+            code = "NETWORK_FETCH_NO_ABORT_SIGNAL"
+        else:
+            bounded = bool(re.search(r"\b(?:timeout|signal)\s*:", call))
+            code = "NETWORK_REQUEST_NO_TIMEOUT"
+        if not bounded:
+            add(code, "external_api", match.start(), "Request has no explicit timeout or abort signal")
+
+    loop_pattern = re.compile(r"\b(?:while\s*\(([^)]*)\)|for\s*\(([^)]*)\))\s*\{")
+    for match in loop_pattern.finditer(masked):
+        opening = masked.find("{", match.start(), match.end())
+        end = _js_matching(masked, opening, "{", "}")
+        body = masked[opening:end + 1]
+        if not _JS_CALL.search(body):
+            continue
+        header = (match.group(1) or match.group(2) or "").strip()
+        backoff = bool(re.search(r"\b(?:setTimeout|sleep|delay|backoff|retryAfter|exponential)\b", body, re.I))
+        if not backoff:
+            add("NETWORK_RETRY_WITHOUT_BACKOFF", "external_api", match.start(),
+                "Retry loop issues network requests without a delay or backoff")
+        unbounded = (match.group(1) or "").strip() in {"true", "1"} or header in {"", ";;"}
+        if unbounded:
+            add("NETWORK_RETRY_UNBOUNDED", "external_api", match.start(),
+                "Retry loop has no visible attempt bound")
+
+    # Risky division involving money/rates/coordinates. A visible positive
+    # guard in the same lexical block suppresses a finding.
+    for match in re.finditer(r"([\w.$\[\]]+)\s*/\s*([\w.$\[\]]+|\d+(?:\.\d+)?)", masked):
+        numerator, denominator = match.group(1), match.group(2)
+        if not (_JS_NUMBER.search(numerator) or _JS_NUMBER.search(denominator)):
+            continue
+        scope = _js_scope(masked, scopes, match.start())
+        guard = denominator not in {"0", "0.0"} and re.search(
+            rf"\b{re.escape(denominator)}\b\s*(?:<=|<|===?|==)\s*0"
+            rf"|\b{re.escape(denominator)}\b\s*>\s*0|0\s*<\s*\b{re.escape(denominator)}\b"
+            rf"|\b{re.escape(denominator)}\b\s*&&|Number\.isFinite\s*\(\s*{re.escape(denominator)}\b",
+            scope)
+        if not guard:
+            add("FINANCE_UNGUARDED_DIVISION", "finance", match.start(),
+                f"Core numeric division by {denominator} has no visible finite positive-value guard")
+
+    # User controlled numeric inputs should be checked before reaching financial
+    # arithmetic or order APIs. Scope checks avoid a guard in a sibling function.
+    for match in re.finditer(r"\b(?:Number|parseFloat|parseInt)\s*(?:\.\s*(?:parseFloat|parseInt))?\s*\(\s*([\w.$]+)", masked):
+        input_name = match.group(1).split(".")[-1]
+        prefix = masked[max(0, match.start() - 120):match.start()]
+        assignment = re.search(r"(?:(?:const|let|var)\s+)?(\w+)\s*=\s*$", prefix)
+        checked_name = assignment.group(1) if assignment else input_name
+        scope = _js_scope(masked, scopes, match.start())
+        if not (_JS_NUMBER.search(input_name) or re.search(r"(?:input|value|amount|price|rate|fee|coord|quantity)", input_name, re.I)):
+            continue
+        if not re.search(r"\bNumber\.isFinite\s*\(\s*" + re.escape(checked_name) + r"\b", scope):
+            # Report only where a computed value is subsequently used in a
+            # relevant arithmetic expression or order/payment operation.
+            if re.search(r"(?:[+*/-]|submitOrder|placeOrder|createOrder|payment|amount|price|fee)", scope, re.I):
+                add("FINANCE_INPUT_NOT_FINITE_CHECKED", "finance", match.start(),
+                    f"Numeric input {input_name} reaches core calculation without Number.isFinite")
+
+    # Event and timer lifetimes must be paired in their lexical scope.
+    for match in re.finditer(r"\bsetInterval\s*\(", masked):
+        scope = _js_scope(masked, scopes, match.start())
+        prefix = masked[max(0, match.start() - 100):match.start()]
+        assigned = re.search(r"\b(?:const|let|var)\s+(\w+)\s*=\s*$", prefix)
+        timer = assigned.group(1) if assigned else None
+        cleanups = re.findall(r"\bclearInterval\s*\(\s*([^)]*)\)", scope)
+        if not cleanups or (timer and not any(re.match(rf"\s*{re.escape(timer)}\b", item) for item in cleanups)):
+            add("RESOURCE_INTERVAL_NOT_CLEARED", "resource", match.start(),
+                "Interval has no matching clearInterval cleanup")
+    for match in re.finditer(r"\baddEventListener\s*\(", masked):
+        scope_start, scope_end = _js_scope_bounds(masked, scopes, match.start())
+        scope = masked[scope_start:scope_end]
+        args = _js_arguments(source, masked, match)
+        target_match = re.search(r"([\w$.]+)\s*\.\s*$", masked[max(0, match.start() - 160):match.start()])
+        target = target_match.group(1) if target_match else ""
+        if len(args) < 2 or not target:
+            add("RESOURCE_EVENT_LISTENER_NOT_REMOVED", "resource", match.start(),
+                "Event listener has no matching removeEventListener cleanup")
+            continue
+        matched_remove = False
+        for removal in re.compile(r"\bremoveEventListener\s*\(").finditer(masked, scope_start, scope_end):
+            remove_args = _js_arguments(source, masked, removal)
+            remove_target_match = re.search(r"([\w$.]+)\s*\.\s*$",
+                                            masked[max(0, removal.start() - 160):removal.start()])
+            if (remove_target_match and remove_target_match.group(1) == target and len(remove_args) >= 2
+                    and re.sub(r"\s+", "", remove_args[0]) == re.sub(r"\s+", "", args[0])
+                    and re.sub(r"\s+", "", remove_args[1]) == re.sub(r"\s+", "", args[1])):
+                matched_remove = True
+                break
+        if not matched_remove:
+            add("RESOURCE_EVENT_LISTENER_NOT_REMOVED", "resource", match.start(),
+                "Event listener has no matching removeEventListener cleanup")
+    for match in re.finditer(r"\bnew\s+WebSocket\s*\(", masked):
+        scope = _js_scope(masked, scopes, match.start())
+        prefix = masked[max(0, match.start() - 100):match.start()]
+        assigned = re.search(r"\b(?:const|let|var)\s+(\w+)\s*=\s*$", prefix)
+        socket = assigned.group(1) if assigned else None
+        close_pattern = rf"\b{re.escape(socket)}\s*\.\s*close\s*\(" if socket else r"\.\s*close\s*\("
+        if not re.search(close_pattern, scope):
+            add("RESOURCE_WEBSOCKET_NOT_CLOSED", "resource", match.start(),
+                "WebSocket has no matching close cleanup")
+
+    collection_pattern = r"\b(?:const|let|var)\s+(\w+)\s*=\s*(?:\[\s*\]|new\s+Map\s*\(\s*\))|\b(?:globalThis|window)\.(\w+)\s*=\s*(?:\[\s*\]|new\s+Map\s*\(\s*\))"
+    for match in re.finditer(collection_pattern, masked):
+        name = match.group(1) or match.group(2)
+        scope = _js_scope(masked, scopes, match.start())
+        bounds = _js_scope_bounds(masked, scopes, match.start())
+        is_global_collection = bounds == (0, len(masked)) or match.group(2) is not None
+        writes = re.search(rf"\b{re.escape(name)}\s*(?:\.push\s*\(|\.set\s*\()", scope)
+        if (is_global_collection and writes
+                and not re.search(rf"\b{re.escape(name)}\.(?:shift|splice|delete)\s*\(", scope)):
+            if not re.search(rf"\b{re.escape(name)}\.length\s*[><=]+\s*\d+", scope):
+                add("UNBOUNDED_GROWTH", "resource", match.start(),
+                    f"Collection {name} grows without a visible size bound or eviction")
+
+    for match in re.finditer(r"\bJSON\s*\.\s*parse\s*\(", masked):
+        if not _js_has_try(masked, match.start(), scopes):
+            add("ASYNC_JSON_PARSE_UNGUARDED", "storage", match.start(), "JSON.parse is not protected by a try/catch")
+
+    for match in re.finditer(r"\b(?:localStorage|sessionStorage)\s*\.\s*(?:getItem|setItem|removeItem|clear)\s*\(|\b(?:wx|tt|ks|my)\s*\.\s*(?:get|set|remove|clear)StorageSync\s*\(", masked):
+        if not _js_has_try(masked, match.start(), scopes):
+            # A visible fallback on the same statement is also sufficient.
+            line_end = masked.find("\n", match.start())
+            line = masked[match.start():line_end if line_end >= 0 else len(masked)]
+            if not re.search(r"\?\?|\|\|\s*(?:\[|\{|['\"`]|\w+)", line):
+                add("STORAGE_EXCEPTION_NO_FALLBACK", "storage", match.start(),
+                    "Storage access has no exception guard or fallback")
+
+    for match in re.finditer(r"\.then\s*\(", masked):
+        end = _js_matching(masked, masked.find("(", match.start(), match.end()))
+        tail = masked[end + 1:end + 240]
+        if not re.match(r"\s*\.\s*(?:catch|finally)\s*\(", tail):
+            add("ASYNC_PROMISE_UNHANDLED", "async", match.start(), "Promise chain has no catch or finally handler")
+
+    for pattern, code, detail in (
+        (r"\b(?:\w+\s*\.\s*)?innerHTML\s*=", "INJECTION_UNSAFE_HTML", "Dynamic content is assigned to innerHTML"),
+        (r"\b(?:\w+\s*\.\s*)?insertAdjacentHTML\s*\(", "INJECTION_UNSAFE_HTML", "Dynamic content is inserted as raw HTML"),
+        (r"\bdangerouslySetInnerHTML\s*:", "INJECTION_UNSAFE_HTML", "React markup bypasses HTML escaping"),
+        (r"\beval\s*\(", "INJECTION_DYNAMIC_EVAL", "eval executes dynamically supplied code"),
+        (r"\bnew\s+Function\s*\(", "INJECTION_DYNAMIC_FUNCTION", "Function constructor compiles dynamic code"),
+        (r"(?:\b__proto__\s*=|\[\s*['\"]__proto__['\"]\s*\]\s*=|Object\s*\.\s*prototype\s*\[|constructor\s*\.\s*prototype\s*\[)", "INJECTION_PROTOTYPE_POLLUTION", "Assignment can mutate an object prototype"),
+    ):
+        for match in re.finditer(pattern, masked):
+            add(code, "injection", match.start(), detail)
+
+    return [asdict(item) for item in sorted(findings, key=lambda item: (item.path, item.line, item.code))]
 
 
 def _sensitive_field(name: str) -> bool:
@@ -224,19 +510,31 @@ class _Guard:
 
 
 def inspect_source(source: str, path: str = "<source>") -> list[dict]:
-    """Return deterministic domain findings for one Python source file."""
+    """Return deterministic findings for Python or supported JS/TS/HTML source."""
     if type(source) is not str or type(path) is not str:
         raise TypeError("source and path must be text")
+    normalized = Path(path).as_posix()
+    suffix = Path(path).suffix.lower()
+    if suffix in {".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs"}:
+        return _inspect_javascript(source, normalized)
+    if suffix == ".html":
+        findings = []
+        for match in re.finditer(r"<script\b[^>]*>(.*?)</script\s*>", source, re.I | re.S):
+            if not match.group(1).strip():
+                continue
+            line_offset = source.count("\n", 0, match.start(1))
+            findings.extend(_inspect_javascript(match.group(1), normalized, line_offset=line_offset))
+        return findings
     try:
-        findings = _Guard(source, Path(path).as_posix()).run()
+        findings = _Guard(source, normalized).run()
     except SyntaxError as error:
-        return [asdict(InvariantFinding("SOURCE_SYNTAX_ERROR", "source", Path(path).as_posix(),
+        return [asdict(InvariantFinding("SOURCE_SYNTAX_ERROR", "source", normalized,
                                         "<module>", error.lineno or 1, "high", "Source cannot be parsed"))]
     return [asdict(item) for item in findings]
 
 
 def scan_changed_files(root: str | Path, changed_files, *, baseline: str | None = None) -> dict:
-    """Find new invariant violations in changed Python files, relative to baseline."""
+    """Find new invariant violations in Python, JS/TS and inline HTML files."""
     root = Path(root).resolve()
     findings = []
     scanned = []
@@ -244,7 +542,8 @@ def scan_changed_files(root: str | Path, changed_files, *, baseline: str | None 
 
     for relative in sorted(set(changed_files)):
         path = (root / relative).resolve()
-        if not path.is_relative_to(root) or not path.is_file() or path.is_symlink() or path.suffix != ".py":
+        if (not path.is_relative_to(root) or not path.is_file() or path.is_symlink()
+                or path.suffix.lower() not in _JS_EXTENSIONS | {".py"}):
             continue
         try:
             after = path.read_text(encoding="utf-8-sig")

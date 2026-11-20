@@ -3,13 +3,15 @@ on: [push, pull_request]
 permissions:
   contents: read
 jobs:
-  pytest:
+  verification:
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
         python: ['3.11', '3.12']
+        suite: [full, v16-gates]
     runs-on: ${{ matrix.os }}
+    name: ${{ matrix.suite }} / ${{ matrix.os }} / Python ${{ matrix.python }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -19,12 +21,15 @@ jobs:
         with:
           node-version: '24'
       - name: Install core and pytest
-        if: matrix.os != 'windows-latest' || matrix.python != '3.11'
+        if: matrix.suite != 'full' || matrix.os != 'windows-latest' || matrix.python != '3.11'
         run: python -m pip install -e ".[test]"
       - name: Run complete suite
-        if: matrix.os != 'windows-latest' || matrix.python != '3.11'
+        if: matrix.suite == 'full' && (matrix.os != 'windows-latest' || matrix.python != '3.11')
         run: python -m pytest -v
       - name: Windows local handoff bootstrap (includes full pytest suite)
-        if: matrix.os == 'windows-latest' && matrix.python == '3.11'
+        if: matrix.suite == 'full' && matrix.os == 'windows-latest' && matrix.python == '3.11'
         shell: pwsh
         run: '& ./scripts/bootstrap_local.ps1'
+      - name: Run v1.1 invariant, sampling and merge preflight gates
+        if: matrix.suite == 'v16-gates'
+        run: python -m pytest -q tests/test_v16_frontend_invariants.py tests/test_v16_runtime_sampling.py tests/test_v16_pr_orchestrator.py
