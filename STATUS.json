@@ -1,6 +1,6 @@
 {
   "phase": 16,
-  "status": "local_full_suite_green_pending_remote_ci",
+  "status": "local_full_suite_green_remote_ci_rerun_pending",
   "version": "1.1.0",
   "branch": "feat/aegis-v1.1-fullstack",
   "base_branch": "main",
@@ -11,28 +11,28 @@
     "baseline_tests": 1145,
     "baseline_tests_still_collected": 1145,
     "baseline_tests_passed": 1145,
-    "phase16_new_tests": 191,
-    "total_collected": 1336,
-    "total_passed": 1336,
+    "phase16_new_tests": 193,
+    "total_collected": 1338,
+    "total_passed": 1338,
     "training_directory_preserved": true,
     "bootstrap_local_ps1_preserved": true,
     "datasets_directory_preserved": true,
     "changes_under_preserved_paths": false
   },
   "tests": {
-    "total_collected": 1336,
-    "passed": 1336,
+    "total_collected": 1338,
+    "passed": 1338,
     "phase16_new_by_milestone": {
       "frontend_invariant_guard": 96,
-      "runtime_profiler_sampling": 48,
+      "runtime_profiler_sampling": 50,
       "pr_orchestrator": 47
     },
     "local_verification": {
       "command": "./.venv/bin/python -m pytest -q",
       "python": "3.12.14",
-      "elapsed_seconds": 249.56,
-      "result": "1336 passed",
-      "loopback_http_integration": "passed with loopback permission enabled"
+      "elapsed_seconds": 292.3,
+      "result": "1338 passed",
+      "loopback_http_integration": "passed with network permission enabled"
     }
   },
   "milestones": {
@@ -58,16 +58,19 @@
     },
     "m2_runtime_profiler_sampling": {
       "module": "aegis_core/runtime_profiler.py",
-      "signature": "(caller, callee, caller_line, arg_schema_hash)",
-      "sampling": "deterministic reservoir over unique signatures; repeats increment counts without consuming a sample slot",
-      "tests": 48,
+      "signature": "(caller, callee, arg_schema_hash); caller_line is location metadata",
+      "sampling": "deterministic stratified reservoir; up to 75% reserved for call edges and dynamic getattr; repeated hits increment counts without consuming slots",
+      "tests": 50,
       "high_frequency_probe": {
         "hot_calls": 100000,
         "unique_hot_call_edge": 1,
         "aggregated_call_count": 100000,
         "repeat_hits_at_least": 99999,
         "reservoir_limit": 128,
-        "tail_cold_branch_captured": true
+        "tail_cold_branch_captured": true,
+        "reservoir_size_observed": 15,
+        "reservoir_replacements": 0,
+        "unique_sites_observed": 15
       }
     },
     "m3_pr_orchestrator": {
@@ -138,7 +141,12 @@
         "v16-gates"
       ]
     },
-    "status": "awaiting branch push"
+    "status": "pending rerun after profiler sampling fix",
+    "previous_run": {
+      "run_id": 44677431133,
+      "url": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44677431133",
+      "result": "failed on high-frequency call-edge retention across Windows and Python 3.11; corrected locally and rerun required"
+    }
   },
   "previous_phase_15": {
     "phase": 15,

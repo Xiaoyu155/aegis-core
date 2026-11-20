@@ -32,14 +32,19 @@ reservoir_replacements = 0
 seen_sites = set()
 reservoir = {}
 sampled_sites = {}
-reservoir_rng = random.Random(0)
+priority_kinds = {"call_edge", "dynamic_getattr"}
+priority_capacity = min(limit, max(1, (limit * 3) // 4))
+secondary_capacity = limit - priority_capacity
+tier_slots = {"priority": [], "secondary": []}
+tier_seen_counts = {"priority": 0, "secondary": 0}
+tier_rngs = {"priority": random.Random(0), "secondary": random.Random(1)}
 argument_schema_cache = {}
 tool_id = None
 events = None
 backend = "trace"
 
 def observe(kind, site):
-    """Deduplicate repeated sites and reservoir-sample only novel signatures."""
+    """Deduplicate repeated sites and reserve sample budget for call paths."""
     global raw_event_count, unique_event_count, reservoir_replacements
     raw_event_count = min(2**63 - 1, raw_event_count + 1)
     signature = (kind, site)
@@ -53,27 +58,34 @@ def observe(kind, site):
     unique_event_count += 1
     encoded = json.dumps([kind, site], sort_keys=True, separators=(",", ":"), default=str)
     token = hashlib.sha256(encoded.encode("utf-8")).hexdigest()
-    if len(reservoir) < limit:
-        reservoir[token] = {"kind": kind, "site": site, "count": 1}
+    tier = "priority" if kind in priority_kinds else "secondary"
+    capacity = priority_capacity if tier == "priority" else secondary_capacity
+    tier_seen_counts[tier] += 1
+    if capacity <= 0:
+        return False
+    slots = tier_slots[tier]
+    if len(slots) < capacity:
+        slots.append(token)
+        reservoir[token] = {"kind": kind, "site": site, "count": 1, "tier": tier}
         sampled_sites[signature] = token
         return True
-    slot = reservoir_rng.randrange(unique_event_count)
-    if slot >= limit:
+    slot = tier_rngs[tier].randrange(tier_seen_counts[tier])
+    if slot >= capacity:
         return False
-    evicted = list(reservoir)[slot]
+    evicted = slots[slot]
     evicted_record = reservoir.pop(evicted)
     sampled_sites.pop((evicted_record["kind"], evicted_record["site"]), None)
     prune_record(evicted_record)
     reservoir_replacements += 1
-    reservoir[token] = {"kind": kind, "site": site, "count": 1}
+    slots[slot] = token
+    reservoir[token] = {"kind": kind, "site": site, "count": 1, "tier": tier}
     sampled_sites[signature] = token
     return True
 
 def prune_record(record):
     kind, site = record["kind"], record["site"]
     if kind == "call_edge":
-        caller, callee, line, schema_hash = site
-        edges.pop((caller, callee, line, schema_hash), None)
+        edges.pop(site, None)
     elif kind == "line":
         function_key, line = site
         heat.pop((function_key, line), None)
@@ -176,12 +188,14 @@ def record_call(frame):
             kinds[schema] = min(2**63 - 1, kinds.get(schema, 0) + 1)
     caller_key = key(caller) if caller is not None else None
     line = caller.f_lineno if caller_key is not None else 0
-    signature = (caller_key or "<entry>", target_key, line, schema_hash)
+    # Keep source line as metadata only: line-table differences across Python
+    # versions must not turn one call site into many reservoir entries.
+    signature = (caller_key or "<entry>", target_key, schema_hash)
     retained = observe("call_edge", signature)
     if caller is not None:
         if caller_key is not None and retained:
-            edge_key = (caller_key, target_key, line, schema_hash)
-            edges[edge_key] = min(2**63 - 1, edges.get(edge_key, 0) + 1)
+            edge = edges.setdefault(signature, {"line": line, "count": 0})
+            edge["count"] = min(2**63 - 1, edge["count"] + 1)
 
 def record_return(frame, value):
     item = functions.get(key(frame))
@@ -283,11 +297,13 @@ builtins.getattr = observed_getattr
 
 def finish():
     if not output: return
-    edge_rows = [{"caller": caller, "caller_file": caller.split("::", 1)[0],
-        "caller_qualname": caller.split("::", 1)[1], "caller_line": line,
-        "callee": callee, "callee_file": callee.split("::", 1)[0],
-        "callee_qualname": callee.split("::", 1)[1], "arg_schema_hash": schema_hash, "count": count}
-        for (caller, callee, line, schema_hash), count in sorted(edges.items())]
+    edge_rows = []
+    for (caller, callee, schema_hash), edge in sorted(edges.items()):
+        edge_rows.append({"caller": caller, "caller_file": caller.split("::", 1)[0],
+            "caller_qualname": caller.split("::", 1)[1], "caller_line": edge["line"],
+            "callee": callee, "callee_file": callee.split("::", 1)[0],
+            "callee_qualname": callee.split("::", 1)[1], "arg_schema_hash": schema_hash,
+            "count": edge["count"]})
     exception_rows = [{"symbol": symbol, "line": line, "type": name, "count": count}
         for (symbol, line, name), count in sorted(exceptions.items())]
     dynamic_rows = [{"caller": caller, "caller_file": caller.split("::", 1)[0],
@@ -300,14 +316,14 @@ def finish():
         "event_count": min(raw_event_count, limit),
         "event_limit_reached": raw_event_count >= limit,
         "call_edge_unique_count": len(edges),
-        "call_edge_repeat_hits": sum(max(0, count - 1) for count in edges.values()),
+        "call_edge_repeat_hits": sum(max(0, edge["count"] - 1) for edge in edges.values()),
         "dynamic_getattr_unique_count": len(dynamic_attributes),
         "dynamic_getattr_repeat_hits": sum(max(0, count - 1) for count in dynamic_attributes.values()),
         "unique_event_count": unique_event_count,
-        "unique_event_limit_reached": unique_event_count > limit,
+        "unique_event_limit_reached": unique_event_count > len(reservoir),
         "reservoir_size": len(reservoir),
         "reservoir_replacements": reservoir_replacements,
-        "dropped_unique_site_count": max(0, unique_event_count - len(reservoir) - reservoir_replacements),
+        "dropped_unique_site_count": max(0, unique_event_count - len(reservoir)),
         "reservoir_sample": [{"signature": token, **value} for token, value in sorted(reservoir.items())]}
     try:
         with open(output + ".tmp", "w", encoding="utf-8") as stream:

@@ -92,6 +92,50 @@ assert result["cold"] is True
     assert any(item["callee_qualname"] == "cold_branch" for item in report["call_edges"])
 
 
+def test_call_edge_signature_aggregates_distinct_lines(tmp_path):
+    path = tmp_path / "lines.py"
+    path.write_text('''def submit():
+    return True
+
+submit()
+submit()
+''', encoding="utf-8")
+    report = RuntimeProfiler(tmp_path, max_events=32).run([sys.executable, str(path)])
+    edges = [item for item in report["call_edges"] if item["callee_qualname"] == "submit"]
+    samples = [item for item in report["reservoir_sample"]
+               if item["kind"] == "call_edge" and item["site"][1].endswith("::submit")]
+    assert len(edges) == 1
+    assert edges[0]["count"] == 2
+    assert len(samples) == 1
+    assert samples[0]["count"] == 2
+
+
+def test_priority_call_paths_survive_secondary_event_churn(tmp_path):
+    noise = "\n".join(f"    marker_{index} = {index}" for index in range(80))
+    source = f'''def noise():
+{noise}
+
+def pulse(value):
+    return value
+
+def cold_branch():
+    return True
+
+noise()
+for index in range(2_000):
+    pulse(index)
+cold_branch()
+'''
+    path = tmp_path / "priority.py"
+    path.write_text(source, encoding="utf-8")
+    report = RuntimeProfiler(tmp_path, timeout_sec=20, max_events=16).run([sys.executable, str(path)])
+    edges = {item["callee_qualname"]: item for item in report["call_edges"]}
+    assert report["completed"] is True
+    assert edges["pulse"]["count"] == 2_000
+    assert edges["cold_branch"]["count"] == 1
+    assert report["reservoir_size"] <= 16
+
+
 @pytest.mark.parametrize("limit", [1, 2, 4, 8, 16, 32])
 def test_reservoir_stays_within_budget_and_records_replacements(limit, tmp_path):
     functions = "\n".join(f"def branch_{index}(): return {index}" for index in range(24))
