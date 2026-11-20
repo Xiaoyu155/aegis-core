@@ -1,0 +1,344 @@
+{
+  "title": "Aegis Core · Engineering Showcase",
+  "version": "1.1.0",
+  "phase": 16,
+  "tests": {
+    "collected": 1338,
+    "passed": 1338,
+    "history": [
+      {
+        "phase": 13,
+        "collected": 656,
+        "passed": 656
+      },
+      {
+        "phase": 14,
+        "collected": 944,
+        "passed": 944
+      },
+      {
+        "phase": 15,
+        "collected": 1145,
+        "passed": 1145
+      },
+      {
+        "phase": 16,
+        "collected": 1338,
+        "passed": 1338
+      }
+    ]
+  },
+  "ci": {
+    "jobs_expected": 8,
+    "verified_runs": [
+      "8/8 success",
+      "8/8 success"
+    ],
+    "head": "c57c319fc7fae0867b7e723b8d7b99dddbc5419c"
+  },
+  "profiler": {
+    "hot_calls": 100000,
+    "unique_hot_call_edge": 1,
+    "aggregated_call_count": 100000,
+    "repeat_hits_at_least": 99999,
+    "reservoir_limit": 128,
+    "tail_cold_branch_captured": true,
+    "reservoir_size_observed": 15,
+    "reservoir_replacements": 0,
+    "unique_sites_observed": 15,
+    "compatibility_backend": "sys.settrace",
+    "compatibility_backend_elapsed_seconds": 1.418
+  },
+  "release": {
+    "sft_examples": 1462,
+    "preference_pairs": 342,
+    "chosen_positive": 342,
+    "rejected_negative": 342,
+    "truncated_rows": 0,
+    "tournament_pairs_seen": 321,
+    "sft_rows_file": "datasets/release_v15/datasets/sft_train.jsonl",
+    "grpo_rows_file": "datasets/release_v15/datasets/grpo_preference_pairs.jsonl"
+  },
+  "scans": {
+    "repositories": 3,
+    "scanned_files": 322,
+    "raw_rule_hits": 715,
+    "by_repository": [
+      {
+        "repository": "Xiaoyu155/douyin-kuaishou-alipay-miniapp",
+        "files": 197,
+        "hits": 269
+      },
+      {
+        "repository": "Xiaoyu155/yuansi-miniapp",
+        "files": 34,
+        "hits": 33
+      },
+      {
+        "repository": "Xiaoyu155/celestia-game",
+        "files": 91,
+        "hits": 413
+      }
+    ],
+    "post_dedup_hits": null,
+    "post_dedup_note": "No post-deduplication count is recorded in the checked-in evidence."
+  },
+  "verified_repairs": [
+    {
+      "repository": "okx-freqtrade-live",
+      "repair": "Reject boolean, nonnumeric, non-finite or non-positive leverage and non-finite notional before calculating the max stake cap.",
+      "tests": {
+        "okx_exchange_and_v15_leverage": {
+          "passed": 32,
+          "failed": 0,
+          "elapsed_seconds": 97.41
+        }
+      }
+    },
+    {
+      "repository": "pet-miniapp-backend",
+      "repair": "Observe checked-out pg Client socket errors, discard broken clients, preserve the original transaction error and attach rollback failure detail.",
+      "tests": {
+        "full_node_suite": {
+          "passed": 274,
+          "failed": 0,
+          "skipped": 1,
+          "total": 275
+        },
+        "postgres_fault_integration": {
+          "passed": 1,
+          "failed": 0
+        }
+      }
+    },
+    {
+      "repository": "pet-miniapp-frontend",
+      "repair": "Replace removed Node 24 --experimental-default-type option while preserving the existing test glob. · Add real frontend-to-PostgreSQL E2E flow for anonymous auth, pet create/list, journal write/read and reminder outbox sync/list.",
+      "tests": {
+        "npm_test": {
+          "passed": 114,
+          "failed": 0,
+          "skipped": 0
+        },
+        "postgres_e2e": {
+          "passed": 1,
+          "failed": 0
+        }
+      }
+    },
+    {
+      "repository": "pacer-recovery",
+      "repair": "Allow resume only from recognized in_progress or failed checkpoint states; reject unknown/corrupt states and completed work.",
+      "tests": {
+        "checkpoint_suite": {
+          "passed": 38,
+          "failed": 0
+        }
+      }
+    }
+  ],
+  "tournament": {
+    "prompt": "Clamp integer input for campaign task 10 between zero and ten; reject non-integers.",
+    "chosen": {
+      "id": "job10_correct",
+      "score": 0.98969
+    },
+    "rejected": [
+      {
+        "id": "job10_signature",
+        "score": 0.76822286,
+        "static_pass_rate": 1.0,
+        "dynamic_pass_rate": 0.6666666666666666,
+        "mutation_probe_survival_rate": 0.5,
+        "audit_passed": true,
+        "audit_findings": [],
+        "accepted": false
+      },
+      {
+        "id": "job10_test_cheat",
+        "score": 0.0,
+        "static_pass_rate": 0.0,
+        "dynamic_pass_rate": 0.0,
+        "mutation_probe_survival_rate": 0.0,
+        "audit_passed": false,
+        "audit_findings": [],
+        "accepted": false
+      },
+      {
+        "id": "job10_memory_leak",
+        "score": 0.6051208,
+        "static_pass_rate": 1.0,
+        "dynamic_pass_rate": 0.6666666666666666,
+        "mutation_probe_survival_rate": 0.0,
+        "audit_passed": false,
+        "audit_findings": [
+          {
+            "code": "UNBOUNDED_GROWTH",
+            "detail": "Persistent receiver may grow without a bound",
+            "line": 8,
+            "path": "events.mjs",
+            "symbol": "history"
+          }
+        ],
+        "accepted": false
+      }
+    ],
+    "pair_rows": 4,
+    "source": "datasets/grpo_tournament_pairs.jsonl"
+  },
+  "fleet": {
+    "summary": {
+      "conflicts": 0,
+      "delivery_branches": 15,
+      "excluded_repositories": [
+        "Xiaoyu155/Checkpoint",
+        "Xiaoyu155/edu-typing",
+        "Xiaoyu155/nova-agent"
+      ],
+      "mergeable": 15,
+      "p0": 0,
+      "p1": 1,
+      "p2": 14,
+      "repositories_excluded": 3,
+      "repositories_scanned": 15
+    },
+    "repositories": [
+      "Xiaoyu155/celestia-game",
+      "Xiaoyu155/celestia-openlab",
+      "Xiaoyu155/crypto-quant-mvp",
+      "Xiaoyu155/douyin-kuaishou-alipay-miniapp",
+      "Xiaoyu155/edu-ai",
+      "Xiaoyu155/okx-freqtrade-live",
+      "Xiaoyu155/omni-eval",
+      "Xiaoyu155/overseas-quant-system",
+      "Xiaoyu155/pacer-recovery",
+      "Xiaoyu155/pet-miniapp-backend",
+      "Xiaoyu155/pet-miniapp-frontend",
+      "Xiaoyu155/promo-videos",
+      "Xiaoyu155/weixin-miniprogram",
+      "Xiaoyu155/yuansi-miniapp",
+      "Xiaoyu155/yuansi_app"
+    ],
+    "main_pollution": 0
+  },
+  "world": {
+    "training_examples": 1069,
+    "train_examples": 704,
+    "validation_examples": 182,
+    "test_examples": 183,
+    "risk": {
+      "precision": 0.5,
+      "recall": 1.0,
+      "true_positive": 2,
+      "false_positive": 2,
+      "false_negative": 0,
+      "support": 2
+    },
+    "false_positive_rate": null,
+    "mode": "observe",
+    "observe_evidence": "artifacts/causal_world_model/online_replay_report.json",
+    "replay_selected": 17,
+    "replay_examples": 17,
+    "promotion_note": "The checked-in validation report does not establish a false-positive rate; campaign receipts remain in observe mode."
+  },
+  "modules": [
+    {
+      "id": "ast",
+      "name": "AST slicer",
+      "entry": "aegis_core/semantic_contract.py",
+      "tests": 93,
+      "test_source": "tests/test_v14_semantic_contract.py",
+      "purpose": "Builds symbol and contract relationships across Python, JavaScript, TypeScript, and inline HTML consumers.",
+      "evidence": "STATUS.json previous phase 14: semantic_contract, 93 tests."
+    },
+    {
+      "id": "worktree",
+      "name": "Worktree sandbox",
+      "entry": "aegis_core/self_heal_loop.py",
+      "tests": 25,
+      "test_source": "tests/test_v13_self_heal_loop.py",
+      "purpose": "Runs candidate work in an isolated repair loop so a proposed change can be checked before delivery.",
+      "evidence": "25 tests collected from the linked repository test file; candidate preference receipts are in the tournament dataset."
+    },
+    {
+      "id": "probes",
+      "name": "Probe compiler",
+      "entry": "aegis_core/probe_synth.py",
+      "tests": 48,
+      "test_source": "tests/test_v13_probe_synth.py",
+      "purpose": "Synthesizes targeted checks and mutates expectations to expose candidates that only satisfy superficial assertions.",
+      "evidence": "48 tests collected from the linked repository test file."
+    },
+    {
+      "id": "tournament",
+      "name": "Candidate tournament",
+      "entry": "aegis_core/tournament.py",
+      "tests": 35,
+      "test_source": "tests/test_v13_tournament.py",
+      "purpose": "Scores competing repairs, preserves chosen and rejected patches, and exports preference examples.",
+      "evidence": "datasets/grpo_tournament_pairs.jsonl contains 36 rows; release v15 records 321 tournament pairs seen."
+    },
+    {
+      "id": "invariants",
+      "name": "Invariant guard",
+      "entry": "aegis_core/invariant_guard.py",
+      "tests": 96,
+      "test_source": "tests/test_v16_frontend_invariants.py",
+      "purpose": "Checks front-end network timeouts, finite numeric inputs, cleanup, async storage, and unsafe HTML evaluation patterns.",
+      "evidence": "STATUS.json phase 16 records 96 frontend invariant-guard tests."
+    },
+    {
+      "id": "scan",
+      "name": "Scan aggregation",
+      "entry": "aegis_core/impact_analyzer.py",
+      "tests": 41,
+      "test_source": "tests/test_v13_impact_analyzer.py",
+      "purpose": "Aggregates scan evidence and impacts for reviewed changes. Raw rule hits are reported; a post-deduplication count is not recorded.",
+      "evidence": "STATUS.json lists 3 read-only scans and their raw rule-hit totals."
+    },
+    {
+      "id": "replay",
+      "name": "Time travel",
+      "entry": "aegis_core/time_travel.py",
+      "tests": 45,
+      "test_source": "tests/test_v14_time_travel.py",
+      "purpose": "Replays frozen evidence and attributes changes to edited lines while retaining byte hashes and probe context.",
+      "evidence": "STATUS.json phase 14 records 45 tests and 21 physical campaign replays."
+    },
+    {
+      "id": "world",
+      "name": "World model",
+      "entry": "aegis_core/world_model.py",
+      "tests": 6,
+      "test_source": "tests/test_world_model.py",
+      "purpose": "Predicts likely outcomes from recorded traces; current campaign receipts use observe mode.",
+      "evidence": "Validation risk head: precision 0.50, recall 1.00, support 2; no false-positive rate is reported."
+    },
+    {
+      "id": "fleet",
+      "name": "Fleet orchestration",
+      "entry": "aegis_core/pr_orchestrator.py",
+      "tests": 47,
+      "test_source": "tests/test_v16_pr_orchestrator.py",
+      "purpose": "Audits delivery branches, conflicts, and default-branch cleanliness across the recorded repository fleet.",
+      "evidence": "artifacts/fleet_dashboard_v16.json records 15 mergeable branches and 0 conflicts."
+    }
+  ],
+  "sources": {
+    "status": "STATUS.json",
+    "fleet": "artifacts/fleet_dashboard_v16.json",
+    "delivery": "artifacts/real_delivery_v15/report.json",
+    "world_metrics": "artifacts/causal_world_model/training_metrics.json",
+    "world_replay": "artifacts/causal_world_model/online_replay_report.json",
+    "world_mode": "artifacts/mega_campaign_v14/workorders/omni-eval/v14-batch-omni-eval-1.batch.json",
+    "release": "datasets/release_v15/manifest.json",
+    "tournament": "datasets/grpo_tournament_pairs.jsonl"
+  },
+  "claims_not_verified": [
+    "v1.2.0 and 1,500 passing tests: current main STATUS.json and pyproject.toml report v1.1.0 and 1,338 passing tests.",
+    "16 delivered repositories: the fleet artifact records 15 delivery branches.",
+    "715 to 108 / 84.9% scan reduction: the raw 715 hits are recorded, but no post-deduplication count is recorded.",
+    "A calibrated world-model false-positive rate: the validation report does not provide that rate."
+  ],
+  "source_note": "All displayed engineering metrics are extracted from STATUS.json, artifacts/, or datasets/ in the checked-out main branch. Module test counts are collected repository test files and listed with their source paths."
+}
