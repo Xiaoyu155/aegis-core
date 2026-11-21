@@ -10,3 +10,5 @@ training/runs/
 .aegis/
 /.aegis/keys/
 *.aegis-token
+.env.luna
+.env.luna.example

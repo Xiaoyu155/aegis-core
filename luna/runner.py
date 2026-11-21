@@ -52,19 +52,25 @@ def _demo_candidates(root: Path, target: str) -> list[list[dict]]:
               "patch": _patch_for(root, target, good), "token_cost": 20}]]
 
 
-def _router(models_path: str | Path):
+def _router(models_path: str | Path, root: Path):
+    from .model_router import ModelRouter, QuotaLedger, load_config
     from aegis_core.router import Router, load_models
     path = Path(models_path).expanduser().resolve()
     if not path.is_file():
         raise LunaBlocked(f"model gateway config is missing: {path}")
-    return Router(load_models(path))
+    config = load_config(path, root)
+    return ModelRouter(config, QuotaLedger(root, config)) if config else Router(load_models(path))
 
 
-def _ask(router, system: str, payload: dict, *, timeout: float = 180) -> tuple[dict, dict]:
-    response = router.call(router.chain[0],
-                           [{"role": "system", "content": system},
-                            {"role": "user", "content": json.dumps(payload, ensure_ascii=False)}],
-                           deadline=time.monotonic() + timeout, require_json=True)
+def _ask(router, system: str, payload: dict, *, role: str, timeout: float = 180) -> tuple[dict, dict]:
+    from .model_router import ModelRouter
+    messages = [{"role": "system", "content": system},
+                {"role": "user", "content": json.dumps(payload, ensure_ascii=False)}]
+    deadline = time.monotonic() + timeout
+    if isinstance(router, ModelRouter):
+        response = router.call(role, messages, deadline=deadline)
+    else:
+        response = router.call(router.chain[0], messages, deadline=deadline, require_json=True)
     if response.get("status") != "admitted":
         raise LunaBlocked("model gateway unavailable: " + str(response.get("reason", "blocked")))
     try:
@@ -85,7 +91,7 @@ def _model_probe(router, requirement: str, plan: dict) -> tuple[dict, dict]:
         "symbol. Supported kinds: numeric_bounds, state_machine, idempotency, bounded_collection, "
         "async_timeout, contract_schema. Include every required field for the chosen kind. Do not invent "
         "external credentials, tests, paths or side effects.",
-        {"requirement": requirement, "task_plan": plan})
+        {"requirement": requirement, "task_plan": plan}, role="planner")
     if set(result) != {"probe_spec"}:
         raise LunaBlocked("model gateway response has an unexpected probe envelope")
     try:
@@ -104,7 +110,7 @@ def _model_candidate_provider(router, allowed_paths: list[str]):
             "listed target files. Do not edit or weaken tests, probes, gates, manifests, credentials or "
             "configuration. The first response should attempt a repair; later responses must address the "
             "recorded diagnosis. Do not claim a patch passed.",
-            {"allowed_paths": allowed_paths, "context": context})
+            {"allowed_paths": allowed_paths, "context": context}, role="coder")
         if set(value) != {"candidates"} or type(value["candidates"]) is not list or not value["candidates"]:
             raise LunaBlocked("model generated no valid repair candidates")
         if len(value["candidates"]) > 3:
@@ -287,8 +293,8 @@ def run_requirement(requirement: str, repo: str | Path = ".", *, models: str | P
         else:
             from aegis_core.probe_synth import acceptance_rule
             rule = acceptance_rule(requirement)
-            config_path = Path(models).expanduser().resolve() if models else root / "config" / "models.yaml"
-            router = _router(config_path)
+            from .model_router import config_path
+            router = _router(config_path(root, models), root)
             if rule and rule["kind"] == "clamp":
                 probe_spec = {"kind": "numeric_bounds", "path": rule["path"], "symbol": rule["symbol"],
                               "min": rule["low"], "max": rule["high"], "fallback": rule["fallback"]}
