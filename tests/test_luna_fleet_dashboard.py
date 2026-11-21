@@ -34,11 +34,11 @@ def github(tmp_path, monkeypatch):
     }
     seen = []
     def run(argv, **kwargs):
-        assert argv[:6] == ["gh", "api", "--method", "GET", "--paginate", "--slurp"]
+        assert argv[:5] == ["gh", "api", "--method", "GET", "--paginate"]
         assert kwargs["cwd"] == tmp_path
-        url = argv[6]
+        url = argv[5]
         seen.append(url)
-        return subprocess.CompletedProcess(argv, 0, stdout=json.dumps(responses[url]), stderr="")
+        return subprocess.CompletedProcess(argv, 0, stdout="".join(json.dumps(page) for page in responses[url]), stderr="")
     import luna.pr_reviewer as reviewer
     import types
     monkeypatch.setattr(reviewer, "subprocess", types.SimpleNamespace(run=run))

@@ -17,11 +17,21 @@ _DEFAULT_RECEIPTS = frozenset(
 
 def _pages(root, endpoint):
     result = subprocess.run(
-        ["gh", "api", "--method", "GET", "--paginate", "--slurp", endpoint],
+        ["gh", "api", "--method", "GET", "--paginate", endpoint],
         cwd=root, capture_output=True, text=True, encoding="utf-8", timeout=120, check=False)
     if result.returncode:
         raise RuntimeError(f"GitHub read failed for {endpoint}; check gh authentication and access")
-    return json.loads(result.stdout)
+    # Older GitHub CLI versions write paginated JSON values consecutively.
+    decoder = json.JSONDecoder()
+    pages = []
+    contents = result.stdout
+    offset = 0
+    while (start := re.search(r"\S", contents[offset:])) is not None:
+        page, offset = decoder.raw_decode(contents, offset + start.start())
+        pages.append(page)
+    if not pages:
+        raise ValueError(f"GitHub returned no JSON for {endpoint}")
+    return pages
 
 
 def _review(root, repo, pull, receipt_names):
