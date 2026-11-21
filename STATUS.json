@@ -1,681 +1,1048 @@
 {
-  "phase": 16,
-  "status": "branch_ci_verified_pr_open",
-  "version": "1.1.0",
-  "branch": "feat/aegis-v1.1-fullstack",
-  "base_branch": "main",
-  "base_commit": "b87ed86af752518458aa3d41a77271e6235341ee",
-  "working_head_before_phase16_commit": "b87ed86af752518458aa3d41a77271e6235341ee",
+  "phase": 19,
+  "status": "v2.0_pr_open_code_validation_green",
+  "version": "2.0.0",
+  "branch": "feat/aegis-v2.0-autonomous-gate",
+  "base_branch": "feat/aegis-v1.3-overnight",
+  "base_commit": "cc7f2f8ff5f6f56d3c12842117339e186e01a0d0",
   "pull_request": {
-    "number": 16,
-    "url": "https://github.com/Xiaoyu155/aegis-core/pull/16",
-    "head_branch": "feat/aegis-v1.1-fullstack",
-    "base_branch": "main"
+    "number": 21,
+    "url": "https://github.com/Xiaoyu155/aegis-core/pull/21",
+    "head_branch": "feat/aegis-v2.0-autonomous-gate",
+    "base_branch": "feat/aegis-v1.3-overnight",
+    "implementation_commit_sha": "4655cede08db2d9f1b1f9c833f3cdc03f2a6de51",
+    "implementation_commit_pull_mergeable": false,
+    "validated_head_sha": "713dd53a1430817c144aa1e8fc4e3d16af9e53bf"
   },
   "preservation": {
-    "baseline_tests": 1145,
-    "baseline_tests_still_collected": 1145,
-    "baseline_tests_passed": 1145,
-    "phase16_new_tests": 193,
-    "total_collected": 1338,
-    "total_passed": 1338,
-    "training_directory_preserved": true,
+    "baseline_tests": 1696,
+    "current_tests_collected": 2502,
+    "existing_training_preserved": true,
     "bootstrap_local_ps1_preserved": true,
-    "datasets_directory_preserved": true,
-    "changes_under_preserved_paths": false
+    "existing_datasets_preserved": true,
+    "new_dataset_path": "datasets/release_v20/",
+    "changes_under_preserved_paths": false,
+    "external_business_repositories_modified": []
   },
   "tests": {
-    "total_collected": 1338,
-    "passed": 1338,
-    "phase16_new_by_milestone": {
-      "frontend_invariant_guard": 96,
-      "runtime_profiler_sampling": 50,
-      "pr_orchestrator": 47
-    },
+    "total_collected": 2502,
+    "passed": 2502,
+    "failed": 0,
+    "skipped": 0,
+    "new_vs_v1_3_baseline": 806,
     "local_verification": {
-      "command": "./.venv/bin/python -m pytest -q",
+      "command": "/tmp/aegis-overnight-venv/bin/python -m pytest -q",
       "python": "3.12.14",
-      "elapsed_seconds": 220.75,
-      "result": "1338 passed",
-      "loopback_http_integration": "passed with network permission enabled"
+      "result": "2502 passed",
+      "elapsed_seconds": 452.14,
+      "loopback_dashboard_integration": "passed"
     }
   },
   "milestones": {
-    "m1_frontend_invariant_guard": {
-      "module": "aegis_core/invariant_guard.py",
-      "extensions": [
-        ".js",
-        ".jsx",
-        ".ts",
-        ".tsx",
-        ".mjs",
-        ".cjs",
-        ".html_inline_script"
+    "m1_noise_confidence": {
+      "modules": [
+        "aegis_core/invariant_guard.py",
+        "aegis_core/noise_filter.py"
       ],
-      "domains": [
-        "network_timeout_retry",
-        "finite_numeric_inputs_and_division",
-        "resource_cleanup_and_global_growth",
-        "async_json_storage",
-        "html_eval_prototype_pollution"
-      ],
-      "tests": 96
-    },
-    "m2_runtime_profiler_sampling": {
-      "module": "aegis_core/runtime_profiler.py",
-      "signature": "(caller, callee, arg_schema_hash); caller_line is location metadata",
-      "sampling": "deterministic stratified reservoir; up to 75% reserved for call edges and dynamic getattr; repeated hits increment counts without consuming slots; code paths and names are cached for trace-backend performance",
-      "tests": 50,
-      "high_frequency_probe": {
-        "hot_calls": 100000,
-        "unique_hot_call_edge": 1,
-        "aggregated_call_count": 100000,
-        "repeat_hits_at_least": 99999,
-        "reservoir_limit": 128,
-        "tail_cold_branch_captured": true,
-        "reservoir_size_observed": 15,
-        "reservoir_replacements": 0,
-        "unique_sites_observed": 15,
-        "compatibility_backend": "sys.settrace",
-        "compatibility_backend_elapsed_seconds": 1.418
-      }
-    },
-    "m3_pr_orchestrator": {
-      "module": "aegis_core/pr_orchestrator.py",
-      "cli": "aegis audit-fleet --owner Xiaoyu155",
-      "tests": 47,
-      "real_git_conflict_repositories": 30,
-      "fleet_audit": {
-        "repositories_with_delivery_branches": 15,
-        "delivery_branches": 15,
-        "mergeable": 15,
-        "conflicts": 0,
-        "default_branch_zero_pollution": true,
-        "excluded_repositories": [
-          "Xiaoyu155/nova-agent",
-          "Xiaoyu155/Checkpoint",
-          "Xiaoyu155/edu-typing"
-        ],
-        "artifacts": [
-          "artifacts/fleet_dashboard_v16.json",
-          "artifacts/fleet_dashboard_v16.md"
-        ]
-      }
-    },
-    "m4_external_frontend_readonly_scans": [
-      {
-        "repository": "Xiaoyu155/douyin-kuaishou-alipay-miniapp",
-        "branch": "feat/aegis-delivery-v1",
-        "head": "aa79c76256475d7eb10c8eb048520e79ba6bd36c",
-        "js_ts_files": 194,
-        "html_files": 3,
-        "scanned_files": 197,
-        "rule_hits": 269
-      },
-      {
-        "repository": "Xiaoyu155/yuansi-miniapp",
-        "branch": "feat/aegis-delivery-v1",
-        "head": "08c51f56faf0ba24d8b184a5b20566742ec51680",
-        "js_ts_files": 19,
-        "html_files": 15,
-        "scanned_files": 34,
-        "rule_hits": 33
-      },
-      {
-        "repository": "Xiaoyu155/celestia-game",
-        "branch": "feat/aegis-delivery-v1",
-        "head": "998e9462c9359b7c7c72ea29d2ab2d54e647a60b",
-        "js_ts_files": 67,
-        "html_files": 24,
-        "scanned_files": 91,
-        "rule_hits": 413
-      }
-    ]
-  },
-  "github_actions": {
-    "required_jobs": 8,
-    "matrix": {
-      "os": [
-        "ubuntu-latest",
-        "windows-latest"
-      ],
-      "python": [
-        "3.11",
-        "3.12"
-      ],
-      "suite": [
-        "full",
-        "v16-gates"
+      "tests": 74,
+      "capabilities": [
+        "asset/scope classification",
+        "lifecycle cleanup correlation",
+        "project/client default timeout awareness",
+        "confidence levels and suppression reasons",
+        "read-only full repository scans"
       ]
     },
-    "status": "See workflow_url for current head; last successful push and PR matrices are recorded below",
-    "previous_run": {
-      "run_id": 44677431133,
-      "url": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44677431133",
-      "result": "failed on high-frequency call-edge retention across Windows and Python 3.11; corrected locally and rerun required"
-    },
-    "workflow_url": "https://github.com/Xiaoyu155/aegis-core/actions",
-    "previous_attempts": [
-      {
-        "run_id": 44677431133,
-        "commit": "eab8609ed093d05655588cc800e656cc265ceeb8",
-        "result": "hot call edge was evicted from the global reservoir; fixed with priority strata and line-independent call signatures"
-      },
-      {
-        "run_id": 44679294614,
-        "commit": "9f29da11454d8736e9a28b0d5f08ff1119fd6e66",
-        "result": "trace profile exceeded the 45-second probe timeout on Python 3.11; fixed by caching code paths and names"
-      },
-      {
-        "run_id": 44680156053,
-        "commit": "5f993450440ea9f4ee07a9f316ec0ec69bde0278",
-        "result": "same trace timeout remained before the cache optimization"
-      }
-    ],
-    "latest_verified_head": "c57c319fc7fae0867b7e723b8d7b99dddbc5419c",
-    "latest_successful_runs": [
-      {
-        "event": "push",
-        "run_id": 44682703955,
-        "url": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44682703955",
-        "head": "c57c319fc7fae0867b7e723b8d7b99dddbc5419c",
-        "result": "8/8 success"
-      },
-      {
-        "event": "pull_request",
-        "run_id": 44682709697,
-        "url": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44682709697",
-        "head": "c57c319fc7fae0867b7e723b8d7b99dddbc5419c",
-        "result": "8/8 success"
-      }
-    ]
-  },
-  "previous_phase_15": {
-    "phase": 15,
-    "status": "delivered_ci_verified_dynamic_rate_gap_documented",
-    "pull_request": "https://github.com/Xiaoyu155/aegis-core/pull/15",
-    "branch": "feat/world-model-v15",
-    "base_branch": "feat/world-model-v14",
-    "base_commit": "1bb8f510ed8f0e226448d267b40f7e3af2b58a27",
-    "previous_phase_14": {
-      "phase": 14,
-      "status": "ci_verified_with_documented_m1_gap",
-      "pull_request": "https://github.com/Xiaoyu155/aegis-core/pull/14",
-      "branch": "feat/world-model-v14",
-      "base_branch": "feat/world-model-v13",
-      "base_commit": "c3a892c3963c24ddee1d359898ce22213e53fff9",
-      "previous_phase_13": {
-        "pull_request": "https://github.com/Xiaoyu155/aegis-core/pull/13",
-        "head": "c3a892c3963c24ddee1d359898ce22213e53fff9",
-        "tests": 656,
-        "github_actions": "8/8 green at the locked baseline"
-      },
-      "preservation": {
-        "baseline_tests": 656,
-        "baseline_tests_still_collected": 656,
-        "training_directory_preserved": true,
-        "bootstrap_local_ps1_preserved": true,
-        "changes_under_preserved_paths": false
-      },
-      "tests": {
-        "total_collected": 944,
-        "passed": 944,
-        "baseline_preserved": 656,
-        "phase_14_new": 288,
-        "new_cases_by_milestone": {
-          "semantic_contract": 93,
-          "time_travel": 45,
-          "swarm_arbiter": 81,
-          "distill_pipeline": 47,
-          "mega_campaign": 22
-        },
-        "local_verification": {
-          "command": "PYTHONPATH=. /tmp/aegis-v13-test-env/bin/python -m pytest -q",
-          "python": "3.12.14",
-          "node": "v24.22.1",
-          "elapsed_seconds": 203.99,
-          "result": "944 passed",
-          "loopback_permission_enabled": true
-        }
-      },
-      "milestones": {
-        "m1_semantic_contract": {
-          "module": "aegis_core/semantic_contract.py",
-          "tests": 93,
-          "features": [
-            "Python TypedDict/dataclass/dict and return schema inference",
-            "JS/TS contracts, destructuring and response property flows",
-            "HTML inline script consumers",
-            "decorator, callback, receiver type, argparse schema and cross-module field analysis"
-          ],
-          "corpus_scan": {
-            "repositories": 21,
-            "tracked_source_files": 4920,
-            "schemas": 25962,
-            "fields": 43609,
-            "flows": 72391,
-            "dynamic_sites": 780,
-            "resolved_dynamic_sites": 90,
-            "unresolved_dynamic_sites": 690,
-            "dynamic_unresolved_reduction_rate": 0.11538461538461539,
-            "required_rate": 0.7,
-            "required_rate_met": false,
-            "parse_diagnostics": 17
-          },
-          "interpretation": "Unresolved dynamic calls are retained when receiver types or runtime object schemas cannot be proven statically."
-        },
-        "m2_time_travel": {
-          "module": "aegis_core/time_travel.py",
-          "cli": [
-            "aegis replay --ticket",
-            "aegis blame"
-          ],
-          "tests": 45,
-          "physical_campaign_replays": 21,
-          "features": [
-            "SQLite WAL immutable snapshot receipts",
-            "Git archive byte hashes and frozen probe/seed/context evidence",
-            "deterministic replay verification",
-            "file delta-debugging and changed-line blame reports"
-          ]
-        },
-        "m3_swarm_arbiter": {
-          "module": "aegis_core/swarm_arbiter.py",
-          "tests": 81,
-          "roles": [
-            "Architect",
-            "Coder",
-            "Adversarial Critic",
-            "Verifier"
-          ],
-          "features": [
-            "explicit role-state receipts",
-            "Python AST and JS/TS brace-region three-way merge",
-            "overlapping semantic block and shared invariant conflict reporting"
-          ]
-        },
-        "m4_distillation": {
-          "module": "aegis_core/distill_pipeline.py",
-          "tests": 47,
-          "tokenizer": "official Qwen/Qwen2.5-Coder-3B-Instruct",
-          "cpu_release_bundle_readback_verified": true,
-          "max_tokens": 4096,
-          "zero_truncation": true,
-          "sft_examples": 489,
-          "preference_pairs": 78,
-          "chosen_rows": 78,
-          "rejected_rows": 78,
-          "token_distribution": {
-            "sft": {
-              "min": 86,
-              "p50": 469,
-              "p90": 589,
-              "max": 592
-            },
-            "preference": {
-              "min": 103,
-              "p50": 114,
-              "p90": 223,
-              "max": 247
-            }
-          },
-          "bundle_files_verified": 10,
-          "hashes": {
-            "sft": "a6f17cedce5d60772c20c52bb95d7f68f492b792a3a16ab6bd01ca79dde0a182",
-            "grpo": "879520ba0f90c21dd63d4986133ccd95c43d979803ca40986675bff9ea4eb8f4",
-            "manifest": "d4c61f551caada89be90fcf28c7aa4156db8a5450d20cab4b3083559195cdb79",
-            "existing_tournament_pairs": "8cf50f972735c08eae5e1d5831b3b20cec442615315ad294fc58e1ab8dbbe9a3"
-          },
-          "gpu_training_run": "not_run_in_linux_cloud"
-        },
-        "m5_21_repository_campaign": {
-          "script": "scripts/run_21repos_mega_campaign.py",
-          "tests": 22,
-          "repositories": 21,
-          "tracked_source_files": 4920,
-          "work_order_attempts": 72,
-          "final_physical_gate_passes": 61,
-          "batch": {
-            "passed": 40,
-            "attempts": 50,
-            "recovered_initial_failures": 8,
-            "source_ineligible_repositories": [
-              "pet-miniapp"
-            ]
-          },
-          "autopilot": {
-            "final_successes": 21,
-            "invalid_candidates_rejected": 63,
-            "invalid_candidates_total": 63,
-            "candidate_evaluations": 84
-          },
-          "sqlite_wal": {
-            "tickets": 69,
-            "traces": 372,
-            "traces_per_second": 0.386,
-            "peak_wal_bytes": 588537912,
-            "database_lock_errors": 0,
-            "new_experience_records": 21
-          },
-          "high_risk_l3_findings": {},
-          "remote_default_heads_unchanged": true,
-          "temporary_worktree_residuals": 0,
-          "source_workorder_scope": "Batch used temporary source comment audit markers; autopilot repairs used temporary tracked contract fixtures. No external application bug fixes were delivered.",
-          "elapsed_seconds": 964.483,
-          "report": "artifacts/mega_campaign_v14/report.json",
-          "stdout": "artifacts/mega_campaign_v14/stdout.txt",
-          "semantic_scan": "artifacts/mega_campaign_v14/semantic_scan.json"
-        },
-        "m6_delivery": {
-          "ci": {
-            "state": "success",
-            "checks_passed": 8,
-            "checks_expected": 8,
-            "matrix": "Linux/Windows x Python 3.11/3.12; push and pull_request",
-            "validated_head": "dba020cb94f7de83e132ac0ddf5e5f8c9e51ea42",
-            "runs": {
-              "push": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44456319152",
-              "pull_request": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44456325882"
-            },
-            "results": {
-              "push": {
-                "ubuntu-latest / Python 3.11": "success",
-                "ubuntu-latest / Python 3.12": "success",
-                "windows-latest / Python 3.11": "success",
-                "windows-latest / Python 3.12": "success"
-              },
-              "pull_request": {
-                "ubuntu-latest / Python 3.11": "success",
-                "ubuntu-latest / Python 3.12": "success",
-                "windows-latest / Python 3.11": "success",
-                "windows-latest / Python 3.12": "success"
-              }
-            }
-          },
-          "pull_request": "https://github.com/Xiaoyu155/aegis-core/pull/14"
-        }
-      },
-      "artifacts": {
-        "campaign_report_sha256": "788709c6b0aa0eec5582bab1caa00e92b88ec7450333922ac8c7da5c2caef6a7",
-        "semantic_scan_sha256": "08930e4c21cbaa276d4c0e78c9d66df26772c7b550921a2c634a86799cac48d4",
-        "campaign_stdout_lines": 171,
-        "release_bundle": "datasets/release_v14/",
-        "release_manifest": "datasets/release_v14_bundle_manifest.json"
-      },
-      "limits": [
-        "The requested 70% reduction in unresolved dynamic sites was not achieved: source corpus result is 11.54% (90/780 resolved).",
-        "21-repository campaign gates used temporary audit markers and contract fixtures; these checks prove isolation and gate execution, not 21 repositories' real business defects fixed.",
-        "RTX 5060 Windows GPU training was not run in this Linux environment."
+    "m2_fleet_shipper": {
+      "module": "aegis_core/fleet_shipper.py",
+      "cli": "aegis ship-fleet",
+      "default_mode": "dry-run",
+      "explicit_execute_required": true,
+      "protected_repositories": [
+        "nova-agent",
+        "Checkpoint",
+        "edu-typing"
       ],
-      "ci_validated_source_head": "dba020cb94f7de83e132ac0ddf5e5f8c9e51ea42"
+      "tests": 40
+    },
+    "m3_world_model_bench": {
+      "module": "aegis_core/world_model_bench.py",
+      "tests": 48,
+      "current_calibration": {
+        "samples": 80,
+        "training_groups": 28,
+        "validation_groups": 12,
+        "validation_samples": 24,
+        "candidate_thresholds": 28,
+        "joint_safe_threshold_found": false,
+        "permit_signing_key_configured": false,
+        "observe_to_enforce": "blocked"
+      }
+    },
+    "m18_m1_semantic_patcher": {
+      "modules": [
+        "aegis_core/semantic_patcher.py",
+        "aegis_core/patch_applier.py",
+        "aegis_core/sandbox.py"
+      ],
+      "tests": 54,
+      "capabilities": [
+        "Python AST symbol targeting",
+        "JS/TS brace-scope targeting",
+        "unified diff fallback",
+        "syntax validation",
+        "atomic rollback"
+      ]
+    },
+    "m18_m2_env_doctor": {
+      "module": "aegis_core/env_doctor.py",
+      "cli": "aegis doctor",
+      "tests": 45,
+      "capabilities": [
+        "disk threshold and bounded cleanup",
+        "Python/Node and dependency inventory",
+        "isolated template copies",
+        "SPARSE_MODE targeted gate with coverage boundary"
+      ]
+    },
+    "m18_m3_synthetic_hard_negatives": {
+      "module": "aegis_core/synthetic_hard_negatives.py",
+      "dataset": "datasets/release_v13_augmented/hard_negative_pairs.jsonl",
+      "pair_count": 400,
+      "tokenizer": "Qwen/Qwen2.5-Coder-3B-Instruct",
+      "zero_truncation_verified": true,
+      "sha256": "2acbdcfc5d93f7554850e10b5c875a13ec3346a3c0f324870d05e3887152b7bb",
+      "verified_mutation_counts": {
+        "weaken_test_assertion": 385,
+        "off_by_one_boundary": 15
+      },
+      "mutation_classes_without_verified_pairs": [
+        "swallow_exception",
+        "remove_timeout_validation",
+        "break_idempotency_key",
+        "unbounded_memory_growth"
+      ],
+      "calibration": {
+        "status": "blocked",
+        "validation_samples": 164,
+        "false_positive_block_rate": 0.0,
+        "recall": 0.975609756097561,
+        "joint_metric_gate_passed": true,
+        "signing_key_available": false,
+        "allowed_mode_transition": false,
+        "report": "datasets/release_v13_augmented/world_model_bench_v13.json"
+      },
+      "tests": 50
+    },
+    "m18_m4_live_dashboard": {
+      "module": "aegis_core/live_dashboard.py",
+      "cli": "aegis serve --port 8765",
+      "tests": 47,
+      "apis": [
+        "/api/overview",
+        "/api/tickets",
+        "/api/traces",
+        "/api/fleet"
+      ],
+      "sqlite": "read-only WAL connection"
+    }
+  },
+  "readonly_external_scans": {
+    "branch": "feat/aegis-delivery-v1",
+    "repos": {
+      "yuansi-miniapp": {
+        "head": "08c51f56faf0ba24d8b184a5b20566742ec51680",
+        "raw": 33,
+        "actionable": 0,
+        "suppressed": 33,
+        "noise_reduction_percent": 100.0,
+        "unexplained_prior_finding_drops": 0
+      },
+      "douyin-kuaishou-alipay-miniapp": {
+        "head": "aa79c76256475d7eb10c8eb048520e79ba6bd36c",
+        "raw": 269,
+        "actionable": 108,
+        "suppressed": 161,
+        "noise_reduction_percent": 59.9,
+        "unexplained_prior_finding_drops": 0
+      },
+      "celestia-game": {
+        "head": "998e9462c9359b7c7c72ea29d2ab2d54e647a60b",
+        "raw": 413,
+        "actionable": 0,
+        "suppressed": 413,
+        "noise_reduction_percent": 100.0,
+        "unexplained_prior_finding_drops": 0
+      }
+    },
+    "totals": {
+      "raw": 715,
+      "actionable": 108,
+      "suppressed": 607,
+      "noise_reduction_percent": 84.9,
+      "unexplained_prior_finding_drops": 0
+    },
+    "external_repositories_modified": false
+  },
+  "previous_phase_16": {
+    "phase": 16,
+    "status": "branch_ci_verified_pr_open",
+    "version": "1.1.0",
+    "branch": "feat/aegis-v1.1-fullstack",
+    "base_branch": "main",
+    "base_commit": "b87ed86af752518458aa3d41a77271e6235341ee",
+    "working_head_before_phase16_commit": "b87ed86af752518458aa3d41a77271e6235341ee",
+    "pull_request": {
+      "number": 16,
+      "url": "https://github.com/Xiaoyu155/aegis-core/pull/16",
+      "head_branch": "feat/aegis-v1.1-fullstack",
+      "base_branch": "main"
     },
     "preservation": {
-      "baseline_tests": 944,
-      "baseline_tests_still_collected": 944,
+      "baseline_tests": 1145,
+      "baseline_tests_still_collected": 1145,
+      "baseline_tests_passed": 1145,
+      "phase16_new_tests": 193,
+      "total_collected": 1338,
+      "total_passed": 1338,
       "training_directory_preserved": true,
       "bootstrap_local_ps1_preserved": true,
-      "changes_under_preserved_paths": false,
-      "verification": "No files deleted; training/ and scripts/bootstrap_local.ps1 are unchanged from the locked PR #14 commit."
+      "datasets_directory_preserved": true,
+      "changes_under_preserved_paths": false
     },
     "tests": {
-      "total_collected": 1145,
-      "passed": 1145,
-      "failed": 0,
-      "baseline_preserved": 944,
-      "phase_15_new": 201,
-      "new_cases_by_milestone": {
-        "runtime_profiler": 73,
-        "invariant_guard": 102,
-        "probe_synth_regression": 1,
-        "distill_release": 14,
-        "autopilot_config_scope": 10,
-        "verified_repair_sft_regression": 1
+      "total_collected": 1338,
+      "passed": 1338,
+      "phase16_new_by_milestone": {
+        "frontend_invariant_guard": 96,
+        "runtime_profiler_sampling": 50,
+        "pr_orchestrator": 47
       },
       "local_verification": {
-        "command": "PYTHONPATH=. /tmp/aegis-v15-env/bin/python -m pytest -q",
+        "command": "./.venv/bin/python -m pytest -q",
         "python": "3.12.14",
-        "elapsed_seconds": 219.66,
-        "result": "1145 passed",
-        "loopback_permission_enabled": true,
-        "stdout": "artifacts/real_delivery_v15/core_full_regression_pathfix.stdout"
-      },
-      "targeted_config_scope_regression": {
-        "command": "PYTHONPATH=. /tmp/aegis-v15-env/bin/python -m pytest -q tests/test_v15_config_scope.py",
-        "passed": 10,
-        "coverage": [
-          "POSIX absolute path",
-          "Windows rooted path",
-          "Windows drive path",
-          "POSIX and Windows traversal"
-        ]
+        "elapsed_seconds": 220.75,
+        "result": "1338 passed",
+        "loopback_http_integration": "passed with network permission enabled"
       }
     },
     "milestones": {
-      "m1_runtime_profiler": {
-        "modules": [
-          "aegis_core/runtime_profiler.py",
-          "aegis_core/semantic_contract.py",
-          "aegis_core/impact_analyzer.py"
-        ],
-        "tests": 73,
-        "features": [
-          "Isolated child-process sampling with CPython 3.12 sys.monitoring and Python 3.11 sys.settrace fallback",
-          "Bounded call edges, dynamic getattr targets, return schemas, exception locations and hot functions",
-          "Runtime overlays in SemanticContract and runtime edge merge in ImpactAnalyzer",
-          "Profiles omit argument values, environment contents and exception messages"
-        ],
-        "pr14_static_baseline": {
-          "sites": 780,
-          "resolved": 90,
-          "unresolved": 690,
-          "rate": 0.11538461538461539
-        },
-        "real_profile_results": {
-          "okx_full_suite": {
-            "source_profile_sha256": "f3613281e3f59712e4b0b693ae43c483da9a6e5cc76a8e701b9b679208b6ee82",
-            "backend": "sys.monitoring+profile",
-            "exit_code": 0,
-            "completed": true,
-            "timed_out": false,
-            "event_count": 50000,
-            "event_limit_reached": true,
-            "observed_functions": 486,
-            "dynamic_sites": 68,
-            "resolved_dynamic_sites": 18,
-            "unresolved_dynamic_sites": 50,
-            "runtime_resolved_dynamic_sites": 5,
-            "runtime_profiled_dynamic_sites": 7,
-            "runtime_profiled_dynamic_sites_resolved": 7,
-            "runtime_profiled_dynamic_resolution_rate": 1.0,
-            "runtime_augmented_dynamic_resolution_rate": 0.2647058823529412,
-            "runtime_observed_call_edges": 509,
-            "dynamic_resolution_kinds": {
-              "runtime_observed": 5,
-              "typed_field": 11,
-              "unique_callable": 2
-            }
-          },
-          "pacer_full_suite": {
-            "source_profile_sha256": "b4f6d63090970c7dd8540536bfd0fcde409d9159017ec479d475f5a6b93d29dc",
-            "backend": "sys.monitoring+profile",
-            "exit_code": 0,
-            "completed": true,
-            "timed_out": false,
-            "event_count": 7856,
-            "event_limit_reached": false,
-            "observed_functions": 123,
-            "dynamic_sites": 163,
-            "resolved_dynamic_sites": 23,
-            "unresolved_dynamic_sites": 140,
-            "runtime_resolved_dynamic_sites": 1,
-            "runtime_profiled_dynamic_sites": 1,
-            "runtime_profiled_dynamic_sites_resolved": 1,
-            "runtime_profiled_dynamic_resolution_rate": 1.0,
-            "runtime_augmented_dynamic_resolution_rate": 0.1411042944785276,
-            "runtime_observed_call_edges": 122,
-            "dynamic_resolution_kinds": {
-              "argparse_option": 21,
-              "runtime_observed": 1,
-              "typed_field": 1
-            }
-          }
-        },
-        "required_whole_corpus_75_percent_met": false,
-        "interpretation": "100% is measured only among runtime-profiled sites observed by each executed suite (7/7 OKX; 1/1 Pacer). Whole-repository augmented site rates are 26.47% for OKX (18/68) and 14.11% for Pacer (23/163); these samples do not cover all 780 PR #14 corpus sites."
-      },
-      "m2_invariant_guard": {
+      "m1_frontend_invariant_guard": {
         "module": "aegis_core/invariant_guard.py",
-        "tests": 102,
+        "extensions": [
+          ".js",
+          ".jsx",
+          ".ts",
+          ".tsx",
+          ".mjs",
+          ".cjs",
+          ".html_inline_script"
+        ],
         "domains": [
-          "finance and position bounds",
-          "database and state-machine atomicity",
-          "network timeout, credentials and retry backoff",
-          "file, database connection and worktree lifecycle"
+          "network_timeout_retry",
+          "finite_numeric_inputs_and_division",
+          "resource_cleanup_and_global_growth",
+          "async_json_storage",
+          "html_eval_prototype_pollution"
         ],
-        "integration": "L3 differential audit reports only newly introduced findings with path, line, code and severity."
+        "tests": 96
       },
-      "m3_structured_probe_and_scoped_config_gates": {
-        "modules": [
-          "aegis_core/probe_synth.py",
-          "aegis_core/tournament.py",
-          "aegis_core/self_heal_loop.py",
-          "aegis_core/cli.py",
-          "aegis_core/reviewer.py"
-        ],
-        "tests": 11,
-        "features": [
-          "Wrong exception types are classified as ASSERTION_FAILED",
-          "Autopilot accepts explicit per-file JSON allowlists only",
-          "Allowlisted JSON receives syntax validation and L3 parse review",
-          "Unsafe and unlisted paths are rejected before candidate gates"
-        ]
-      },
-      "m4_distillation_release": {
-        "module": "aegis_core/distill_pipeline.py",
-        "tests": 14,
-        "manifest": "datasets/release_v15_bundle_manifest.json",
-        "tokenizer": {
-          "max_tokens": 4096,
-          "model_id": "Qwen/Qwen2.5-Coder-3B-Instruct",
-          "official_tokenizer": true,
-          "tokenizer_id": "Qwen/Qwen2.5-Coder-3B-Instruct",
-          "zero_truncation": true
-        },
-        "counts": {
-          "chosen_positive": 342,
-          "duplicate_experience_rows": 21,
-          "duplicate_sft_rows": 468,
-          "experience_rows_seen": 21,
-          "labeled_rollout_groups_paired": 264,
-          "labeled_rollout_rows_seen": 528,
-          "ledger_repair_attempts": 85,
-          "ledger_traces_seen": 381,
-          "ledger_verified_repair_examples": 24,
-          "preference_pairs": 342,
-          "rejected_negative": 342,
-          "sft_examples": 1462,
-          "sft_rows_seen": 1906,
-          "tournament_pairs_seen": 321,
-          "truncated_rows": 0
-        },
-        "token_length_distribution": {
-          "preference": {
-            "count": 342,
-            "max": 757,
-            "min": 103,
-            "p50": 413,
-            "p90": 646
-          },
-          "sft": {
-            "count": 1462,
-            "max": 2122,
-            "min": 86,
-            "p50": 1856,
-            "p90": 2037
-          }
-        },
-        "zero_truncation": true,
-        "bundle_files_verified": 10,
-        "bundle_sha256": "a258cd031f13204eceeb0b40045c7878b3b5e72a855198cdb70cd0ed3901106a",
-        "sft_sha256": "8fb67693c7b693fa698dade551fe801f0e3e3e30b3f043a2c41384b60124dc4c",
-        "preference_sha256": "b5cab843e47c6f4ce22ee3a28d6db93e3d6027a04c9a82581bcc77ac4b065899",
-        "windows_rtx_5060_gpu_run": "not run in Linux cloud; Windows bootstrap and trainer sources preserved"
-      },
-      "m5_real_business_delivery": {
-        "campaign_report": "artifacts/real_delivery_v15/report.json",
-        "full_gate_stdout": "artifacts/real_delivery_v15/stdout.txt",
-        "repositories": {
-          "okx-freqtrade-live": {
-            "branch": "feat/aegis-v15-delivery",
-            "head": "c2370e1deb3270703c640da8f78341f65b313658",
-            "tests": "32 passed",
-            "repair": "Finite positive leverage and finite notional validation for stake cap calculation."
-          },
-          "pet-miniapp-backend": {
-            "branch": "feat/aegis-v15-delivery",
-            "head": "80a004a91722e8e96a741e6d652057f8df2f92dd",
-            "tests": "274 passed, 1 skipped; PostgreSQL fault integration 1 passed",
-            "repair": "Discard errored pg clients and preserve primary transaction error when rollback also fails."
-          },
-          "pet-miniapp-frontend": {
-            "branch": "feat/aegis-v15-delivery",
-            "head": "16154611c316b2209dee36ae6991badad66b9af5",
-            "tests": "npm test 114 passed; real PostgreSQL E2E passed",
-            "repair": "Node 24 compatible test command plus real frontend/backend flow acceptance gate."
-          },
-          "pacer-recovery": {
-            "branch": "feat/aegis-v15-delivery",
-            "head": "73f50a7ee09742d0b2ea0c62041acae31c8e1d25",
-            "tests": "38 passed",
-            "repair": "Resume only recognized in_progress/failed checkpoints; reject unknown and completed states."
-          }
-        },
-        "all_aegis_autopilot_receipts": "artifacts/real_delivery_v15/*_autopilot.json",
-        "default_branch_writes_issued": false
-      }
-    },
-    "ci": {
-      "state": "success",
-      "checks_passed": 8,
-      "checks_expected": 8,
-      "matrix": "Linux/Windows x Python 3.11/3.12; push and pull_request",
-      "validated_head": "8e4673d824679bf64221615beb175d2f9402d27c",
-      "runs": {
-        "push": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44481505540",
-        "pull_request": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44481511483"
-      },
-      "results": {
-        "push": {
-          "ubuntu-latest / Python 3.11": "success",
-          "ubuntu-latest / Python 3.12": "success",
-          "windows-latest / Python 3.11": "success",
-          "windows-latest / Python 3.12": "success"
-        },
-        "pull_request": {
-          "ubuntu-latest / Python 3.11": "success",
-          "ubuntu-latest / Python 3.12": "success",
-          "windows-latest / Python 3.11": "success",
-          "windows-latest / Python 3.12": "success"
+      "m2_runtime_profiler_sampling": {
+        "module": "aegis_core/runtime_profiler.py",
+        "signature": "(caller, callee, arg_schema_hash); caller_line is location metadata",
+        "sampling": "deterministic stratified reservoir; up to 75% reserved for call edges and dynamic getattr; repeated hits increment counts without consuming slots; code paths and names are cached for trace-backend performance",
+        "tests": 50,
+        "high_frequency_probe": {
+          "hot_calls": 100000,
+          "unique_hot_call_edge": 1,
+          "aggregated_call_count": 100000,
+          "repeat_hits_at_least": 99999,
+          "reservoir_limit": 128,
+          "tail_cold_branch_captured": true,
+          "reservoir_size_observed": 15,
+          "reservoir_replacements": 0,
+          "unique_sites_observed": 15,
+          "compatibility_backend": "sys.settrace",
+          "compatibility_backend_elapsed_seconds": 1.418
         }
       },
-      "previous_attempts": {
-        "push": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44478507261",
-        "pull_request": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44478556275",
-        "outcome": "4/8 Linux jobs passed; four Windows jobs exposed the same rooted POSIX-path validation bug, fixed with dual POSIX/Windows path parsing.",
-        "failed_head": "262bf16e4892165e66e457577bf18ca301683a61"
-      }
+      "m3_pr_orchestrator": {
+        "module": "aegis_core/pr_orchestrator.py",
+        "cli": "aegis audit-fleet --owner Xiaoyu155",
+        "tests": 47,
+        "real_git_conflict_repositories": 30,
+        "fleet_audit": {
+          "repositories_with_delivery_branches": 15,
+          "delivery_branches": 15,
+          "mergeable": 15,
+          "conflicts": 0,
+          "default_branch_zero_pollution": true,
+          "excluded_repositories": [
+            "Xiaoyu155/nova-agent",
+            "Xiaoyu155/Checkpoint",
+            "Xiaoyu155/edu-typing"
+          ],
+          "artifacts": [
+            "artifacts/fleet_dashboard_v16.json",
+            "artifacts/fleet_dashboard_v16.md"
+          ]
+        }
+      },
+      "m4_external_frontend_readonly_scans": [
+        {
+          "repository": "Xiaoyu155/douyin-kuaishou-alipay-miniapp",
+          "branch": "feat/aegis-delivery-v1",
+          "head": "aa79c76256475d7eb10c8eb048520e79ba6bd36c",
+          "js_ts_files": 194,
+          "html_files": 3,
+          "scanned_files": 197,
+          "rule_hits": 269
+        },
+        {
+          "repository": "Xiaoyu155/yuansi-miniapp",
+          "branch": "feat/aegis-delivery-v1",
+          "head": "08c51f56faf0ba24d8b184a5b20566742ec51680",
+          "js_ts_files": 19,
+          "html_files": 15,
+          "scanned_files": 34,
+          "rule_hits": 33
+        },
+        {
+          "repository": "Xiaoyu155/celestia-game",
+          "branch": "feat/aegis-delivery-v1",
+          "head": "998e9462c9359b7c7c72ea29d2ab2d54e647a60b",
+          "js_ts_files": 67,
+          "html_files": 24,
+          "scanned_files": 91,
+          "rule_hits": 413
+        }
+      ]
     },
-    "artifacts": {
-      "real_delivery_report_sha256": "13a7829ad2e6dc407d86afc40660568cb0258ebbaf97905b3e096c291645637a",
-      "runtime_profile_summary_sha256": "37bd8e118209d9688ec6ccde510ba9ad3f41d3a77c77299823ec87dc1fb0d33e",
-      "release_bundle": "datasets/release_v15/",
-      "release_manifest": "datasets/release_v15_bundle_manifest.json",
-      "core_regression_sha256": "986fec57d8ba1a3374ddb21c1302f4f4c8b211386a8069f81c7b065b34efc2eb"
+    "github_actions": {
+      "required_jobs": 8,
+      "matrix": {
+        "os": [
+          "ubuntu-latest",
+          "windows-latest"
+        ],
+        "python": [
+          "3.11",
+          "3.12"
+        ],
+        "suite": [
+          "full",
+          "v16-gates"
+        ]
+      },
+      "status": "See workflow_url for current head; last successful push and PR matrices are recorded below",
+      "previous_run": {
+        "run_id": 44677431133,
+        "url": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44677431133",
+        "result": "failed on high-frequency call-edge retention across Windows and Python 3.11; corrected locally and rerun required"
+      },
+      "workflow_url": "https://github.com/Xiaoyu155/aegis-core/actions",
+      "previous_attempts": [
+        {
+          "run_id": 44677431133,
+          "commit": "eab8609ed093d05655588cc800e656cc265ceeb8",
+          "result": "hot call edge was evicted from the global reservoir; fixed with priority strata and line-independent call signatures"
+        },
+        {
+          "run_id": 44679294614,
+          "commit": "9f29da11454d8736e9a28b0d5f08ff1119fd6e66",
+          "result": "trace profile exceeded the 45-second probe timeout on Python 3.11; fixed by caching code paths and names"
+        },
+        {
+          "run_id": 44680156053,
+          "commit": "5f993450440ea9f4ee07a9f316ec0ec69bde0278",
+          "result": "same trace timeout remained before the cache optimization"
+        }
+      ],
+      "latest_verified_head": "c57c319fc7fae0867b7e723b8d7b99dddbc5419c",
+      "latest_successful_runs": [
+        {
+          "event": "push",
+          "run_id": 44682703955,
+          "url": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44682703955",
+          "head": "c57c319fc7fae0867b7e723b8d7b99dddbc5419c",
+          "result": "8/8 success"
+        },
+        {
+          "event": "pull_request",
+          "run_id": 44682709697,
+          "url": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44682709697",
+          "head": "c57c319fc7fae0867b7e723b8d7b99dddbc5419c",
+          "result": "8/8 success"
+        }
+      ]
+    },
+    "previous_phase_15": {
+      "phase": 15,
+      "status": "delivered_ci_verified_dynamic_rate_gap_documented",
+      "pull_request": "https://github.com/Xiaoyu155/aegis-core/pull/15",
+      "branch": "feat/world-model-v15",
+      "base_branch": "feat/world-model-v14",
+      "base_commit": "1bb8f510ed8f0e226448d267b40f7e3af2b58a27",
+      "previous_phase_14": {
+        "phase": 14,
+        "status": "ci_verified_with_documented_m1_gap",
+        "pull_request": "https://github.com/Xiaoyu155/aegis-core/pull/14",
+        "branch": "feat/world-model-v14",
+        "base_branch": "feat/world-model-v13",
+        "base_commit": "c3a892c3963c24ddee1d359898ce22213e53fff9",
+        "previous_phase_13": {
+          "pull_request": "https://github.com/Xiaoyu155/aegis-core/pull/13",
+          "head": "c3a892c3963c24ddee1d359898ce22213e53fff9",
+          "tests": 656,
+          "github_actions": "8/8 green at the locked baseline"
+        },
+        "preservation": {
+          "baseline_tests": 656,
+          "baseline_tests_still_collected": 656,
+          "training_directory_preserved": true,
+          "bootstrap_local_ps1_preserved": true,
+          "changes_under_preserved_paths": false
+        },
+        "tests": {
+          "total_collected": 944,
+          "passed": 944,
+          "baseline_preserved": 656,
+          "phase_14_new": 288,
+          "new_cases_by_milestone": {
+            "semantic_contract": 93,
+            "time_travel": 45,
+            "swarm_arbiter": 81,
+            "distill_pipeline": 47,
+            "mega_campaign": 22
+          },
+          "local_verification": {
+            "command": "PYTHONPATH=. /tmp/aegis-v13-test-env/bin/python -m pytest -q",
+            "python": "3.12.14",
+            "node": "v24.22.1",
+            "elapsed_seconds": 203.99,
+            "result": "944 passed",
+            "loopback_permission_enabled": true
+          }
+        },
+        "milestones": {
+          "m1_semantic_contract": {
+            "module": "aegis_core/semantic_contract.py",
+            "tests": 93,
+            "features": [
+              "Python TypedDict/dataclass/dict and return schema inference",
+              "JS/TS contracts, destructuring and response property flows",
+              "HTML inline script consumers",
+              "decorator, callback, receiver type, argparse schema and cross-module field analysis"
+            ],
+            "corpus_scan": {
+              "repositories": 21,
+              "tracked_source_files": 4920,
+              "schemas": 25962,
+              "fields": 43609,
+              "flows": 72391,
+              "dynamic_sites": 780,
+              "resolved_dynamic_sites": 90,
+              "unresolved_dynamic_sites": 690,
+              "dynamic_unresolved_reduction_rate": 0.11538461538461539,
+              "required_rate": 0.7,
+              "required_rate_met": false,
+              "parse_diagnostics": 17
+            },
+            "interpretation": "Unresolved dynamic calls are retained when receiver types or runtime object schemas cannot be proven statically."
+          },
+          "m2_time_travel": {
+            "module": "aegis_core/time_travel.py",
+            "cli": [
+              "aegis replay --ticket",
+              "aegis blame"
+            ],
+            "tests": 45,
+            "physical_campaign_replays": 21,
+            "features": [
+              "SQLite WAL immutable snapshot receipts",
+              "Git archive byte hashes and frozen probe/seed/context evidence",
+              "deterministic replay verification",
+              "file delta-debugging and changed-line blame reports"
+            ]
+          },
+          "m3_swarm_arbiter": {
+            "module": "aegis_core/swarm_arbiter.py",
+            "tests": 81,
+            "roles": [
+              "Architect",
+              "Coder",
+              "Adversarial Critic",
+              "Verifier"
+            ],
+            "features": [
+              "explicit role-state receipts",
+              "Python AST and JS/TS brace-region three-way merge",
+              "overlapping semantic block and shared invariant conflict reporting"
+            ]
+          },
+          "m4_distillation": {
+            "module": "aegis_core/distill_pipeline.py",
+            "tests": 47,
+            "tokenizer": "official Qwen/Qwen2.5-Coder-3B-Instruct",
+            "cpu_release_bundle_readback_verified": true,
+            "max_tokens": 4096,
+            "zero_truncation": true,
+            "sft_examples": 489,
+            "preference_pairs": 78,
+            "chosen_rows": 78,
+            "rejected_rows": 78,
+            "token_distribution": {
+              "sft": {
+                "min": 86,
+                "p50": 469,
+                "p90": 589,
+                "max": 592
+              },
+              "preference": {
+                "min": 103,
+                "p50": 114,
+                "p90": 223,
+                "max": 247
+              }
+            },
+            "bundle_files_verified": 10,
+            "hashes": {
+              "sft": "a6f17cedce5d60772c20c52bb95d7f68f492b792a3a16ab6bd01ca79dde0a182",
+              "grpo": "879520ba0f90c21dd63d4986133ccd95c43d979803ca40986675bff9ea4eb8f4",
+              "manifest": "d4c61f551caada89be90fcf28c7aa4156db8a5450d20cab4b3083559195cdb79",
+              "existing_tournament_pairs": "8cf50f972735c08eae5e1d5831b3b20cec442615315ad294fc58e1ab8dbbe9a3"
+            },
+            "gpu_training_run": "not_run_in_linux_cloud"
+          },
+          "m5_21_repository_campaign": {
+            "script": "scripts/run_21repos_mega_campaign.py",
+            "tests": 22,
+            "repositories": 21,
+            "tracked_source_files": 4920,
+            "work_order_attempts": 72,
+            "final_physical_gate_passes": 61,
+            "batch": {
+              "passed": 40,
+              "attempts": 50,
+              "recovered_initial_failures": 8,
+              "source_ineligible_repositories": [
+                "pet-miniapp"
+              ]
+            },
+            "autopilot": {
+              "final_successes": 21,
+              "invalid_candidates_rejected": 63,
+              "invalid_candidates_total": 63,
+              "candidate_evaluations": 84
+            },
+            "sqlite_wal": {
+              "tickets": 69,
+              "traces": 372,
+              "traces_per_second": 0.386,
+              "peak_wal_bytes": 588537912,
+              "database_lock_errors": 0,
+              "new_experience_records": 21
+            },
+            "high_risk_l3_findings": {},
+            "remote_default_heads_unchanged": true,
+            "temporary_worktree_residuals": 0,
+            "source_workorder_scope": "Batch used temporary source comment audit markers; autopilot repairs used temporary tracked contract fixtures. No external application bug fixes were delivered.",
+            "elapsed_seconds": 964.483,
+            "report": "artifacts/mega_campaign_v14/report.json",
+            "stdout": "artifacts/mega_campaign_v14/stdout.txt",
+            "semantic_scan": "artifacts/mega_campaign_v14/semantic_scan.json"
+          },
+          "m6_delivery": {
+            "ci": {
+              "state": "success",
+              "checks_passed": 8,
+              "checks_expected": 8,
+              "matrix": "Linux/Windows x Python 3.11/3.12; push and pull_request",
+              "validated_head": "dba020cb94f7de83e132ac0ddf5e5f8c9e51ea42",
+              "runs": {
+                "push": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44456319152",
+                "pull_request": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44456325882"
+              },
+              "results": {
+                "push": {
+                  "ubuntu-latest / Python 3.11": "success",
+                  "ubuntu-latest / Python 3.12": "success",
+                  "windows-latest / Python 3.11": "success",
+                  "windows-latest / Python 3.12": "success"
+                },
+                "pull_request": {
+                  "ubuntu-latest / Python 3.11": "success",
+                  "ubuntu-latest / Python 3.12": "success",
+                  "windows-latest / Python 3.11": "success",
+                  "windows-latest / Python 3.12": "success"
+                }
+              }
+            },
+            "pull_request": "https://github.com/Xiaoyu155/aegis-core/pull/14"
+          }
+        },
+        "artifacts": {
+          "campaign_report_sha256": "788709c6b0aa0eec5582bab1caa00e92b88ec7450333922ac8c7da5c2caef6a7",
+          "semantic_scan_sha256": "08930e4c21cbaa276d4c0e78c9d66df26772c7b550921a2c634a86799cac48d4",
+          "campaign_stdout_lines": 171,
+          "release_bundle": "datasets/release_v14/",
+          "release_manifest": "datasets/release_v14_bundle_manifest.json"
+        },
+        "limits": [
+          "The requested 70% reduction in unresolved dynamic sites was not achieved: source corpus result is 11.54% (90/780 resolved).",
+          "21-repository campaign gates used temporary audit markers and contract fixtures; these checks prove isolation and gate execution, not 21 repositories' real business defects fixed.",
+          "RTX 5060 Windows GPU training was not run in this Linux environment."
+        ],
+        "ci_validated_source_head": "dba020cb94f7de83e132ac0ddf5e5f8c9e51ea42"
+      },
+      "preservation": {
+        "baseline_tests": 944,
+        "baseline_tests_still_collected": 944,
+        "training_directory_preserved": true,
+        "bootstrap_local_ps1_preserved": true,
+        "changes_under_preserved_paths": false,
+        "verification": "No files deleted; training/ and scripts/bootstrap_local.ps1 are unchanged from the locked PR #14 commit."
+      },
+      "tests": {
+        "total_collected": 1145,
+        "passed": 1145,
+        "failed": 0,
+        "baseline_preserved": 944,
+        "phase_15_new": 201,
+        "new_cases_by_milestone": {
+          "runtime_profiler": 73,
+          "invariant_guard": 102,
+          "probe_synth_regression": 1,
+          "distill_release": 14,
+          "autopilot_config_scope": 10,
+          "verified_repair_sft_regression": 1
+        },
+        "local_verification": {
+          "command": "PYTHONPATH=. /tmp/aegis-v15-env/bin/python -m pytest -q",
+          "python": "3.12.14",
+          "elapsed_seconds": 219.66,
+          "result": "1145 passed",
+          "loopback_permission_enabled": true,
+          "stdout": "artifacts/real_delivery_v15/core_full_regression_pathfix.stdout"
+        },
+        "targeted_config_scope_regression": {
+          "command": "PYTHONPATH=. /tmp/aegis-v15-env/bin/python -m pytest -q tests/test_v15_config_scope.py",
+          "passed": 10,
+          "coverage": [
+            "POSIX absolute path",
+            "Windows rooted path",
+            "Windows drive path",
+            "POSIX and Windows traversal"
+          ]
+        }
+      },
+      "milestones": {
+        "m1_runtime_profiler": {
+          "modules": [
+            "aegis_core/runtime_profiler.py",
+            "aegis_core/semantic_contract.py",
+            "aegis_core/impact_analyzer.py"
+          ],
+          "tests": 73,
+          "features": [
+            "Isolated child-process sampling with CPython 3.12 sys.monitoring and Python 3.11 sys.settrace fallback",
+            "Bounded call edges, dynamic getattr targets, return schemas, exception locations and hot functions",
+            "Runtime overlays in SemanticContract and runtime edge merge in ImpactAnalyzer",
+            "Profiles omit argument values, environment contents and exception messages"
+          ],
+          "pr14_static_baseline": {
+            "sites": 780,
+            "resolved": 90,
+            "unresolved": 690,
+            "rate": 0.11538461538461539
+          },
+          "real_profile_results": {
+            "okx_full_suite": {
+              "source_profile_sha256": "f3613281e3f59712e4b0b693ae43c483da9a6e5cc76a8e701b9b679208b6ee82",
+              "backend": "sys.monitoring+profile",
+              "exit_code": 0,
+              "completed": true,
+              "timed_out": false,
+              "event_count": 50000,
+              "event_limit_reached": true,
+              "observed_functions": 486,
+              "dynamic_sites": 68,
+              "resolved_dynamic_sites": 18,
+              "unresolved_dynamic_sites": 50,
+              "runtime_resolved_dynamic_sites": 5,
+              "runtime_profiled_dynamic_sites": 7,
+              "runtime_profiled_dynamic_sites_resolved": 7,
+              "runtime_profiled_dynamic_resolution_rate": 1.0,
+              "runtime_augmented_dynamic_resolution_rate": 0.2647058823529412,
+              "runtime_observed_call_edges": 509,
+              "dynamic_resolution_kinds": {
+                "runtime_observed": 5,
+                "typed_field": 11,
+                "unique_callable": 2
+              }
+            },
+            "pacer_full_suite": {
+              "source_profile_sha256": "b4f6d63090970c7dd8540536bfd0fcde409d9159017ec479d475f5a6b93d29dc",
+              "backend": "sys.monitoring+profile",
+              "exit_code": 0,
+              "completed": true,
+              "timed_out": false,
+              "event_count": 7856,
+              "event_limit_reached": false,
+              "observed_functions": 123,
+              "dynamic_sites": 163,
+              "resolved_dynamic_sites": 23,
+              "unresolved_dynamic_sites": 140,
+              "runtime_resolved_dynamic_sites": 1,
+              "runtime_profiled_dynamic_sites": 1,
+              "runtime_profiled_dynamic_sites_resolved": 1,
+              "runtime_profiled_dynamic_resolution_rate": 1.0,
+              "runtime_augmented_dynamic_resolution_rate": 0.1411042944785276,
+              "runtime_observed_call_edges": 122,
+              "dynamic_resolution_kinds": {
+                "argparse_option": 21,
+                "runtime_observed": 1,
+                "typed_field": 1
+              }
+            }
+          },
+          "required_whole_corpus_75_percent_met": false,
+          "interpretation": "100% is measured only among runtime-profiled sites observed by each executed suite (7/7 OKX; 1/1 Pacer). Whole-repository augmented site rates are 26.47% for OKX (18/68) and 14.11% for Pacer (23/163); these samples do not cover all 780 PR #14 corpus sites."
+        },
+        "m2_invariant_guard": {
+          "module": "aegis_core/invariant_guard.py",
+          "tests": 102,
+          "domains": [
+            "finance and position bounds",
+            "database and state-machine atomicity",
+            "network timeout, credentials and retry backoff",
+            "file, database connection and worktree lifecycle"
+          ],
+          "integration": "L3 differential audit reports only newly introduced findings with path, line, code and severity."
+        },
+        "m3_structured_probe_and_scoped_config_gates": {
+          "modules": [
+            "aegis_core/probe_synth.py",
+            "aegis_core/tournament.py",
+            "aegis_core/self_heal_loop.py",
+            "aegis_core/cli.py",
+            "aegis_core/reviewer.py"
+          ],
+          "tests": 11,
+          "features": [
+            "Wrong exception types are classified as ASSERTION_FAILED",
+            "Autopilot accepts explicit per-file JSON allowlists only",
+            "Allowlisted JSON receives syntax validation and L3 parse review",
+            "Unsafe and unlisted paths are rejected before candidate gates"
+          ]
+        },
+        "m4_distillation_release": {
+          "module": "aegis_core/distill_pipeline.py",
+          "tests": 14,
+          "manifest": "datasets/release_v15_bundle_manifest.json",
+          "tokenizer": {
+            "max_tokens": 4096,
+            "model_id": "Qwen/Qwen2.5-Coder-3B-Instruct",
+            "official_tokenizer": true,
+            "tokenizer_id": "Qwen/Qwen2.5-Coder-3B-Instruct",
+            "zero_truncation": true
+          },
+          "counts": {
+            "chosen_positive": 342,
+            "duplicate_experience_rows": 21,
+            "duplicate_sft_rows": 468,
+            "experience_rows_seen": 21,
+            "labeled_rollout_groups_paired": 264,
+            "labeled_rollout_rows_seen": 528,
+            "ledger_repair_attempts": 85,
+            "ledger_traces_seen": 381,
+            "ledger_verified_repair_examples": 24,
+            "preference_pairs": 342,
+            "rejected_negative": 342,
+            "sft_examples": 1462,
+            "sft_rows_seen": 1906,
+            "tournament_pairs_seen": 321,
+            "truncated_rows": 0
+          },
+          "token_length_distribution": {
+            "preference": {
+              "count": 342,
+              "max": 757,
+              "min": 103,
+              "p50": 413,
+              "p90": 646
+            },
+            "sft": {
+              "count": 1462,
+              "max": 2122,
+              "min": 86,
+              "p50": 1856,
+              "p90": 2037
+            }
+          },
+          "zero_truncation": true,
+          "bundle_files_verified": 10,
+          "bundle_sha256": "a258cd031f13204eceeb0b40045c7878b3b5e72a855198cdb70cd0ed3901106a",
+          "sft_sha256": "8fb67693c7b693fa698dade551fe801f0e3e3e30b3f043a2c41384b60124dc4c",
+          "preference_sha256": "b5cab843e47c6f4ce22ee3a28d6db93e3d6027a04c9a82581bcc77ac4b065899",
+          "windows_rtx_5060_gpu_run": "not run in Linux cloud; Windows bootstrap and trainer sources preserved"
+        },
+        "m5_real_business_delivery": {
+          "campaign_report": "artifacts/real_delivery_v15/report.json",
+          "full_gate_stdout": "artifacts/real_delivery_v15/stdout.txt",
+          "repositories": {
+            "okx-freqtrade-live": {
+              "branch": "feat/aegis-v15-delivery",
+              "head": "c2370e1deb3270703c640da8f78341f65b313658",
+              "tests": "32 passed",
+              "repair": "Finite positive leverage and finite notional validation for stake cap calculation."
+            },
+            "pet-miniapp-backend": {
+              "branch": "feat/aegis-v15-delivery",
+              "head": "80a004a91722e8e96a741e6d652057f8df2f92dd",
+              "tests": "274 passed, 1 skipped; PostgreSQL fault integration 1 passed",
+              "repair": "Discard errored pg clients and preserve primary transaction error when rollback also fails."
+            },
+            "pet-miniapp-frontend": {
+              "branch": "feat/aegis-v15-delivery",
+              "head": "16154611c316b2209dee36ae6991badad66b9af5",
+              "tests": "npm test 114 passed; real PostgreSQL E2E passed",
+              "repair": "Node 24 compatible test command plus real frontend/backend flow acceptance gate."
+            },
+            "pacer-recovery": {
+              "branch": "feat/aegis-v15-delivery",
+              "head": "73f50a7ee09742d0b2ea0c62041acae31c8e1d25",
+              "tests": "38 passed",
+              "repair": "Resume only recognized in_progress/failed checkpoints; reject unknown and completed states."
+            }
+          },
+          "all_aegis_autopilot_receipts": "artifacts/real_delivery_v15/*_autopilot.json",
+          "default_branch_writes_issued": false
+        }
+      },
+      "ci": {
+        "state": "success",
+        "checks_passed": 8,
+        "checks_expected": 8,
+        "matrix": "Linux/Windows x Python 3.11/3.12; push and pull_request",
+        "validated_head": "8e4673d824679bf64221615beb175d2f9402d27c",
+        "runs": {
+          "push": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44481505540",
+          "pull_request": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44481511483"
+        },
+        "results": {
+          "push": {
+            "ubuntu-latest / Python 3.11": "success",
+            "ubuntu-latest / Python 3.12": "success",
+            "windows-latest / Python 3.11": "success",
+            "windows-latest / Python 3.12": "success"
+          },
+          "pull_request": {
+            "ubuntu-latest / Python 3.11": "success",
+            "ubuntu-latest / Python 3.12": "success",
+            "windows-latest / Python 3.11": "success",
+            "windows-latest / Python 3.12": "success"
+          }
+        },
+        "previous_attempts": {
+          "push": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44478507261",
+          "pull_request": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44478556275",
+          "outcome": "4/8 Linux jobs passed; four Windows jobs exposed the same rooted POSIX-path validation bug, fixed with dual POSIX/Windows path parsing.",
+          "failed_head": "262bf16e4892165e66e457577bf18ca301683a61"
+        }
+      },
+      "artifacts": {
+        "real_delivery_report_sha256": "13a7829ad2e6dc407d86afc40660568cb0258ebbaf97905b3e096c291645637a",
+        "runtime_profile_summary_sha256": "37bd8e118209d9688ec6ccde510ba9ad3f41d3a77c77299823ec87dc1fb0d33e",
+        "release_bundle": "datasets/release_v15/",
+        "release_manifest": "datasets/release_v15_bundle_manifest.json",
+        "core_regression_sha256": "986fec57d8ba1a3374ddb21c1302f4f4c8b211386a8069f81c7b065b34efc2eb"
+      },
+      "limits": [
+        "The 75% whole-corpus dynamic resolution target is not supported by the measured profiles. Only 7 OKX and 1 Pacer dynamic sites were observed and resolved at runtime; whole-project augmented rates are 26.47% and 14.11%.",
+        "The 50,000-event OKX profile reached its cap; event coverage may be incomplete.",
+        "RTX 5060 Windows GPU training was not run in this Linux environment."
+      ]
+    }
+  },
+  "previous_phase_17": {
+    "phase": 17,
+    "status": "pr_open_ci_verified_for_implementation_commit",
+    "version": "1.2.0",
+    "branch": "feat/aegis-v1.2-precision",
+    "base_branch": "main",
+    "base_commit": "d23a37eaa19bff73aff247e767ad1a42eaf3bf85",
+    "pull_request": {
+      "number": 17,
+      "url": "https://github.com/Xiaoyu155/aegis-core/pull/17",
+      "head_branch": "feat/aegis-v1.2-precision",
+      "base_branch": "main",
+      "implementation_commit_sha": "7304528ef409e57c588801600fb659f5c414ce6d",
+      "implementation_commit_pull_mergeable": true
+    },
+    "tests": {
+      "total_collected": 1500,
+      "passed": 1500,
+      "new_tests": 162,
+      "new_tests_by_milestone": {
+        "m1_noise_confidence": 74,
+        "m2_fleet_shipper": 40,
+        "m3_world_model_bench": 48
+      },
+      "local_verification": {
+        "command": "PYTHONPATH=. python -m pytest -q",
+        "python": "3.12.14",
+        "result": "1500 passed",
+        "elapsed_seconds": 323.04,
+        "loopback_http_integration": "passed with network permission enabled"
+      },
+      "github_actions": {
+        "expected_jobs_per_event": 8,
+        "passed_per_event": 8,
+        "matrix": [
+          "Linux/Windows",
+          "Python 3.11/3.12"
+        ],
+        "suites": [
+          "full",
+          "v16-gates"
+        ],
+        "push_event": {
+          "run_id": 44722941631,
+          "url": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44722941631",
+          "head_sha": "7304528ef409e57c588801600fb659f5c414ce6d",
+          "result": "success"
+        },
+        "pull_request_event": {
+          "run_id": 44724920956,
+          "url": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44724920956",
+          "head_sha": "7304528ef409e57c588801600fb659f5c414ce6d",
+          "result": "success"
+        },
+        "status_commit_validation_note": "These passing runs verify the implementation commit listed above. The status metadata update will trigger the same matrix again."
+      }
+    }
+  },
+  "delivery": {
+    "pr_number": 20,
+    "pr_url": "https://github.com/Xiaoyu155/aegis-core/pull/20",
+    "head_sha": "6887da7439d4e9401c6954be33b75ada1f4774bc",
+    "ci_matrix": "Linux/Windows × Python 3.11/3.12; full and v16-gates suites",
+    "pr_created_after_push_ci_green": true,
+    "status_metadata_commit_validation": "pending"
+  },
+  "history": [
+    {
+      "phase": 18,
+      "version": "1.3.0",
+      "branch": "feat/aegis-v1.3-overnight",
+      "pull_request": {
+        "number": 20,
+        "url": "https://github.com/Xiaoyu155/aegis-core/pull/20",
+        "head_branch": "feat/aegis-v1.3-overnight",
+        "base_branch": "feat/aegis-v1.2-precision",
+        "implementation_commit_sha": "6887da7439d4e9401c6954be33b75ada1f4774bc",
+        "implementation_commit_pull_mergeable": null
+      },
+      "tests_collected": 1696,
+      "tests_passed": 1696
+    }
+  ],
+  "github_actions": {
+    "expected_jobs_per_event": 8,
+    "matrix": [
+      "Linux/Windows",
+      "Python 3.11/3.12",
+      "full/v16-gates"
+    ],
+    "pull_request_event": {
+      "run_id": 44863199448,
+      "url": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44863199448",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "713dd53a1430817c144aa1e8fc4e3d16af9e53bf"
+    },
+    "final_head_validation": "success for the validated implementation/status revision above",
+    "status_commit_validation_note": "The following status-only metadata commit triggers a new 8-job matrix; PR checks must be consulted for its final result.",
+    "completed_job_count": 8,
+    "successful_job_count": 8
+  },
+  "v2_0_overnight": {
+    "implementation_commit_sha": "4655cede08db2d9f1b1f9c833f3cdc03f2a6de51",
+    "dataset": {
+      "sample_count": 2000,
+      "hard_negative_count": 1600,
+      "hard_positive_count": 400,
+      "redlight_verified_negatives": 1600,
+      "hard_positive_tests_passed": 400,
+      "zero_token_truncation": true,
+      "tokenizer": "Qwen/Qwen2.5-Coder-3B-Instruct",
+      "manifest_sha256": "99e42d5bf22f5ce62f1ab4b3be8ce86946172662e8c8a0ffc4b1bdd66c2fc532",
+      "negative_samples_per_defect_per_language": 80,
+      "positive_samples_per_defect_per_language": 20
+    },
+    "defect_types": [
+      "off_by_one_boundary",
+      "swallow_exception",
+      "remove_timeout_validation",
+      "break_idempotency_key",
+      "unbounded_memory_growth",
+      "concurrency_lock_loss",
+      "authorization_bypass",
+      "failure_as_success",
+      "sql_command_injection",
+      "weaken_test_assertion"
+    ],
+    "adversarial_self_play": {
+      "rounds": 3,
+      "negative_attempts_per_round": 8000,
+      "hard_positives_per_round": 400,
+      "final_false_positive_rate": 0.0,
+      "final_recall": 1.0,
+      "final_per_class_min_recall": 1.0,
+      "final_escape_rate": 0.0,
+      "pre_hardening_escape_rate": 0.01,
+      "pre_hardening_escaped_samples": 80,
+      "permanent_regression_cases": 80,
+      "report": "artifacts/v20_adversarial_report.json",
+      "pre_hardening_report": "artifacts/v20_adversarial_pre_hardening.json"
+    },
+    "performance": {
+      "simulated_repository_files": 500,
+      "changed_files": 50,
+      "diff_lines": 5000,
+      "p95_ms": 2.953971999886562,
+      "total_scan_ms": 104.52028300142047,
+      "wall_ms": 120.12076600012733,
+      "peak_memory_mib": 2.7590370178222656,
+      "passed": true,
+      "report": "artifacts/v20_performance.json"
+    },
+    "enforcement": {
+      "algorithm": "Ed25519",
+      "token_issue_and_verify": "passed in isolated temporary key directory",
+      "physical_pre_commit_block_and_allow": "passed in isolated temporary Git repository",
+      "pre_push_scan": "passed",
+      "manifest_tamper_fail_closed": "passed",
+      "strict_doctor": "READY with no strict errors",
+      "audit_verify": "valid",
+      "persistent_test_keys": false,
+      "persistent_test_sandbox": false
+    },
+    "dashboard": {
+      "command": "aegis serve --port 8765",
+      "bind": "loopback only",
+      "runtime_dependencies": "Python standard library"
+    },
+    "cleanup": {
+      "worktrees_remaining": 0,
+      "pressure_sandboxes_remaining": 0,
+      "temporary_keys_remaining": 0,
+      "root_aegis_temp_ledger_removed": true
     },
     "limits": [
-      "The 75% whole-corpus dynamic resolution target is not supported by the measured profiles. Only 7 OKX and 1 Pacer dynamic sites were observed and resolved at runtime; whole-project augmented rates are 26.47% and 14.11%.",
-      "The 50,000-event OKX profile reached its cap; event coverage may be incomplete.",
-      "RTX 5060 Windows GPU training was not run in this Linux environment."
+      "The measured recall is over the released synthetic corpus and five deterministic transformations.",
+      "The JS/TS scanner uses conservative structural patterns and is not a whole-program data-flow proof."
     ]
   }
 }

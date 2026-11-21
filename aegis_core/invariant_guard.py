@@ -12,6 +12,8 @@ from dataclasses import asdict, dataclass
 import re
 from pathlib import Path
 
+from .noise_filter import annotate_findings, classify_asset, split_findings
+
 
 @dataclass(frozen=True)
 class InvariantFinding:
@@ -163,18 +165,53 @@ def _inspect_javascript(source: str, path: str, *, line_offset: int = 0) -> list
         symbol = next((item.group(1) or item.group(2) for item in reversed(functions)), "<module>")
         findings.append(InvariantFinding(code, domain, path, symbol, line, severity, detail))
 
+    # axios.create clients inherit the timeout configured on their instance.
+    aliases = set(re.findall(r"\b(?:const|let|var)\s+([\w$]+)\s*=\s*axios\.create\s*\(", masked))
+    configured_clients = set(re.findall(
+        r"\b([\w$]+)\.defaults\.timeout\s*=\s*(?:[1-9]\d*(?:\.\d+)?|\d*\.\d*[1-9]\d*)", masked))
+    configured_clients.update(match.group(1) for match in re.finditer(
+        r"\b([\w$]+)\.defaults\s*=\s*\{[^}]*\btimeout\s*:\s*(?:[1-9]\d*(?:\.\d+)?|\d*\.\d*[1-9]\d*)",
+        masked, re.S))
+    network_clients = aliases | configured_clients
+    network_matches = list(_JS_CALL.finditer(masked))
+    for alias in network_clients:
+        network_matches.extend(re.finditer(
+            rf"\b{re.escape(alias)}\s*\.\s*(?:get|post|put|patch|delete|request)\s*\(", masked))
+    network_matches = sorted({(item.start(), item.end()): item for item in network_matches}.values(),
+                             key=lambda item: item.start())
+
     # Network calls: option text is read from the original source after locating
     # each call in the comment/string-masked representation.
-    for match in _JS_CALL.finditer(masked):
+    for match in network_matches:
         opening = masked.find("(", match.start(), match.end())
         end = _js_matching(masked, opening)
         call = source[match.start():min(end + 1, len(source))]
+        masked_call = masked[match.start():min(end + 1, len(masked))]
         call_name = match.group(0).split("(", 1)[0].strip()
         if call_name == "fetch":
             bounded = bool(re.search(r"\bsignal\s*(?::|[,}])", call))
             code = "NETWORK_FETCH_NO_ABORT_SIGNAL"
         else:
-            bounded = bool(re.search(r"\b(?:timeout|signal)\s*:", call))
+            bounded = bool(re.search(r"\bsignal\s*:", masked_call))
+            timeout_value = re.search(r"\btimeout\s*:\s*([^,}]+)", masked_call)
+            if timeout_value:
+                expression = timeout_value.group(1).strip()
+                try:
+                    bounded = bounded or float(expression) > 0
+                except ValueError:
+                    identifiers = re.findall(r"\b[A-Za-z_$][\w$]*\b", expression)
+                    bounded = bounded or any(re.search(
+                        rf"\b(?:const|let|var)\s+{re.escape(value)}\s*=\s*(?:[1-9]\d*(?:\.\d+)?|\d*\.\d*[1-9]\d*)\b", masked)
+                        for value in identifiers)
+                    for identifier in identifiers:
+                        declaration = re.search(
+                            rf"\b(?:const|let|var)\s+{re.escape(identifier)}\s*=\s*([^;]+)", masked)
+                        if declaration and "?" in declaration.group(1):
+                            defaults = re.findall(r"\b[A-Z_$][\w$]*TIMEOUT[\w$]*\b", declaration.group(1))
+                            if any(re.search(
+                                    rf"\b(?:const|let|var)\s+{re.escape(default)}\s*=\s*(?:[1-9]\d*(?:\.\d+)?|\d*\.\d*[1-9]\d*)\b", masked)
+                                   for default in defaults):
+                                bounded = True
             code = "NETWORK_REQUEST_NO_TIMEOUT"
         if not bounded:
             add(code, "external_api", match.start(), "Request has no explicit timeout or abort signal")
@@ -184,7 +221,9 @@ def _inspect_javascript(source: str, path: str, *, line_offset: int = 0) -> list
         opening = masked.find("{", match.start(), match.end())
         end = _js_matching(masked, opening, "{", "}")
         body = masked[opening:end + 1]
-        if not _JS_CALL.search(body):
+        if not _JS_CALL.search(body) and not any(
+                re.search(rf"\b{re.escape(alias)}\s*\.\s*(?:get|post|put|patch|delete|request)\s*\(", body)
+                for alias in network_clients):
             continue
         header = (match.group(1) or match.group(2) or "").strip()
         backoff = bool(re.search(r"\b(?:setTimeout|sleep|delay|backoff|retryAfter|exponential)\b", body, re.I))
@@ -509,36 +548,65 @@ class _Guard:
             yield current
 
 
-def inspect_source(source: str, path: str = "<source>") -> list[dict]:
+def inspect_source(source: str, path: str = "<source>", *, context_sources=()) -> list[dict]:
     """Return deterministic findings for Python or supported JS/TS/HTML source."""
     if type(source) is not str or type(path) is not str:
         raise TypeError("source and path must be text")
-    normalized = Path(path).as_posix()
+    normalized = str(path).replace("\\", "/")
     suffix = Path(path).suffix.lower()
     if suffix in {".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs"}:
-        return _inspect_javascript(source, normalized)
-    if suffix == ".html":
+        findings = _inspect_javascript(source, normalized)
+    elif suffix == ".html":
         findings = []
         for match in re.finditer(r"<script\b[^>]*>(.*?)</script\s*>", source, re.I | re.S):
             if not match.group(1).strip():
                 continue
             line_offset = source.count("\n", 0, match.start(1))
             findings.extend(_inspect_javascript(match.group(1), normalized, line_offset=line_offset))
-        return findings
-    try:
-        findings = _Guard(source, normalized).run()
-    except SyntaxError as error:
-        return [asdict(InvariantFinding("SOURCE_SYNTAX_ERROR", "source", normalized,
-                                        "<module>", error.lineno or 1, "high", "Source cannot be parsed"))]
-    return [asdict(item) for item in findings]
+    else:
+        try:
+            findings = [asdict(item) for item in _Guard(source, normalized).run()]
+        except SyntaxError as error:
+            findings = [asdict(InvariantFinding("SOURCE_SYNTAX_ERROR", "source", normalized,
+                                                "<module>", error.lineno or 1, "high", "Source cannot be parsed"))]
+    return annotate_findings(findings, normalized, source, context_sources=context_sources)
+
+
+def _repository_timeout_context(root: Path) -> list[str]:
+    """Read only likely shared config/client files for repo-wide timeout defaults."""
+    from .sandbox import run_git
+
+    result = run_git(root, "ls-files", "-z", check=False)
+    if result.returncode:
+        return []
+    context = []
+    accepted = {"app.json", "project.config.json", "manifest.json"}
+    for raw in result.stdout.decode("utf-8", errors="replace").split("\0"):
+        if not raw:
+            continue
+        relative = Path(raw).as_posix()
+        name = Path(relative).name.lower()
+        if name not in accepted and not re.search(r"(?:request|http|axios|api.client|client.config)\.(?:js|jsx|ts|tsx|mjs|cjs|json)$", name):
+            continue
+        path = root / relative
+        try:
+            if path.is_symlink() or not path.is_file() or path.stat().st_size > 1_000_000:
+                continue
+            context.append(path.read_text(encoding="utf-8-sig"))
+        except (OSError, UnicodeError):
+            continue
+    return context
 
 
 def scan_changed_files(root: str | Path, changed_files, *, baseline: str | None = None) -> dict:
     """Find new invariant violations in Python, JS/TS and inline HTML files."""
     root = Path(root).resolve()
     findings = []
+    suppressed = []
     scanned = []
     from .sandbox import run_git
+
+    timeout_context = _repository_timeout_context(root)
 
     for relative in sorted(set(changed_files)):
         path = (root / relative).resolve()
@@ -552,14 +620,76 @@ def scan_changed_files(root: str | Path, changed_files, *, baseline: str | None 
                 result = run_git(root, "cat-file", "blob", f"{baseline}:{Path(relative).as_posix()}", check=False)
                 if result.returncode == 0:
                     earlier = result.stdout.decode("utf-8-sig", errors="replace")
-            before = inspect_source(earlier, relative)
-            after_findings = inspect_source(after, relative)
+            before = inspect_source(earlier, relative, context_sources=timeout_context)
+            after_findings = inspect_source(after, relative, context_sources=timeout_context)
         except (OSError, ValueError):
             continue
         previous = {(item["code"], item["symbol"], item["detail"]) for item in before}
-        findings.extend(item for item in after_findings
-                        if (item["code"], item["symbol"], item["detail"]) not in previous)
+        new_findings = [item for item in after_findings
+                        if (item["code"], item["symbol"], item["detail"]) not in previous]
+        visible, filtered = split_findings(new_findings)
+        findings.extend(visible)
+        suppressed.extend(filtered)
         scanned.append(Path(relative).as_posix())
     findings.sort(key=lambda item: (item["path"], item["line"], item["code"]))
-    return {"passed": not findings, "scanned_files": scanned, "findings": findings}
+    suppressed.sort(key=lambda item: (item["path"], item["line"], item["code"]))
+    raw_count = len(findings) + len(suppressed)
+    return {"passed": not findings, "scanned_files": scanned, "findings": findings,
+            "suppressed_findings": suppressed,
+            "summary": {"raw_findings": raw_count, "actionable_findings": len(findings),
+                        "suppressed_findings": len(suppressed),
+                        "noise_reduction_rate": (len(suppressed) / raw_count if raw_count else 0.0)}}
+
+
+def scan_repository(root: str | Path, *, baseline: str | None = None) -> dict:
+    """Read-only scan of tracked Python, JS/TS, and inline-HTML source files."""
+    root = Path(root).resolve()
+    from .sandbox import run_git
+
+    result = run_git(root, "ls-files", "-z", check=False)
+    if result.returncode:
+        raise ValueError(f"not a git repository: {root}")
+    tracked = result.stdout.decode("utf-8", errors="replace").split("\0")
+    return scan_changed_files(root, tracked, baseline=baseline)
+
+
+def inspect_test_assertion_delta(baseline: str, candidate: str, *, path: str = "tests") -> dict:
+    """Fail when a candidate removes or trivially weakens Python assertions.
+
+    This narrow comparison is used for generated mutation evidence and review
+    of test edits. It parses both versions without importing either module.
+    """
+    try:
+        before_tree = ast.parse(baseline, filename=f"{path}:baseline")
+        after_tree = ast.parse(candidate, filename=f"{path}:candidate")
+    except SyntaxError as error:
+        return {"passed": False, "findings": [{"code": "TEST_SOURCE_SYNTAX_ERROR",
+                "path": path, "detail": str(error)}]}
+    before = [node for node in ast.walk(before_tree) if isinstance(node, ast.Assert)]
+    after = [node for node in ast.walk(after_tree) if isinstance(node, ast.Assert)]
+    findings = []
+    if len(after) < len(before):
+        findings.append({"code": "TEST_ASSERTION_REMOVED", "path": path,
+                         "detail": f"assertion count decreased from {len(before)} to {len(after)}"})
+
+    def contains_true(node):
+        return any(isinstance(item, ast.Constant) and item.value is True for item in ast.walk(node))
+
+    for node in after:
+        if isinstance(node.test, ast.Constant) and node.test.value is True:
+            findings.append({"code": "TEST_ASSERTION_ALWAYS_TRUE", "path": path,
+                             "line": node.lineno, "detail": "assert True cannot detect a regression"})
+        elif isinstance(node.test, ast.BoolOp) and isinstance(node.test.op, ast.Or) and contains_true(node.test):
+            findings.append({"code": "TEST_ASSERTION_ALWAYS_TRUE", "path": path,
+                             "line": node.lineno, "detail": "assertion is made unconditional by `or True`"})
+
+    def complexity(node):
+        return sum(1 for _ in ast.walk(node))
+
+    if len(after) >= len(before) and sum(complexity(item.test) for item in after) < sum(
+            complexity(item.test) for item in before):
+        findings.append({"code": "TEST_ASSERTION_SIMPLIFIED", "path": path,
+                         "detail": "candidate assertions contain fewer predicate nodes"})
+    return {"passed": not findings, "findings": findings,
+            "baseline_assertions": len(before), "candidate_assertions": len(after)}
 

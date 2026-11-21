@@ -1,0 +1,20 @@
+{
+  "changed_files": 50,
+  "degraded_files": 0,
+  "diff_lines": 5000,
+  "files_scanned": 50,
+  "findings": 0,
+  "p95_ms": 2.953971999886562,
+  "passed": true,
+  "peak_memory_bytes": 2893060,
+  "peak_memory_mib": 2.7590370178222656,
+  "schema_version": "aegis.performance.v1",
+  "simulated_repository_files": 500,
+  "thresholds": {
+    "p95_ms": 80,
+    "peak_memory_bytes": 268435456,
+    "total_50_file_ms": 3000
+  },
+  "total_scan_ms": 104.52028300142047,
+  "wall_ms": 120.12076600012733
+}

@@ -1,0 +1,594 @@
+{
+  "converged": false,
+  "final_escape_rate": 0.01,
+  "final_false_positive_rate": 0.0,
+  "final_per_class_min_recall": 0.9,
+  "final_recall": 0.99,
+  "first_round_regressions_persisted": 80,
+  "regression_directory": "evasion_regressions",
+  "rounds": [
+    {
+      "attempts": 8000,
+      "escape_rate": 0.01,
+      "escapes": 80,
+      "false_positive_rate": 0.0,
+      "hard_positive_count": 400,
+      "hard_positive_false_positives": 0,
+      "per_class": {
+        "authorization_bypass": {
+          "attempts": 800,
+          "detected": 800,
+          "recall": 1.0,
+          "transform_recall": {
+            "javascript:comment_noise": 1.0,
+            "javascript:helper_wrapper": 1.0,
+            "javascript:rename": 1.0,
+            "javascript:split_lines": 1.0,
+            "javascript:true_condition": 1.0,
+            "python:comment_noise": 1.0,
+            "python:helper_wrapper": 1.0,
+            "python:rename": 1.0,
+            "python:split_lines": 1.0,
+            "python:true_condition": 1.0
+          }
+        },
+        "break_idempotency_key": {
+          "attempts": 800,
+          "detected": 800,
+          "recall": 1.0,
+          "transform_recall": {
+            "javascript:comment_noise": 1.0,
+            "javascript:helper_wrapper": 1.0,
+            "javascript:rename": 1.0,
+            "javascript:split_lines": 1.0,
+            "javascript:true_condition": 1.0,
+            "python:comment_noise": 1.0,
+            "python:helper_wrapper": 1.0,
+            "python:rename": 1.0,
+            "python:split_lines": 1.0,
+            "python:true_condition": 1.0
+          }
+        },
+        "concurrency_lock_loss": {
+          "attempts": 800,
+          "detected": 800,
+          "recall": 1.0,
+          "transform_recall": {
+            "javascript:comment_noise": 1.0,
+            "javascript:helper_wrapper": 1.0,
+            "javascript:rename": 1.0,
+            "javascript:split_lines": 1.0,
+            "javascript:true_condition": 1.0,
+            "python:comment_noise": 1.0,
+            "python:helper_wrapper": 1.0,
+            "python:rename": 1.0,
+            "python:split_lines": 1.0,
+            "python:true_condition": 1.0
+          }
+        },
+        "failure_as_success": {
+          "attempts": 800,
+          "detected": 800,
+          "recall": 1.0,
+          "transform_recall": {
+            "javascript:comment_noise": 1.0,
+            "javascript:helper_wrapper": 1.0,
+            "javascript:rename": 1.0,
+            "javascript:split_lines": 1.0,
+            "javascript:true_condition": 1.0,
+            "python:comment_noise": 1.0,
+            "python:helper_wrapper": 1.0,
+            "python:rename": 1.0,
+            "python:split_lines": 1.0,
+            "python:true_condition": 1.0
+          }
+        },
+        "off_by_one_boundary": {
+          "attempts": 800,
+          "detected": 800,
+          "recall": 1.0,
+          "transform_recall": {
+            "javascript:comment_noise": 1.0,
+            "javascript:helper_wrapper": 1.0,
+            "javascript:rename": 1.0,
+            "javascript:split_lines": 1.0,
+            "javascript:true_condition": 1.0,
+            "python:comment_noise": 1.0,
+            "python:helper_wrapper": 1.0,
+            "python:rename": 1.0,
+            "python:split_lines": 1.0,
+            "python:true_condition": 1.0
+          }
+        },
+        "remove_timeout_validation": {
+          "attempts": 800,
+          "detected": 800,
+          "recall": 1.0,
+          "transform_recall": {
+            "javascript:comment_noise": 1.0,
+            "javascript:helper_wrapper": 1.0,
+            "javascript:rename": 1.0,
+            "javascript:split_lines": 1.0,
+            "javascript:true_condition": 1.0,
+            "python:comment_noise": 1.0,
+            "python:helper_wrapper": 1.0,
+            "python:rename": 1.0,
+            "python:split_lines": 1.0,
+            "python:true_condition": 1.0
+          }
+        },
+        "sql_command_injection": {
+          "attempts": 800,
+          "detected": 800,
+          "recall": 1.0,
+          "transform_recall": {
+            "javascript:comment_noise": 1.0,
+            "javascript:helper_wrapper": 1.0,
+            "javascript:rename": 1.0,
+            "javascript:split_lines": 1.0,
+            "javascript:true_condition": 1.0,
+            "python:comment_noise": 1.0,
+            "python:helper_wrapper": 1.0,
+            "python:rename": 1.0,
+            "python:split_lines": 1.0,
+            "python:true_condition": 1.0
+          }
+        },
+        "swallow_exception": {
+          "attempts": 800,
+          "detected": 800,
+          "recall": 1.0,
+          "transform_recall": {
+            "javascript:comment_noise": 1.0,
+            "javascript:helper_wrapper": 1.0,
+            "javascript:rename": 1.0,
+            "javascript:split_lines": 1.0,
+            "javascript:true_condition": 1.0,
+            "python:comment_noise": 1.0,
+            "python:helper_wrapper": 1.0,
+            "python:rename": 1.0,
+            "python:split_lines": 1.0,
+            "python:true_condition": 1.0
+          }
+        },
+        "unbounded_memory_growth": {
+          "attempts": 800,
+          "detected": 720,
+          "recall": 0.9,
+          "transform_recall": {
+            "javascript:comment_noise": 1.0,
+            "javascript:helper_wrapper": 1.0,
+            "javascript:rename": 0.0,
+            "javascript:split_lines": 1.0,
+            "javascript:true_condition": 1.0,
+            "python:comment_noise": 1.0,
+            "python:helper_wrapper": 1.0,
+            "python:rename": 1.0,
+            "python:split_lines": 1.0,
+            "python:true_condition": 1.0
+          }
+        },
+        "weaken_test_assertion": {
+          "attempts": 800,
+          "detected": 800,
+          "recall": 1.0,
+          "transform_recall": {
+            "javascript:comment_noise": 1.0,
+            "javascript:helper_wrapper": 1.0,
+            "javascript:rename": 1.0,
+            "javascript:split_lines": 1.0,
+            "javascript:true_condition": 1.0,
+            "python:comment_noise": 1.0,
+            "python:helper_wrapper": 1.0,
+            "python:rename": 1.0,
+            "python:split_lines": 1.0,
+            "python:true_condition": 1.0
+          }
+        }
+      },
+      "recall": 0.99,
+      "round": 1,
+      "transforms": [
+        "python:rename",
+        "python:split_lines",
+        "python:helper_wrapper",
+        "python:true_condition",
+        "python:comment_noise",
+        "javascript:rename",
+        "javascript:split_lines",
+        "javascript:helper_wrapper",
+        "javascript:true_condition",
+        "javascript:comment_noise"
+      ]
+    },
+    {
+      "attempts": 8000,
+      "escape_rate": 0.01,
+      "escapes": 80,
+      "false_positive_rate": 0.0,
+      "hard_positive_count": 400,
+      "hard_positive_false_positives": 0,
+      "per_class": {
+        "authorization_bypass": {
+          "attempts": 800,
+          "detected": 800,
+          "recall": 1.0,
+          "transform_recall": {
+            "javascript:comment_noise": 1.0,
+            "javascript:helper_wrapper": 1.0,
+            "javascript:rename": 1.0,
+            "javascript:split_lines": 1.0,
+            "javascript:true_condition": 1.0,
+            "python:comment_noise": 1.0,
+            "python:helper_wrapper": 1.0,
+            "python:rename": 1.0,
+            "python:split_lines": 1.0,
+            "python:true_condition": 1.0
+          }
+        },
+        "break_idempotency_key": {
+          "attempts": 800,
+          "detected": 800,
+          "recall": 1.0,
+          "transform_recall": {
+            "javascript:comment_noise": 1.0,
+            "javascript:helper_wrapper": 1.0,
+            "javascript:rename": 1.0,
+            "javascript:split_lines": 1.0,
+            "javascript:true_condition": 1.0,
+            "python:comment_noise": 1.0,
+            "python:helper_wrapper": 1.0,
+            "python:rename": 1.0,
+            "python:split_lines": 1.0,
+            "python:true_condition": 1.0
+          }
+        },
+        "concurrency_lock_loss": {
+          "attempts": 800,
+          "detected": 800,
+          "recall": 1.0,
+          "transform_recall": {
+            "javascript:comment_noise": 1.0,
+            "javascript:helper_wrapper": 1.0,
+            "javascript:rename": 1.0,
+            "javascript:split_lines": 1.0,
+            "javascript:true_condition": 1.0,
+            "python:comment_noise": 1.0,
+            "python:helper_wrapper": 1.0,
+            "python:rename": 1.0,
+            "python:split_lines": 1.0,
+            "python:true_condition": 1.0
+          }
+        },
+        "failure_as_success": {
+          "attempts": 800,
+          "detected": 800,
+          "recall": 1.0,
+          "transform_recall": {
+            "javascript:comment_noise": 1.0,
+            "javascript:helper_wrapper": 1.0,
+            "javascript:rename": 1.0,
+            "javascript:split_lines": 1.0,
+            "javascript:true_condition": 1.0,
+            "python:comment_noise": 1.0,
+            "python:helper_wrapper": 1.0,
+            "python:rename": 1.0,
+            "python:split_lines": 1.0,
+            "python:true_condition": 1.0
+          }
+        },
+        "off_by_one_boundary": {
+          "attempts": 800,
+          "detected": 800,
+          "recall": 1.0,
+          "transform_recall": {
+            "javascript:comment_noise": 1.0,
+            "javascript:helper_wrapper": 1.0,
+            "javascript:rename": 1.0,
+            "javascript:split_lines": 1.0,
+            "javascript:true_condition": 1.0,
+            "python:comment_noise": 1.0,
+            "python:helper_wrapper": 1.0,
+            "python:rename": 1.0,
+            "python:split_lines": 1.0,
+            "python:true_condition": 1.0
+          }
+        },
+        "remove_timeout_validation": {
+          "attempts": 800,
+          "detected": 800,
+          "recall": 1.0,
+          "transform_recall": {
+            "javascript:comment_noise": 1.0,
+            "javascript:helper_wrapper": 1.0,
+            "javascript:rename": 1.0,
+            "javascript:split_lines": 1.0,
+            "javascript:true_condition": 1.0,
+            "python:comment_noise": 1.0,
+            "python:helper_wrapper": 1.0,
+            "python:rename": 1.0,
+            "python:split_lines": 1.0,
+            "python:true_condition": 1.0
+          }
+        },
+        "sql_command_injection": {
+          "attempts": 800,
+          "detected": 800,
+          "recall": 1.0,
+          "transform_recall": {
+            "javascript:comment_noise": 1.0,
+            "javascript:helper_wrapper": 1.0,
+            "javascript:rename": 1.0,
+            "javascript:split_lines": 1.0,
+            "javascript:true_condition": 1.0,
+            "python:comment_noise": 1.0,
+            "python:helper_wrapper": 1.0,
+            "python:rename": 1.0,
+            "python:split_lines": 1.0,
+            "python:true_condition": 1.0
+          }
+        },
+        "swallow_exception": {
+          "attempts": 800,
+          "detected": 800,
+          "recall": 1.0,
+          "transform_recall": {
+            "javascript:comment_noise": 1.0,
+            "javascript:helper_wrapper": 1.0,
+            "javascript:rename": 1.0,
+            "javascript:split_lines": 1.0,
+            "javascript:true_condition": 1.0,
+            "python:comment_noise": 1.0,
+            "python:helper_wrapper": 1.0,
+            "python:rename": 1.0,
+            "python:split_lines": 1.0,
+            "python:true_condition": 1.0
+          }
+        },
+        "unbounded_memory_growth": {
+          "attempts": 800,
+          "detected": 720,
+          "recall": 0.9,
+          "transform_recall": {
+            "javascript:comment_noise": 1.0,
+            "javascript:helper_wrapper": 1.0,
+            "javascript:rename": 0.0,
+            "javascript:split_lines": 1.0,
+            "javascript:true_condition": 1.0,
+            "python:comment_noise": 1.0,
+            "python:helper_wrapper": 1.0,
+            "python:rename": 1.0,
+            "python:split_lines": 1.0,
+            "python:true_condition": 1.0
+          }
+        },
+        "weaken_test_assertion": {
+          "attempts": 800,
+          "detected": 800,
+          "recall": 1.0,
+          "transform_recall": {
+            "javascript:comment_noise": 1.0,
+            "javascript:helper_wrapper": 1.0,
+            "javascript:rename": 1.0,
+            "javascript:split_lines": 1.0,
+            "javascript:true_condition": 1.0,
+            "python:comment_noise": 1.0,
+            "python:helper_wrapper": 1.0,
+            "python:rename": 1.0,
+            "python:split_lines": 1.0,
+            "python:true_condition": 1.0
+          }
+        }
+      },
+      "recall": 0.99,
+      "round": 2,
+      "transforms": [
+        "python:rename",
+        "python:split_lines",
+        "python:helper_wrapper",
+        "python:true_condition",
+        "python:comment_noise",
+        "javascript:rename",
+        "javascript:split_lines",
+        "javascript:helper_wrapper",
+        "javascript:true_condition",
+        "javascript:comment_noise"
+      ]
+    },
+    {
+      "attempts": 8000,
+      "escape_rate": 0.01,
+      "escapes": 80,
+      "false_positive_rate": 0.0,
+      "hard_positive_count": 400,
+      "hard_positive_false_positives": 0,
+      "per_class": {
+        "authorization_bypass": {
+          "attempts": 800,
+          "detected": 800,
+          "recall": 1.0,
+          "transform_recall": {
+            "javascript:comment_noise": 1.0,
+            "javascript:helper_wrapper": 1.0,
+            "javascript:rename": 1.0,
+            "javascript:split_lines": 1.0,
+            "javascript:true_condition": 1.0,
+            "python:comment_noise": 1.0,
+            "python:helper_wrapper": 1.0,
+            "python:rename": 1.0,
+            "python:split_lines": 1.0,
+            "python:true_condition": 1.0
+          }
+        },
+        "break_idempotency_key": {
+          "attempts": 800,
+          "detected": 800,
+          "recall": 1.0,
+          "transform_recall": {
+            "javascript:comment_noise": 1.0,
+            "javascript:helper_wrapper": 1.0,
+            "javascript:rename": 1.0,
+            "javascript:split_lines": 1.0,
+            "javascript:true_condition": 1.0,
+            "python:comment_noise": 1.0,
+            "python:helper_wrapper": 1.0,
+            "python:rename": 1.0,
+            "python:split_lines": 1.0,
+            "python:true_condition": 1.0
+          }
+        },
+        "concurrency_lock_loss": {
+          "attempts": 800,
+          "detected": 800,
+          "recall": 1.0,
+          "transform_recall": {
+            "javascript:comment_noise": 1.0,
+            "javascript:helper_wrapper": 1.0,
+            "javascript:rename": 1.0,
+            "javascript:split_lines": 1.0,
+            "javascript:true_condition": 1.0,
+            "python:comment_noise": 1.0,
+            "python:helper_wrapper": 1.0,
+            "python:rename": 1.0,
+            "python:split_lines": 1.0,
+            "python:true_condition": 1.0
+          }
+        },
+        "failure_as_success": {
+          "attempts": 800,
+          "detected": 800,
+          "recall": 1.0,
+          "transform_recall": {
+            "javascript:comment_noise": 1.0,
+            "javascript:helper_wrapper": 1.0,
+            "javascript:rename": 1.0,
+            "javascript:split_lines": 1.0,
+            "javascript:true_condition": 1.0,
+            "python:comment_noise": 1.0,
+            "python:helper_wrapper": 1.0,
+            "python:rename": 1.0,
+            "python:split_lines": 1.0,
+            "python:true_condition": 1.0
+          }
+        },
+        "off_by_one_boundary": {
+          "attempts": 800,
+          "detected": 800,
+          "recall": 1.0,
+          "transform_recall": {
+            "javascript:comment_noise": 1.0,
+            "javascript:helper_wrapper": 1.0,
+            "javascript:rename": 1.0,
+            "javascript:split_lines": 1.0,
+            "javascript:true_condition": 1.0,
+            "python:comment_noise": 1.0,
+            "python:helper_wrapper": 1.0,
+            "python:rename": 1.0,
+            "python:split_lines": 1.0,
+            "python:true_condition": 1.0
+          }
+        },
+        "remove_timeout_validation": {
+          "attempts": 800,
+          "detected": 800,
+          "recall": 1.0,
+          "transform_recall": {
+            "javascript:comment_noise": 1.0,
+            "javascript:helper_wrapper": 1.0,
+            "javascript:rename": 1.0,
+            "javascript:split_lines": 1.0,
+            "javascript:true_condition": 1.0,
+            "python:comment_noise": 1.0,
+            "python:helper_wrapper": 1.0,
+            "python:rename": 1.0,
+            "python:split_lines": 1.0,
+            "python:true_condition": 1.0
+          }
+        },
+        "sql_command_injection": {
+          "attempts": 800,
+          "detected": 800,
+          "recall": 1.0,
+          "transform_recall": {
+            "javascript:comment_noise": 1.0,
+            "javascript:helper_wrapper": 1.0,
+            "javascript:rename": 1.0,
+            "javascript:split_lines": 1.0,
+            "javascript:true_condition": 1.0,
+            "python:comment_noise": 1.0,
+            "python:helper_wrapper": 1.0,
+            "python:rename": 1.0,
+            "python:split_lines": 1.0,
+            "python:true_condition": 1.0
+          }
+        },
+        "swallow_exception": {
+          "attempts": 800,
+          "detected": 800,
+          "recall": 1.0,
+          "transform_recall": {
+            "javascript:comment_noise": 1.0,
+            "javascript:helper_wrapper": 1.0,
+            "javascript:rename": 1.0,
+            "javascript:split_lines": 1.0,
+            "javascript:true_condition": 1.0,
+            "python:comment_noise": 1.0,
+            "python:helper_wrapper": 1.0,
+            "python:rename": 1.0,
+            "python:split_lines": 1.0,
+            "python:true_condition": 1.0
+          }
+        },
+        "unbounded_memory_growth": {
+          "attempts": 800,
+          "detected": 720,
+          "recall": 0.9,
+          "transform_recall": {
+            "javascript:comment_noise": 1.0,
+            "javascript:helper_wrapper": 1.0,
+            "javascript:rename": 0.0,
+            "javascript:split_lines": 1.0,
+            "javascript:true_condition": 1.0,
+            "python:comment_noise": 1.0,
+            "python:helper_wrapper": 1.0,
+            "python:rename": 1.0,
+            "python:split_lines": 1.0,
+            "python:true_condition": 1.0
+          }
+        },
+        "weaken_test_assertion": {
+          "attempts": 800,
+          "detected": 800,
+          "recall": 1.0,
+          "transform_recall": {
+            "javascript:comment_noise": 1.0,
+            "javascript:helper_wrapper": 1.0,
+            "javascript:rename": 1.0,
+            "javascript:split_lines": 1.0,
+            "javascript:true_condition": 1.0,
+            "python:comment_noise": 1.0,
+            "python:helper_wrapper": 1.0,
+            "python:rename": 1.0,
+            "python:split_lines": 1.0,
+            "python:true_condition": 1.0
+          }
+        }
+      },
+      "recall": 0.99,
+      "round": 3,
+      "transforms": [
+        "python:rename",
+        "python:split_lines",
+        "python:helper_wrapper",
+        "python:true_condition",
+        "python:comment_noise",
+        "javascript:rename",
+        "javascript:split_lines",
+        "javascript:helper_wrapper",
+        "javascript:true_condition",
+        "javascript:comment_noise"
+      ]
+    }
+  ],
+  "schema_version": "aegis.adversarial_report.v1"
+}

@@ -615,6 +615,9 @@ def main(argv: list[str] | None = None) -> int:
     batch.add_argument("--config", required=True)
     batch.add_argument("--workers", type=int, default=4)
     batch.add_argument("--out", "--output")
+    batch.add_argument("--repo", default=".")
+    batch.add_argument("--sparse-mode", choices=("auto", "on", "off"), default="auto")
+    batch.add_argument("--changed-file", action="append", default=[])
     plan = commands.add_parser("plan")
     plan.add_argument("text")
     plan.add_argument("--repo", default=".")
@@ -646,6 +649,7 @@ def main(argv: list[str] | None = None) -> int:
     autopilot.add_argument("--repo", default=".")
     autopilot.add_argument("--db")
     autopilot.add_argument("--out", "--output")
+    autopilot.add_argument("--sparse-mode", choices=("auto", "on", "off"), default="auto")
     replay = commands.add_parser("replay", help="restore and physically execute a frozen ticket snapshot")
     replay.add_argument("--ticket", required=True)
     replay.add_argument("--repo", default=".")
@@ -693,6 +697,102 @@ def main(argv: list[str] | None = None) -> int:
     fleet.add_argument("--token-env", default="GITHUB_TOKEN", help="Environment variable holding an optional GitHub token")
     fleet.add_argument("--exclude-repo", action="append", default=[],
                        help="Skip an account repository by full name or short name; repeat as needed")
+    ship = commands.add_parser("ship-fleet", help="build an idempotent PR delivery plan for feat/aegis-* branches")
+    ship_scope = ship.add_mutually_exclusive_group(required=True)
+    ship_scope.add_argument("--owner", help="GitHub account or organization to inspect read-only")
+    ship_scope.add_argument("--repo", action="append", dest="repositories",
+                            help="Local repository to plan; repeat for a local fleet")
+    ship.add_argument("--base-branch", default="main", help="Default branch used for local repository plans")
+    ship.add_argument("--exclude-repo", action="append", default=[],
+                      help="Skip a repository by full name or short name; repeat as needed")
+    ship.add_argument("--token-env", default="GITHUB_TOKEN", help="Environment variable holding a GitHub token")
+    ship.add_argument("--out", help="Optional path for the complete JSON delivery plan")
+    ship.add_argument("--execute", action="store_true",
+                      help="Create ready GitHub PRs; requires --owner and a token. Default is a dry run.")
+    bench = commands.add_parser("world-model-bench", help="calibrate the world-model observe-to-enforce gate")
+    bench.add_argument("--repo", default=".")
+    bench.add_argument("--tournament-dataset", help="JSONL tournament winner/loser dataset")
+    bench.add_argument("--causal-traces", help="Optional causal trace JSONL dataset")
+    bench.add_argument("--validation-fraction", type=float, default=0.2)
+    bench.add_argument("--threshold", type=float, action="append", dest="thresholds",
+                       help="Evaluate a threshold; repeat to specify a fixed sweep")
+    bench.add_argument("--signing-key-env", default="AEGIS_CALIBRATION_SIGNING_KEY",
+                       help="Environment variable used to sign an eligible enforce permit")
+    bench.add_argument("--out", help="Optional path for the JSON calibration report")
+    doctor = commands.add_parser("doctor", help="preflight runtimes, dependencies, disk space, and local config templates")
+    doctor.add_argument("--repo", default=".")
+    doctor.add_argument("--min-free-bytes", type=int, default=2 * 1024**3)
+    doctor.add_argument("--changed-file", action="append", default=[])
+    doctor.add_argument("--sparse-mode", choices=("auto", "on", "off"), default="auto")
+    doctor.add_argument("--run-sparse", action="store_true", help="run only the targeted tests in SPARSE_MODE")
+    doctor.add_argument("--strict", action="store_true", help="require runtimes, valid signing keys, and an intact audit ledger")
+    doctor.add_argument("--keys-dir", help="Override the local Ed25519 key directory for isolated checks")
+    doctor.add_argument("--no-cleanup", action="store_true", help="report low disk without pruning caches or orphan worktrees")
+    doctor.add_argument("--out", "--output")
+    serve = commands.add_parser("serve", help="start the local read-only Chinese control dashboard")
+    serve.add_argument("--repo", default=".")
+    serve.add_argument("--db")
+    serve.add_argument("--port", type=int, default=8765)
+    synth = commands.add_parser("synthesize-hard-negatives", help="generate red-light-verified calibration pairs")
+    synth.add_argument("--repo", default=".")
+    synth.add_argument("--source-dataset")
+    synth.add_argument("--out")
+    synth.add_argument("--pairs", type=int, default=400)
+    synth.add_argument("--tokenizer", default="Qwen/Qwen2.5-Coder-3B-Instruct")
+    synth.add_argument("--max-tokens", type=int, default=4096)
+    synth.add_argument("--timeout", type=float, default=45)
+    synth.add_argument("--bench-out")
+    synth2 = commands.add_parser("synthesize-v2-samples", help="build the bilingual v2.0 hard-sample release")
+    synth2.add_argument("--repo", default=".")
+    synth2.add_argument("--out")
+    synth2.add_argument("--negatives-per-type", type=int, default=80,
+                        help="per language; default creates 1600 negatives total")
+    synth2.add_argument("--positives-per-type", type=int, default=20,
+                        help="per language; default creates 400 hard positives total")
+    synth2.add_argument("--tokenizer", default="Qwen/Qwen2.5-Coder-3B-Instruct")
+    synth2.add_argument("--max-tokens", type=int, default=4096)
+    synth2.add_argument("--timeout", type=float, default=180)
+    selfplay = commands.add_parser("self-play", help="run three deterministic red/blue evasion rounds")
+    selfplay.add_argument("--dataset", default="datasets/release_v20/hard_samples_v2.jsonl")
+    selfplay.add_argument("--out", default="artifacts/v20_adversarial_report.json")
+    selfplay.add_argument("--regressions", default="evasion_regressions")
+    selfplay.add_argument("--baseline-report", default="artifacts/v20_adversarial_pre_hardening.json")
+    performance = commands.add_parser("performance", help="run the 500-file/5000-line v2.0 scan profile")
+    performance.add_argument("--out", default="artifacts/v20_performance.json")
+    keys = commands.add_parser("keys", help="manage local Ed25519 enforcement keys")
+    keys_commands = keys.add_subparsers(dest="keys_command", required=True)
+    key_create = keys_commands.add_parser("create", help="create a non-overwriting local signing keypair")
+    key_create.add_argument("--directory", "--keys-dir")
+    key_create.add_argument("--expires-days", type=int, default=90)
+    token = commands.add_parser("token", help="issue or verify a signed enforcement permit")
+    token_commands = token.add_subparsers(dest="token_command", required=True)
+    token_issue = token_commands.add_parser("issue")
+    token_issue.add_argument("--repo", default=".")
+    token_issue.add_argument("--manifest", required=True)
+    token_issue.add_argument("--policy-version", default="2.0")
+    token_issue.add_argument("--expires-seconds", type=int, default=3600)
+    token_issue.add_argument("--keys-dir")
+    token_issue.add_argument("--out")
+    token_verify = token_commands.add_parser("verify")
+    token_verify.add_argument("--repo", default=".")
+    token_verify.add_argument("--manifest", required=True)
+    token_verify.add_argument("--token", required=True, help="Token file path")
+    token_verify.add_argument("--policy-version", default="2.0")
+    token_verify.add_argument("--keys-dir")
+    audit = commands.add_parser("audit", help="verify the append-only local audit ledger")
+    audit_commands = audit.add_subparsers(dest="audit_command", required=True)
+    audit_verify = audit_commands.add_parser("verify")
+    audit_verify.add_argument("--repo", default=".")
+    audit_verify.add_argument("--ledger", default=".aegis/audit.jsonl")
+    hook = commands.add_parser("hook", help="install or run local Git enforcement hooks")
+    hook_commands = hook.add_subparsers(dest="hook_command", required=True)
+    hook_install = hook_commands.add_parser("install")
+    hook_install.add_argument("--repo", default=".")
+    hook_remove = hook_commands.add_parser("remove")
+    hook_remove.add_argument("--repo", default=".")
+    hook_run = hook_commands.add_parser("run", help=argparse.SUPPRESS)
+    hook_run.add_argument("--repo", default=".")
+    hook_run.add_argument("--mode", choices=("staged", "pre-push"), required=True)
     for name in ("stats", "export-traces"):
         command = commands.add_parser(name)
         command.add_argument("--repo", default=".")
@@ -719,7 +819,19 @@ def main(argv: list[str] | None = None) -> int:
                 result, code = _run(args)
         elif args.command == "batch":
             from .factory_queue import run_factory_queue
-            result, code = run_factory_queue(args.config, workers=args.workers)
+            from .env_doctor import EnvDoctor
+            doctor = EnvDoctor(args.repo)
+            environment = doctor.check(changed_files=args.changed_file, sparse_mode=args.sparse_mode)
+            if args.changed_file and environment["sparse_mode"]["enabled"]:
+                environment["sparse_gate"] = doctor.run_sparse_gate(args.changed_file)
+            if environment["blocking"]:
+                result, code = {"status": "environment_blocked", "environment": environment}, 2
+            elif environment.get("sparse_gate", {}).get("status") == "failed":
+                result, code = {"status": "SPARSE_MODE_FAILED", "environment": environment}, 1
+            else:
+                result, code = run_factory_queue(args.config, workers=args.workers)
+                result["environment"] = environment
+            doctor.cleanup_temporary_configs()
             if args.out:
                 _save(args.out, result)
         elif args.command == "plan":
@@ -772,6 +884,25 @@ def main(argv: list[str] | None = None) -> int:
             rounds = config.get("candidate_rounds", config.get("rounds"))
             if type(rounds) is not list:
                 raise ValueError("autopilot config requires candidate_rounds")
+            from .env_doctor import EnvDoctor
+            doctor = EnvDoctor(root)
+            changed_files = config.get("changed_files", config.get("allowed_paths", []))
+            environment = doctor.check(changed_files=changed_files, sparse_mode=args.sparse_mode)
+            if environment["blocking"]:
+                result, code = {"status": "environment_blocked", "environment": environment}, 2
+                if args.out:
+                    _save(args.out, result)
+                print(json.dumps(result, ensure_ascii=False, allow_nan=False))
+                return code
+            if environment["sparse_mode"]["enabled"] and changed_files:
+                environment["sparse_gate"] = doctor.run_sparse_gate(changed_files)
+                if environment["sparse_gate"]["status"] != "passed":
+                    result = {"status": "SPARSE_MODE_FAILED", "environment": environment}
+                    if args.out:
+                        _save(args.out, result)
+                    print(json.dumps(result, ensure_ascii=False, allow_nan=False))
+                    doctor.cleanup_temporary_configs()
+                    return 1
             normalized_rounds = []
             for round_items in rounds:
                 if type(round_items) is not list:
@@ -802,6 +933,8 @@ def main(argv: list[str] | None = None) -> int:
                 ticket_id=config.get("ticket_id"), answers=config.get("answers"),
                 database_path=args.db,
                 dataset_path=(root / dataset_path).resolve() if dataset_path else None)
+            result["environment"] = environment
+            doctor.cleanup_temporary_configs()
             if args.out:
                 _save(args.out, result)
             code = 0 if result["status"] == "succeeded" else 1
@@ -871,6 +1004,143 @@ def main(argv: list[str] | None = None) -> int:
                                  exclude_repositories=args.exclude_repo)
             result["artifacts"] = write_fleet_artifacts(result, args.out_dir)
             code = 0 if result["summary"]["conflicts"] == 0 else 1
+        elif args.command == "ship-fleet":
+            from .fleet_shipper import execute_ship_plan, plan_github_fleet, plan_local_fleet
+            token = os.environ.get(args.token_env)
+            if args.owner:
+                result = plan_github_fleet(args.owner, token=token, exclude_repositories=args.exclude_repo)
+            else:
+                if args.execute:
+                    raise ValueError("--execute requires --owner so remote PR creation can be idempotency-checked")
+                result = plan_local_fleet(args.repositories, default_branch=args.base_branch,
+                                          exclude_repositories=args.exclude_repo)
+            if args.execute:
+                result = execute_ship_plan(result, token=token)
+            if args.out:
+                _save(args.out, result)
+            code = 0 if result["summary"].get("conflicts", 0) == 0 else 1
+        elif args.command == "world-model-bench":
+            from .world_model_bench import run_benchmark
+            result = run_benchmark(args.repo, tournament_path=args.tournament_dataset,
+                                   causal_trace_path=args.causal_traces,
+                                   validation_fraction=args.validation_fraction,
+                                   thresholds=args.thresholds,
+                                   signing_key=os.environ.get(args.signing_key_env))
+            if args.out:
+                _save(args.out, result)
+            code = 0 if result["gate"]["allowed_mode_transition"] else 1
+        elif args.command == "doctor":
+            from .env_doctor import EnvDoctor
+            doctor_instance = EnvDoctor(args.repo, min_free_bytes=args.min_free_bytes,
+                                        cleanup=not args.no_cleanup)
+            result = doctor_instance.check(changed_files=args.changed_file, sparse_mode=args.sparse_mode,
+                                           strict=args.strict, keys_dir=args.keys_dir)
+            if args.run_sparse and result["sparse_mode"]["enabled"]:
+                result["sparse_gate"] = doctor_instance.run_sparse_gate(args.changed_file)
+            doctor_instance.cleanup_temporary_configs()
+            if args.out:
+                _save(args.out, result)
+            code = 0 if result["ready"] and result.get("sparse_gate", {}).get("status", "passed") == "passed" else 2
+        elif args.command == "serve":
+            from .live_dashboard import serve as serve_dashboard
+            serve_dashboard(args.repo, port=args.port, db_path=args.db)
+            return 0
+        elif args.command == "keys":
+            from .audit_ledger import AuditLedger
+            from .enforce import create_keypair
+            result = create_keypair(args.directory, expires_days=args.expires_days)
+            AuditLedger(Path.cwd() / ".aegis" / "audit.jsonl").append(
+                "ed25519_key_issued", {"algorithm": "Ed25519", "expires_at": result["expires_at"]})
+            code = 0
+        elif args.command == "token":
+            from .audit_ledger import AuditLedger
+            from .enforce import issue_token, manifest_sha256, policy_sha256, verify_token
+            root = Path(args.repo).resolve()
+            manifest = Path(args.manifest)
+            manifest = manifest if manifest.is_absolute() else root / manifest
+            if args.token_command == "issue":
+                result = issue_token(manifest, policy_version=args.policy_version,
+                                     expires_in_seconds=args.expires_seconds,
+                                     directory=args.keys_dir, policy_digest=policy_sha256(root))
+                destination = Path(args.out) if args.out else root / ".aegis" / "enforce.token"
+                if not destination.is_absolute():
+                    destination = root / destination
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                descriptor = os.open(destination, os.O_CREAT | os.O_TRUNC | os.O_WRONLY, 0o600)
+                with os.fdopen(descriptor, "w", encoding="ascii") as handle:
+                    handle.write(result["token"] + "\n")
+                result["token_path"] = str(destination)
+                AuditLedger(root / ".aegis" / "audit.jsonl").append(
+                    "enforce_token_issued", {"manifest_sha256": result["payload"]["manifest_sha256"],
+                                             "policy_version": args.policy_version,
+                                             "expires_at": result["payload"]["expires_at"]})
+            else:
+                token_path = Path(args.token)
+                if not token_path.is_absolute():
+                    token_path = root / token_path
+                value = token_path.read_text(encoding="ascii").strip()
+                result = verify_token(value, expected_manifest_sha256=manifest_sha256(manifest),
+                                      expected_policy_version=args.policy_version,
+                                      expected_policy_sha256=policy_sha256(root), directory=args.keys_dir)
+                AuditLedger(root / ".aegis" / "audit.jsonl").append(
+                    "enforce_token_verified" if result["authorized"] else "enforce_token_rejected",
+                    {"reason": result["reason"], "manifest": str(manifest)})
+                code = 0 if result["authorized"] else 1
+            if args.token_command == "issue":
+                code = 0
+        elif args.command == "audit":
+            from .audit_ledger import AuditLedger
+            root = Path(args.repo).resolve()
+            path = Path(args.ledger)
+            path = path if path.is_absolute() else root / path
+            result = AuditLedger(path).verify()
+            result["path"] = str(path)
+            code = 0 if result["valid"] else 1
+        elif args.command == "hook":
+            if args.hook_command == "install":
+                from .git_hooks import install_hooks
+                result = install_hooks(args.repo)
+                code = 0
+            elif args.hook_command == "remove":
+                from .git_hooks import remove_hooks
+                result = remove_hooks(args.repo)
+                code = 0
+            else:
+                from .security_gate import run_hook
+                code, result = run_hook(args.repo, mode=args.mode, stdin=sys.stdin.buffer.read())
+        elif args.command == "synthesize-hard-negatives":
+            from .synthetic_hard_negatives import generate_release
+            from .world_model_bench import run_benchmark
+            result = generate_release(args.repo, source_dataset=args.source_dataset, output_dir=args.out,
+                                      target_pairs=args.pairs, tokenizer_id=args.tokenizer,
+                                      max_tokens=args.max_tokens, timeout=args.timeout)
+            benchmark_path = Path(result["output"]) / "world_model_bench_v13.json"
+            calibration = run_benchmark(args.repo,
+                                        tournament_path=Path(result["output"]) / "hard_negative_pairs.jsonl")
+            _save(benchmark_path, calibration)
+            result["calibration"] = {"report": str(benchmark_path), "status": calibration["gate"]["status"],
+                                     "validation_samples": calibration["dataset"]["validation_samples"],
+                                     "allowed_mode_transition": calibration["gate"]["allowed_mode_transition"]}
+            if args.bench_out:
+                _save(args.bench_out, calibration)
+            code = 0
+        elif args.command == "synthesize-v2-samples":
+            from .v20_samples import generate_v20_release
+            result = generate_v20_release(args.repo, output_dir=args.out,
+                                         negatives_per_type=args.negatives_per_type,
+                                         positives_per_type=args.positives_per_type,
+                                         tokenizer_id=args.tokenizer, max_tokens=args.max_tokens,
+                                         timeout=args.timeout)
+            code = 0
+        elif args.command == "self-play":
+            from .adversarial_self_play import run_self_play
+            result = run_self_play(args.dataset, report_path=args.out, regression_dir=args.regressions,
+                                   baseline_report_path=args.baseline_report)
+            code = 0 if result["converged"] else 1
+        elif args.command == "performance":
+            from .v20_performance import run_performance_profile
+            result = run_performance_profile(output_path=args.out)
+            code = 0 if result["passed"] else 1
         else:
             ledger = _ledger(_repo(args.repo), args.db)
             if args.command == "stats":

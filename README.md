@@ -1,6 +1,7 @@
-# aegis-core V1
+# aegis-core V1.3
 
-Python 3.11+ 的确定性控制面与因果轨迹骨架。运行时仅依赖标准库；Git
+Python 3.11+ 的确定性控制面与因果轨迹骨架。核心运行路径使用标准库；Ed25519
+签名令牌需 `cryptography`，控制台服务本身仍为纯标准库实现。Git
 Worktree 需要系统安装 Git，验收测试需要 pytest。不调用模型、不导入目标业务模块。
 
 ## 运行
@@ -24,6 +25,19 @@ pytest -v
 - attach 会识别包含可执行脚本的 HTML 入口，并保留 .aegis/repo_profile.json 中的 tool_source_globs。默认涵盖根目录和子项目 tools/ 下的 Python、JavaScript/TypeScript、HTML 及 CSS，测试和配置仍受保护。用 aegis attach --tool-source-glob 重设工具范围。
 - 浏览器修复工单在 DAG 中声明 "probe_kind": "browser_visual"，也可用 aegis wish --no-auto-probe --probe-kind browser_visual 冻结契约。至少要锁定一个探针脚本。直接传入的脚本参数会自动锁定；间接入口或额外夹具可用 probe_scripts（CLI 为重复 --probe-script）显式指定。probe_script_sha256 对仓内文本脚本统一使用 LF，其余路径按原始字节计算。门禁在每次执行前后核验，红绿两次探针在同一个 worktree 内还须具有相同的 probe_runtime_sha256 原始字节摘要。验证节点也支持相同声明。
 - 浏览器探针自行运行项目的浏览器脚本，断言布局、像素或帧时；Aegis 记录退出和证据。FailureDiagnosis.failure_code 区分断言失败、模块未实现、浏览器等待超时和环境不可用。HTML 内联 JS 与 CSS 引用可由 L3 原生审查，静态规则只覆盖可识别的源码模式。
+
+## v1.2 高信噪比扫描与交付门禁
+
+- `inspect_source` 为每条发现增加 `confidence`、`confidence_score`、`scope`、`asset_type` 和 `suppression_reason`。`scan_changed_files` 把被抑制的依赖、测试夹具、静态原型、离线脚本、生命周期清理与框架默认超时发现单独列入 `suppressed_findings`，不让它们阻塞门禁。
+- `aegis ship-fleet --owner Xiaoyu155` 默认只生成完整 PR 计划；它读取 `feat/aegis-*` 的提交、变更、冲突预检和 GitHub 检查状态，并对已有 PR 做幂等复用。只有显式 `--execute` 且检查全绿时才创建 PR。`nova-agent`、`Checkpoint`、`edu-typing` 默认排除。
+- `aegis world-model-bench` 用锦标赛正负样本和已验证因果轨迹做分组留出校准。只有同一阈值同时达到正确补丁误拦率低于 1%、风险样本召回率至少 85%，并提供至少 16 字节 `AEGIS_CALIBRATION_SIGNING_KEY` 时，报告才签发 `observe -> enforce` 许可。
+
+## v1.3 结构化补丁、环境自愈与实时监控
+
+- `Sandbox.apply_patch` 先校验并应用 unified diff；上下文失败时按 Python AST 符号或 JS/TS 花括号块定位补丁，完成语法校验并保留 compare-and-swap 回滚能力。
+- `aegis doctor --repo .` 检查磁盘、Python/Node 运行时、声明依赖和本地配置模板。`--sparse-mode auto --changed-file path/to/module.py --run-sparse` 会运行定向门禁，并在诊断 JSON 中列出覆盖边界。
+- `aegis serve --repo . --port 8765` 启动仅绑定本机的只读控制台；JSON API 提供 `/api/overview`、`/api/tickets`、`/api/traces` 和 `/api/fleet`。
+- `aegis synthesize-hard-negatives --repo . --pairs 400` 只输出经过真实绿灯/红灯证据与官方 Qwen tokenizer 零截断验证的样本；需要 `transformers` 和本地已缓存的 `Qwen/Qwen2.5-Coder-3B-Instruct` tokenizer，清单记录 SHA-256。校准结果如实写入 `world_model_bench_v13.json`，未达门槛时保持阻断。
 
 ## 第十二阶段工厂
 
@@ -107,7 +121,7 @@ Worktree 提供 Git 文件隔离，执行命令继承宿主权限；不提供不
 
 AST 分析范围是目标同目录；不求解反射、动态绑定、跨目录包图或全程序数据流。
 存根保持静态语法接口，装饰器与默认值不执行。SQLite WAL 适用于本地文件系统；
-NORMAL 模式不承诺掉电时最近提交绝不丢失。零运行时第三方依赖不意味着系统
+NORMAL 模式不承诺掉电时最近提交绝不丢失。低依赖实现不意味着系统
 预装 Python、Git 或 pytest；移动端需要提供这些工具的 Python/终端环境。
 
 测试覆盖多进程并发写、竞争租约与过期令牌、事务回滚、JSONL、跨文件切片、
@@ -138,3 +152,25 @@ python -m aegis_core --help
 
 完整流程、退出码、账本位置及数据来源见 [控制塔说明](docs/control_tower.md)；
 Windows 环境初始化与 QLoRA/GRPO 启动见 [三条接管命令](LOCAL_HANDOFF.md)。
+
+## v2.0 自治门禁
+
+v2.0 增加 Python/JS 双语硬样本、三轮红蓝逃逸评估、Ed25519 enforce 令牌、
+pre-commit/pre-push 本地拦截、哈希链审计账本及只读 Quarantine 审阅台。生成样本
+前应准备官方 Qwen tokenizer 缓存；密钥默认保存在 `~/.aegis/keys/`，也可通过
+`AEGIS_KEYS_DIR` 指定独立目录，密钥不会进入仓库。
+
+```bash
+aegis synthesize-v2-samples
+aegis self-play
+aegis performance
+aegis keys create
+aegis token issue --manifest datasets/release_v20/manifest_v2.json
+aegis doctor --strict
+aegis hook install
+aegis audit verify
+aegis serve --port 8765
+```
+
+控制台只绑定 loopback，浏览器地址为 `http://127.0.0.1:8765/`。本地门禁会将阻断
+补丁及触发规则保存到 `.aegis/quarantine/`，审计 JSONL 与哈希锚点保存在 `.aegis/`。

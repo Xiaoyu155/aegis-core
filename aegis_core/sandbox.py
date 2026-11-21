@@ -221,11 +221,16 @@ class Sandbox:
             raise ValueError("worktree not owned by this lifecycle manager")
         return path, branch
 
-    def apply_patch(self, ticket_id: str, patch: str) -> None:
+    def apply_patch(self, ticket_id: str, patch: str) -> dict:
         path, _ = self._owned_path(ticket_id)
         self._gates.pop(ticket_id, None)
-        self._git("apply", "--check", "--whitespace=error", "-", cwd=path, input=patch)
-        self._git("apply", "--whitespace=error", "-", cwd=path, input=patch)
+        from .patch_applier import PatchApplicationError, apply_patch
+        try:
+            return apply_patch(path, patch)
+        except PatchApplicationError as error:
+            raise subprocess.CalledProcessError(
+                1, ["git", "apply", "--check", "--whitespace=error", "-"],
+                output=b"", stderr=str(error).encode("utf-8", errors="replace")) from error
 
     def exam(self, ticket_id: str, test_cmd: str | list[str] = "pytest", *, timeout=60) -> dict:
         path, _ = self._owned_path(ticket_id)
