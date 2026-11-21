@@ -1,6 +1,7 @@
 # aegis-core V1.3
 
-Python 3.11+ 的确定性控制面与因果轨迹骨架。运行时仅依赖标准库；Git
+Python 3.11+ 的确定性控制面与因果轨迹骨架。核心运行路径使用标准库；Ed25519
+签名令牌需 `cryptography`，控制台服务本身仍为纯标准库实现。Git
 Worktree 需要系统安装 Git，验收测试需要 pytest。不调用模型、不导入目标业务模块。
 
 ## 运行
@@ -120,7 +121,7 @@ Worktree 提供 Git 文件隔离，执行命令继承宿主权限；不提供不
 
 AST 分析范围是目标同目录；不求解反射、动态绑定、跨目录包图或全程序数据流。
 存根保持静态语法接口，装饰器与默认值不执行。SQLite WAL 适用于本地文件系统；
-NORMAL 模式不承诺掉电时最近提交绝不丢失。零运行时第三方依赖不意味着系统
+NORMAL 模式不承诺掉电时最近提交绝不丢失。低依赖实现不意味着系统
 预装 Python、Git 或 pytest；移动端需要提供这些工具的 Python/终端环境。
 
 测试覆盖多进程并发写、竞争租约与过期令牌、事务回滚、JSONL、跨文件切片、
@@ -151,3 +152,25 @@ python -m aegis_core --help
 
 完整流程、退出码、账本位置及数据来源见 [控制塔说明](docs/control_tower.md)；
 Windows 环境初始化与 QLoRA/GRPO 启动见 [三条接管命令](LOCAL_HANDOFF.md)。
+
+## v2.0 自治门禁
+
+v2.0 增加 Python/JS 双语硬样本、三轮红蓝逃逸评估、Ed25519 enforce 令牌、
+pre-commit/pre-push 本地拦截、哈希链审计账本及只读 Quarantine 审阅台。生成样本
+前应准备官方 Qwen tokenizer 缓存；密钥默认保存在 `~/.aegis/keys/`，也可通过
+`AEGIS_KEYS_DIR` 指定独立目录，密钥不会进入仓库。
+
+```bash
+aegis synthesize-v2-samples
+aegis self-play
+aegis performance
+aegis keys create
+aegis token issue --manifest datasets/release_v20/manifest_v2.json
+aegis doctor --strict
+aegis hook install
+aegis audit verify
+aegis serve --port 8765
+```
+
+控制台只绑定 loopback，浏览器地址为 `http://127.0.0.1:8765/`。本地门禁会将阻断
+补丁及触发规则保存到 `.aegis/quarantine/`，审计 JSONL 与哈希锚点保存在 `.aegis/`。

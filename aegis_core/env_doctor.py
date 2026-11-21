@@ -265,7 +265,8 @@ class EnvDoctor:
         return {"status": "passed" if results and all(item["passed"] for item in results) else "failed",
                 "results": results, "coverage_boundary": plan["coverage_boundary"]}
 
-    def check(self, *, changed_files: list[str] | None = None, sparse_mode: str = "auto") -> dict:
+    def check(self, *, changed_files: list[str] | None = None, sparse_mode: str = "auto",
+              strict: bool = False, keys_dir: str | Path | None = None) -> dict:
         if sparse_mode not in {"auto", "on", "off"}:
             raise ValueError("sparse_mode must be auto, on, or off")
         usage = self._usage_provider(self.repo_root)
@@ -309,10 +310,37 @@ class EnvDoctor:
         status = "SPARSE_MODE" if enabled else ("READY_WITH_MISSING_CONFIG_TEMPLATES" if configs else "READY")
         if sparse_mode == "off" and sparse_reasons:
             status = "BLOCKED"
+        from .audit_ledger import AuditLedger
+        from .enforce import inspect_keys
+        key_state = inspect_keys(keys_dir)
+        audit_path = self.repo_root / ".aegis" / "audit.jsonl"
+        audit_state = AuditLedger(audit_path).verify()
+        strict_errors = []
+        if strict and not key_state["valid"]:
+            strict_errors.extend("signing_key:" + item for item in key_state["errors"])
+        if strict and missing:
+            strict_errors.append("runtime_or_dependency_missing")
+        if strict and disk.get("low_space"):
+            strict_errors.append("disk_below_threshold")
+        if strict and configs:
+            strict_errors.append("local_config_template_missing")
+        if strict and enabled:
+            strict_errors.append("sparse_mode_active")
+        if strict and not audit_path.is_file():
+            strict_errors.append("audit_ledger_missing")
+        elif strict and not audit_state["valid"]:
+            strict_errors.append("audit_ledger_invalid")
+        if strict_errors:
+            status = "BLOCKED"
         return {"schema_version": "aegis.env_doctor.v1", "status": status,
                 "ready": status != "BLOCKED", "blocking": status == "BLOCKED",
                 "disk": disk, "python": python_report, "node": node,
                 "missing_dependencies": missing, "temporary_configs": configs,
+                "security": {"strict": strict, "signing_key": key_state,
+                             "audit_ledger": {**audit_state,
+                                              "path": audit_path.relative_to(self.repo_root).as_posix(),
+                                              "present": audit_path.is_file()},
+                             "strict_errors": strict_errors},
                 "sparse_mode": {"enabled": enabled, "reasons": sparse_reasons,
                                 "commands": sparse["commands"] if sparse else [],
                                 "coverage_boundary": sparse["coverage_boundary"] if sparse else None},

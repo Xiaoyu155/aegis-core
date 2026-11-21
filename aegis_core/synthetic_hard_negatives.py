@@ -29,6 +29,10 @@ MUTATION_TYPES = (
     "remove_timeout_validation",
     "break_idempotency_key",
     "unbounded_memory_growth",
+    "concurrency_lock_loss",
+    "authorization_bypass",
+    "failure_as_success",
+    "sql_command_injection",
     "weaken_test_assertion",
 )
 
@@ -81,11 +85,20 @@ def _python_operator_offset(source: str, operators: set[str]) -> tuple[int, int,
     return None
 
 
-def mutate_source(source: str, mutation_type: str) -> dict | None:
+def mutate_source(source: str, mutation_type: str, *, language: str = "python") -> dict | None:
     """Apply one deterministic, source-level defect operator; return None if absent."""
     if mutation_type not in MUTATION_TYPES:
         raise ValueError(f"unknown mutation type: {mutation_type}")
+    if language in {"javascript", "js", "typescript", "ts", "tsx", "jsx"}:
+        return _mutate_javascript_source(source, mutation_type)
+    if language not in {"python", "py"}:
+        raise ValueError("language must be Python or JavaScript/TypeScript")
     if mutation_type == "off_by_one_boundary":
+        match = re.search(r"\b(?:index|i|offset|position)\s*<\s*len\s*\(", source)
+        if match:
+            offset = source.index("<", match.start())
+            return {"source": source[:offset] + "<=" + source[offset + 1:], "changed": True,
+                    "reason": "included the collection length as a valid index"}
         token = _python_operator_offset(source, {"<=", ">="})
         if token:
             start, end, operator = token
@@ -118,6 +131,11 @@ def mutate_source(source: str, mutation_type: str) -> dict | None:
         return None
 
     if mutation_type == "remove_timeout_validation":
+        request_timeout = re.search(r"(?P<prefix>\b(?:requests|httpx|urllib\.request)\.(?:get|post|put|patch|delete|request|urlopen)\s*\([^()\n]*?,\s*)timeout\s*=\s*[^,()\n]+,?", source)
+        if request_timeout:
+            return {"source": source[:request_timeout.start()] + request_timeout.group("prefix").rstrip(" ,") +
+                    source[request_timeout.end():], "changed": True,
+                    "reason": "removed explicit network request timeout"}
         patterns = (
             (r"\b(?:math\.)?isfinite\s*\([^()]*\)", "True"),
             (r"(?m)^(?P<indent>[ \t]*)if\s+[^\n]*\btimeout\b[^\n]*(?:<=|<|is None)[^\n]*:\s*$", None),
@@ -151,8 +169,9 @@ def mutate_source(source: str, mutation_type: str) -> dict | None:
         for pattern in patterns:
             match = re.search(pattern, source)
             if match:
-                updated = source[:match.start()] + match.group("prefix") + '"constant-key"' + source[match.end():]
-                return {"source": updated, "changed": True, "reason": "replaced request identity with a constant"}
+                value = "uuid.uuid4().hex"
+                updated = source[:match.start()] + match.group("prefix") + value + source[match.end():]
+                return {"source": updated, "changed": True, "reason": "replaced request identity with a random UUID"}
         return None
 
     if mutation_type == "unbounded_memory_growth":
@@ -173,6 +192,138 @@ def mutate_source(source: str, mutation_type: str) -> dict | None:
     if mutation_type == "weaken_test_assertion":
         variants = mutate_test_assertions(source)
         return variants[0] if variants else None
+    if mutation_type == "concurrency_lock_loss":
+        pattern = re.compile(r"(?m)^(?P<indent>[ \t]*)async\s+with\s+[\w.]*?(?:lock|mutex)\s*:\s*\r?\n"
+                             r"(?P<body>(?:(?P=indent)[ \t]+[^\n]*\r?\n?)+)", re.I)
+        match = pattern.search(source)
+        if match:
+            body = match.group("body")
+            prefix = match.group("indent")
+            lines = body.splitlines(keepends=True)
+            dedented = "".join(line[:len(prefix)] + line[len(prefix) + 4:] if line.startswith(prefix + "    ") else line
+                               for line in lines)
+            return {"source": source[:match.start()] + dedented + source[match.end():],
+                    "changed": True, "reason": "removed async lock context around shared state"}
+        return None
+    if mutation_type == "authorization_bypass":
+        pattern = re.compile(r"(?m)^(?P<indent>[ \t]*)if\s+(?P<condition>[^:\n]*(?:admin|authoriz|permission|role|access)[^:\n]*):\s*\r?\n"
+                             r"(?P<body>(?:[ \t]+raise\s+(?:PermissionError|AuthorizationError|AccessDenied)[^\n]*\r?\n?)+)", re.I)
+        match = pattern.search(source)
+        if match:
+            indent = match.group("indent")
+            replacement = indent + "if True:\n" + indent + "    return True\n"
+            return {"source": source[:match.start()] + replacement + source[match.end():],
+                    "changed": True, "reason": "short-circuited authorization with a constant-true branch"}
+        return None
+    if mutation_type == "failure_as_success":
+        pattern = re.compile(r"(?s)(except\b[^:]*:\s*(?:\n\s+[^\n]*)*?)(?P<key>[\"']?(?:status|status_code|statusCode)[\"']?\s*[:=]\s*)(?P<code>5\d\d)")
+        match = pattern.search(source)
+        if match:
+            return {"source": source[:match.start("code")] + "200" + source[match.end("code"):],
+                    "changed": True, "reason": "converted an exception response into HTTP 200"}
+        return None
+    if mutation_type == "sql_command_injection":
+        pattern = re.compile(r"(?P<call>(?:\w+\.)?(?:execute|query)\s*\(\s*)(?P<quote>['\"])(?P<query>[^'\"\n]*\?[^'\"\n]*)(?P=quote)\s*,\s*\(\s*(?P<arg>[\w.]+)\s*,?\s*\)\s*\)")
+        match = pattern.search(source)
+        if match:
+            query = match.group("query").replace("?", "'{ " + match.group("arg") + " }'")
+            replacement = match.group("call") + "f" + match.group("quote") + query + match.group("quote") + ")"
+            return {"source": source[:match.start()] + replacement + source[match.end():],
+                    "changed": True, "reason": "interpolated untrusted SQL value into the command string"}
+        return None
+    return None
+
+
+def _mutate_javascript_source(source: str, mutation_type: str) -> dict | None:
+    """Apply a deterministic JavaScript/TypeScript defect operator."""
+    if mutation_type == "off_by_one_boundary":
+        match = re.search(r"(\b(?:index|i|offset|position)\s*<=\s*[\w$.]+\.(?:length|size))", source)
+        if match:
+            return {"source": source[:match.start()] + match.group(1).replace("<=", "<") + source[match.end():],
+                    "changed": True, "reason": "changed inclusive collection bound to exclusive"}
+        match = re.search(r"(\b(?:index|i|offset|position)\s*<\s*[\w$.]+\.(?:length|size))", source)
+        if match:
+            return {"source": source[:match.start()] + match.group(1).replace("<", "<=") + source[match.end():],
+                    "changed": True, "reason": "included the collection length as a valid index"}
+        return None
+    if mutation_type == "swallow_exception":
+        pattern = re.compile(r"(catch\s*\(\s*([\w$]+)\s*\)\s*\{)([\s\S]*?)(\})")
+        for match in pattern.finditer(source):
+            body = match.group(3)
+            if re.search(r"\bthrow\s+" + re.escape(match.group(2)) + r"\s*;", body):
+                replacement_body = re.sub(r"\bthrow\s+" + re.escape(match.group(2)) + r"\s*;", "return undefined;", body, count=1)
+                return {"source": source[:match.start(3)] + replacement_body + source[match.end(3):],
+                        "changed": True, "reason": "swallowed the caught JavaScript exception"}
+            if not body.strip():
+                return None
+        return None
+    if mutation_type == "remove_timeout_validation":
+        signal = re.search(r"\bsignal\s*:\s*controller\.signal\s*,?", source)
+        if signal:
+            updated = source[:signal.start()] + source[signal.end():]
+            return {"source": updated, "changed": True, "reason": "removed AbortController timeout signal"}
+        controller = re.search(r"\bconst\s+controller\s*=\s*new\s+AbortController\s*\(\s*\)\s*;?\s*\n?", source)
+        if controller:
+            updated = source[:controller.start()] + source[controller.end():]
+            return {"source": updated, "changed": True, "reason": "removed AbortController timeout signal"}
+        timeout_guard = re.search(r"(?m)^(?P<indent>[ \t]*)if\s*\(\s*timeout\s*<=\s*0\s*\)\s*\{[^{}]*\}\s*;?", source)
+        if timeout_guard:
+            return {"source": source[:timeout_guard.start()] + timeout_guard.group("indent") + "if (false) {}" + source[timeout_guard.end():],
+                    "changed": True, "reason": "disabled timeout validation"}
+        return None
+    if mutation_type == "break_idempotency_key":
+        match = re.search(r"(?P<prefix>[\w$]*idempotency[\w$]*key\s*[:=]\s*)(?P<value>[^,;\n}]+)", source, re.I)
+        if match:
+            return {"source": source[:match.start("value")] + "crypto.randomUUID()" + source[match.end("value"):],
+                    "changed": True, "reason": "replaced stable request identity with a random UUID"}
+        return None
+    if mutation_type == "unbounded_memory_growth":
+        patterns = (r"\s*\bmax(?:Size|Entries)?\s*:\s*\d+\s*,?",)
+        for pattern in patterns:
+            match = re.search(pattern, source)
+            if match:
+                return {"source": source[:match.start()] + source[match.end():],
+                        "changed": True, "reason": "removed bounded cache retention setting"}
+        return None
+    if mutation_type == "concurrency_lock_loss":
+        match = re.search(r"(?s)(?P<prefix>return\s+)(?:mutex|lock)\.run\s*\(\s*async\s*\(\s*\)\s*=>\s*\{(?P<body>.*?)\}\s*\)", source)
+        if match:
+            return {"source": source[:match.start()] + "return (async () => {" + match.group("body") + "})()" + source[match.end():],
+                    "changed": True, "reason": "removed async mutex wrapper around shared state"}
+        return None
+    if mutation_type == "authorization_bypass":
+        match = re.search(r"(?s)(?:async\s+)?function\s+(?:authorize|isAuthorized|hasPermission|canAccess)\w*\s*\([^)]*\)\s*\{", source, re.I)
+        if match:
+            return {"source": source[:match.end()] + " if (true) return true; " + source[match.end():],
+                    "changed": True, "reason": "inserted an unconditional authorization success"}
+        return None
+    if mutation_type == "failure_as_success":
+        match = re.search(r"catch\s*\([^)]*\)\s*\{[\s\S]*?\bstatus(?:Code)?\s*[:=]\s*(?P<code>5\d\d)", source)
+        if match:
+            return {"source": source[:match.start("code")] + "200" + source[match.end("code"):],
+                    "changed": True, "reason": "converted an exception response into HTTP 200"}
+        return None
+    if mutation_type == "sql_command_injection":
+        prepared = re.search(r"(?P<call>(?:\w+\.)?prepare\s*\()(?P<quote>['\"])(?P<sql>[^'\"\n]*\?[^'\"\n]*)(?P=quote)\)\.all\(\s*(?P<arg>[\w$.]+)\s*\)", source)
+        if prepared:
+            sql = prepared.group("sql").replace("?", "'${" + prepared.group("arg") + "}'")
+            replacement = prepared.group("call") + "`" + sql + "`).all()"
+            return {"source": source[:prepared.start()] + replacement + source[prepared.end():],
+                    "changed": True, "reason": "interpolated untrusted SQL value into a template string"}
+        match = re.search(r"(?P<call>(?:\w+\.)?(?:query|execute)\s*\()(?P<quote>['\"])(?P<sql>[^'\"\n]*\?[^'\"\n]*)(?P=quote)\s*,\s*\[\s*(?P<arg>[\w$.]+)\s*\]\s*\)", source)
+        if match:
+            sql = match.group("sql").replace("?", "${" + match.group("arg") + "}")
+            replacement = match.group("call") + "`" + sql + "`)"
+            return {"source": source[:match.start()] + replacement + source[match.end():],
+                    "changed": True, "reason": "interpolated untrusted SQL value into a template string"}
+        return None
+    if mutation_type == "weaken_test_assertion":
+        pattern = re.compile(r"(?m)^(?P<indent>[ \t]*)assert\.(?:equal|strictEqual|ok)\([^\n]+\);?\s*$")
+        match = pattern.search(source)
+        if match:
+            return {"source": source[:match.start()] + match.group("indent") + "assert.ok(true);" + source[match.end():],
+                    "changed": True, "reason": "replaced a real JavaScript assertion with an always-true check"}
+        return None
     return None
 
 

@@ -1,0 +1,93 @@
+{
+  "category_counts": {
+    "authorization_bypass": {
+      "hard_negative": 160,
+      "hard_positive": 40,
+      "javascript": 100,
+      "python": 100
+    },
+    "break_idempotency_key": {
+      "hard_negative": 160,
+      "hard_positive": 40,
+      "javascript": 100,
+      "python": 100
+    },
+    "concurrency_lock_loss": {
+      "hard_negative": 160,
+      "hard_positive": 40,
+      "javascript": 100,
+      "python": 100
+    },
+    "failure_as_success": {
+      "hard_negative": 160,
+      "hard_positive": 40,
+      "javascript": 100,
+      "python": 100
+    },
+    "off_by_one_boundary": {
+      "hard_negative": 160,
+      "hard_positive": 40,
+      "javascript": 100,
+      "python": 100
+    },
+    "remove_timeout_validation": {
+      "hard_negative": 160,
+      "hard_positive": 40,
+      "javascript": 100,
+      "python": 100
+    },
+    "sql_command_injection": {
+      "hard_negative": 160,
+      "hard_positive": 40,
+      "javascript": 100,
+      "python": 100
+    },
+    "swallow_exception": {
+      "hard_negative": 160,
+      "hard_positive": 40,
+      "javascript": 100,
+      "python": 100
+    },
+    "unbounded_memory_growth": {
+      "hard_negative": 160,
+      "hard_positive": 40,
+      "javascript": 100,
+      "python": 100
+    },
+    "weaken_test_assertion": {
+      "hard_negative": 160,
+      "hard_positive": 40,
+      "javascript": 100,
+      "python": 100
+    }
+  },
+  "dataset_sha256": "99e42d5bf22f5ce62f1ab4b3be8ce86946172662e8c8a0ffc4b1bdd66c2fc532",
+  "defect_types": [
+    "off_by_one_boundary",
+    "swallow_exception",
+    "remove_timeout_validation",
+    "break_idempotency_key",
+    "unbounded_memory_growth",
+    "concurrency_lock_loss",
+    "authorization_bypass",
+    "failure_as_success",
+    "sql_command_injection",
+    "weaken_test_assertion"
+  ],
+  "generator": "aegis_core.v20_samples.generate_v20_release",
+  "hard_negative_count": 1600,
+  "hard_positive_count": 400,
+  "hard_positive_tests_passed": 400,
+  "languages": [
+    "python",
+    "javascript"
+  ],
+  "max_tokens": 4096,
+  "negative_samples_per_class_per_language": 80,
+  "official_tokenizer": "Qwen/Qwen2.5-Coder-3B-Instruct",
+  "positive_samples_per_class_per_language": 20,
+  "redlight_verified_negative_count": 1600,
+  "sample_count": 2000,
+  "schema_version": "aegis.hard_samples_manifest.v2",
+  "zero_truncation_verified": true
+}

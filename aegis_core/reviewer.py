@@ -261,6 +261,11 @@ def _scan_python(source, path):
     tree = ast.parse(source)
     audit = _PythonAudit(path, tree)
     audit.visit_suite(tree.body)
+    from .security_rules import scan_python
+    audit.findings.extend(Finding(item.code, path, item.symbol, item.line, item.detail)
+                          for item in scan_python(source))
+    audit.findings = list({(item.code, item.path, item.symbol, item.line): item
+                           for item in audit.findings}.values())
     return audit.findings, audit.controls
 
 
@@ -291,6 +296,11 @@ def _scan_js(source, path):
         if masked[match.start():match.start() + len(match[1])].strip() and _SECRET.search(match[1]):
             findings.append(Finding("HARDCODED_SECRET", path, "<module>", source.count("\n", 0, match.start()) + 1,
                                     "Credential field contains a literal value"))
+    from .security_rules import scan_javascript
+    findings.extend(Finding(item.code, path, item.symbol, item.line, item.detail)
+                    for item in scan_javascript(source))
+    findings = list({(item.code, item.path, item.symbol, item.line): item
+                     for item in findings}.values())
     return findings, {}
 
 

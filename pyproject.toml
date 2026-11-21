@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aegis-core"
-version = "1.3.0"
-description = "Deterministic control kernel with causal traces"
+version = "2.0.0"
+description = "Deterministic control kernel with autonomous enforcement"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = ["cryptography>=41"]
 
 [project.scripts]
 aegis = "aegis_core.cli:main"

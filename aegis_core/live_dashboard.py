@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
+import os
 from pathlib import Path
 import sqlite3
 from urllib.parse import parse_qs, urlsplit
@@ -20,19 +21,24 @@ header{padding:24px max(22px,calc((100vw - 1240px)/2));border-bottom:1px solid v
 <main><section class="grid" id="overview"></section>
 <section class="section panels"><div class="card"><h2>工单进度</h2><div class="scroll"><table><thead><tr><th>工单</th><th>状态</th><th>更新时间</th></tr></thead><tbody id="tickets"></tbody></table></div></div>
 <div class="card"><h2>探针与拦截轨迹</h2><div class="scroll"><table><thead><tr><th>工单 / 步骤</th><th>结果</th><th>操作</th></tr></thead><tbody id="traces"></tbody></table></div></div></section>
-<section class="section panels"><div class="card"><h2>锦标赛与世界模型</h2><div id="world" class="muted">读取校准状态…</div></div><div class="card"><h2>全舰队交付健康度</h2><div id="fleet" class="muted">读取舰队状态…</div><div class="bar"><i id="fleetbar"></i></div></div></section>
+<section class="section panels"><div class="card"><h2>签名门禁与审计</h2><div id="security" class="muted">读取密钥与账本状态…</div><div id="world" class="muted">读取世界模型校准…</div></div><div class="card"><h2>全舰队交付健康度</h2><div id="fleet" class="muted">读取舰队状态…</div><div class="bar"><i id="fleetbar"></i></div></div></section>
+<section class="section card"><h2>10 × 10 红蓝对抗矩阵</h2><div class="scroll"><table><thead><tr id="matrix-head"></tr></thead><tbody id="matrix"></tbody></table></div><div id="convergence" class="muted"></div></section>
+<section class="section card"><h2>Quarantine 审阅台</h2><div class="scroll"><table><thead><tr><th>时间</th><th>模式</th><th>规则</th><th>Diff 预览</th></tr></thead><tbody id="quarantine"></tbody></table></div></section>
 <div class="footer">数据来自本地 SQLite 只读连接与仓库内已生成的 JSON 报告。页面每 3 秒刷新。</div></main>
 <script>
 const $=id=>document.getElementById(id);const esc=x=>String(x??"");
 function cell(tr,value,cls){const td=document.createElement("td");td.textContent=esc(value);if(cls)td.className=cls;tr.appendChild(td)}
 function row(table,values){const tr=document.createElement("tr");values.forEach(v=>cell(tr,v));table.appendChild(tr)}
 async function get(path){const r=await fetch(path,{cache:"no-store"});if(!r.ok)throw Error(r.status);return(await r.json()).data}
-async function refresh(){try{const o=await get("/api/overview"),t=await get("/api/tickets"),r=await get("/api/traces"),f=await get("/api/fleet");
+async function refresh(){try{const o=await get("/api/overview"),t=await get("/api/tickets"),r=await get("/api/traces"),f=await get("/api/fleet"),q=await get("/api/quarantine");
 $("clock").textContent="最后更新 "+new Date().toLocaleTimeString();$("overview").replaceChildren();
-[["工单总数",o.tickets],["运行中",o.running],["探针轨迹",o.traces],["拦截记录",o.interceptions]].forEach(([label,value])=>{const d=document.createElement("div");d.className="card";const a=document.createElement("div");a.className="label";a.textContent=label;const b=document.createElement("div");b.className="value";b.textContent=esc(value);d.append(a,b);$("overview").appendChild(d)});
+[["工单总数",o.tickets],["运行中",o.running],["探针轨迹",o.traces],["拦截记录",o.interceptions],["enforce 签名",o.enforce?.signature_status||"未启用"],["扫描 P95",(o.p95_ms??"—")+" ms"]].forEach(([label,value])=>{const d=document.createElement("div");d.className="card";const a=document.createElement("div");a.className="label";a.textContent=label;const b=document.createElement("div");b.className="value";b.textContent=esc(value);d.append(a,b);$("overview").appendChild(d)});
 const tt=$("tickets");tt.replaceChildren();t.items.forEach(x=>row(tt,[x.ticket_id,x.status,x.updated_at]));
 const tr=$("traces");tr.replaceChildren();r.items.forEach(x=>row(tr,[x.ticket_id+" / "+x.step_idx,x.actual_state_s1?.status||x.actual_state_s1?.failure_code||"recorded",x.action_a0?.op||"—"]));
-const m=o.world_model||{};$("world").textContent="校准："+(m.status||"无报告")+" · 样本："+(m.samples??"—")+" · observe → enforce："+(m.allowed_mode_transition?"已签发许可":"保持阻断");
+const e=o.enforce||{};$("security").textContent="签名："+(e.signature_status||"缺失")+" · 指纹："+(e.token_fingerprint||"—").slice(0,16)+" · 账本："+(e.ledger_integrity||"缺失");
+const m=o.world_model||{};$("world").textContent="校准："+(m.status||"无报告")+" · 样本："+(m.samples??"—")+" · enforce 转换："+(m.allowed_mode_transition?"已授权":"保持阻断");
+const transforms=o.matrix_transforms||[];const mh=$("matrix-head");mh.replaceChildren();["缺陷类",...transforms].forEach(x=>{const th=document.createElement("th");th.textContent=x;mh.appendChild(th)});const mt=$("matrix");mt.replaceChildren();(o.defect_matrix||[]).forEach(x=>row(mt,[x.defect_type,...x.recall]));const rounds=o.adversarial?.rounds||[];$("convergence").textContent="逃逸率收敛："+rounds.map(x=>"R"+x.round+" "+(100*x.escape_rate).toFixed(2)+"%").join(" → ");
+const qt=$("quarantine");qt.replaceChildren();q.items.forEach(x=>{const tr=document.createElement("tr");[x.created_at||x.file,x.mode,(x.findings||[]).map(f=>f.code+" → "+f.path+":"+f.line).join(", ")].forEach(v=>cell(tr,v));const td=document.createElement("td"),pre=document.createElement("pre");pre.style.margin="0";pre.style.whiteSpace="pre-wrap";(x.preview||"(无 diff)").split("\n").slice(0,50).forEach(line=>{const span=document.createElement("span");span.textContent=line+"\n";if(line.startsWith("+"))span.style.color="var(--green)";else if(line.startsWith("-"))span.style.color="var(--red)";pre.appendChild(span)});td.appendChild(pre);tr.appendChild(td);qt.appendChild(tr)});
 const summary=f.summary||{};const repos=f.repositories||[];$("fleet").textContent="仓库 "+(summary.repositories_scanned??repos.length)+" · 交付分支 "+(summary.delivery_branches??"—")+" · 冲突 "+(summary.conflicts??"—");const total=summary.delivery_branches||0;const healthy=Math.max(0,total-(summary.conflicts||0));$("fleetbar").style.width=(total?Math.min(100,healthy/total*100):0)+"%";
 }catch(e){$("clock").textContent="读取失败："+e.message}}refresh();setInterval(refresh,3000);
 </script></body></html>'''
@@ -160,6 +166,98 @@ class DashboardReadModel:
     def fleet(self) -> dict:
         return self._fleet()
 
+    def security_state(self) -> dict:
+        """Read key/token metadata with the standard library; never load private keys."""
+        local = self.repo_root / ".aegis"
+        keys = Path(os.environ.get("AEGIS_KEYS_DIR", Path.home() / ".aegis" / "keys")).expanduser()
+        metadata = keys / "key-metadata.json"
+        token_path = local / "enforce.token"
+        fingerprint = None
+        key_expiry = None
+        key_ready = False
+        try:
+            item = json.loads(metadata.read_text(encoding="utf-8"))
+            key_expiry = item.get("expires_at")
+            fingerprint = item.get("public_key_sha256")
+            key_ready = ((keys / "ed25519-public.pem").is_file()
+                         and (keys / "ed25519-private.pem").is_file() and bool(fingerprint))
+        except (OSError, json.JSONDecodeError):
+            pass
+        token_fingerprint = fingerprint
+        signature_status = "missing"
+        token_expires = None
+        try:
+            token = token_path.read_text(encoding="ascii").strip()
+            body = token.split(".", 1)[0]
+            import base64
+            payload = json.loads(base64.urlsafe_b64decode(body + "=" * (-len(body) % 4)))
+            token_expires = payload.get("expires_at")
+            signature_status = "present_unverified" if len(token.split(".")) == 2 and key_ready else "unverified"
+        except (OSError, ValueError, UnicodeError, json.JSONDecodeError):
+            if token_path.exists():
+                signature_status = "malformed"
+        ledger_path = local / "audit.jsonl"
+        if ledger_path.is_file():
+            from .audit_ledger import AuditLedger
+            ledger = AuditLedger(ledger_path).verify()
+            ledger_status = "valid" if ledger["valid"] else "tampered"
+            if ledger["valid"]:
+                try:
+                    last = json.loads(ledger_path.read_text(encoding="utf-8").splitlines()[-1])
+                    if last.get("event") == "enforce_token_verified":
+                        signature_status = "verified"
+                    elif last.get("event") == "enforce_token_rejected":
+                        signature_status = "rejected"
+                    elif last.get("details", {}).get("enforce_authorized") is True:
+                        signature_status = "verified_at_last_gate"
+                    elif last.get("details", {}).get("enforce_reason"):
+                        signature_status = "rejected"
+                except (OSError, IndexError, json.JSONDecodeError):
+                    pass
+        else:
+            ledger_status = "missing"
+        return {"signature_status": signature_status, "token_fingerprint": token_fingerprint,
+                "key_ready": key_ready, "key_expires_at": key_expiry,
+                "token_expires_at": token_expires, "ledger_integrity": ledger_status}
+
+    def quarantine(self, limit: int = 50) -> dict:
+        directory = self.repo_root / ".aegis" / "quarantine"
+        items = []
+        if not directory.is_dir():
+            return {"items": [], "count": 0}
+        paths = sorted(directory.glob("*.json"), key=lambda path: path.stat().st_mtime, reverse=True)[:limit]
+        for meta_path in paths:
+            try:
+                metadata = json.loads(meta_path.read_text(encoding="utf-8"))
+                diff_path = meta_path.with_suffix(".diff")
+                preview = diff_path.read_text(encoding="utf-8", errors="replace")[:1200] if diff_path.is_file() else ""
+                items.append({**metadata, "file": meta_path.name, "preview": preview})
+            except (OSError, json.JSONDecodeError):
+                continue
+        return {"items": items, "count": len(items)}
+
+    def security_overview(self) -> dict:
+        state = self.security_state()
+        reports = {}
+        for key, relative in (("adversarial", "artifacts/v20_adversarial_report.json"),
+                              ("performance", "artifacts/v20_performance.json")):
+            try:
+                reports[key] = json.loads((self.repo_root / relative).read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                reports[key] = {}
+        adversarial = reports["adversarial"]
+        rounds = adversarial.get("rounds", [])
+        final = rounds[-1] if rounds else {}
+        transform_order = final.get("transforms", [])
+        matrix = []
+        for name, details in final.get("per_class", {}).items():
+            recalls = details.get("transform_recall", {})
+            matrix.append({"defect_type": name,
+                           "recall": [f"{100 * recalls.get(transform, 0.0):.1f}%" for transform in transform_order]})
+        return {"enforce": state, "adversarial": adversarial,
+                "p95_ms": reports["performance"].get("p95_ms"),
+                "matrix_transforms": transform_order, "defect_matrix": matrix}
+
 
 def create_server(repo_root: str | Path = ".", *, port: int = 8765,
                   db_path: str | Path | None = None, host: str = "127.0.0.1") -> ThreadingHTTPServer:
@@ -195,7 +293,8 @@ def create_server(repo_root: str | Path = ".", *, port: int = 8765,
                 self._send(200, _HTML.encode("utf-8"), "text/html; charset=utf-8")
                 return
             endpoints = {"/api/overview": model.overview, "/api/tickets": model.tickets,
-                         "/api/traces": model.traces, "/api/fleet": model.fleet}
+                         "/api/traces": model.traces, "/api/fleet": model.fleet,
+                         "/api/quarantine": model.quarantine}
             handler = endpoints.get(parsed.path)
             if handler is None:
                 self._json(404, {"ok": False, "error": "not_found"})
@@ -206,6 +305,8 @@ def create_server(repo_root: str | Path = ".", *, port: int = 8765,
                 if not 1 <= limit <= 500:
                     raise ValueError("limit must be 1..500")
                 payload = handler() if parsed.path in {"/api/overview", "/api/fleet"} else handler(limit)
+                if parsed.path == "/api/overview":
+                    payload.update(model.security_overview())
                 self._json(200, {"ok": True, "data": payload})
             except (ValueError, TypeError) as error:
                 self._json(400, {"ok": False, "error": str(error)})

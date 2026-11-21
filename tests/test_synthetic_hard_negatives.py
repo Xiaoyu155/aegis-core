@@ -34,8 +34,8 @@ MUTATION_CASES = [
     ("swallow_exception", "def read():\n    try:\n        return load()\n    except ValueError:\n        raise\n", "except ValueError:\n        pass"),
     ("remove_timeout_validation", "def run(timeout):\n    if not math.isfinite(timeout):\n        raise ValueError()\n", "if not True"),
     ("remove_timeout_validation", "def run(timeout):\n    if timeout <= 0:\n        raise ValueError()\n", "if False:\n        raise ValueError()"),
-    ("break_idempotency_key", "def send():\n    idempotency_key = make_key(request)\n", 'idempotency_key = "constant-key"'),
-    ("break_idempotency_key", "def send():\n    payload['idempotency_key'] = create_key()\n", 'payload[\'idempotency_key\'] = "constant-key"'),
+    ("break_idempotency_key", "def send():\n    idempotency_key = make_key(request)\n", "idempotency_key = uuid.uuid4().hex"),
+    ("break_idempotency_key", "def send():\n    payload['idempotency_key'] = create_key()\n", "payload['idempotency_key'] = uuid.uuid4().hex"),
     ("unbounded_memory_growth", "from collections import deque\nhistory = deque(maxlen=8)\n", "history = deque()"),
     ("unbounded_memory_growth", "def append(history, item):\n    history.append(item)\n    del history[:-128]\n", "history.append(item)"),
     ("weaken_test_assertion", "def test_value():\n    assert value() == 4\n", "assert True"),
@@ -210,8 +210,10 @@ def test_source_diff_is_a_real_unified_patch_with_deterministic_hash(tmp_path):
     assert _sha256_file(file) == hashlib.sha256(file.read_bytes()).hexdigest()
 
 
-def test_mutation_type_catalog_covers_six_distinct_hidden_defect_classes():
-    assert len(MUTATION_TYPES) == 6
-    assert len(set(MUTATION_TYPES)) == 6
+def test_mutation_type_catalog_covers_ten_distinct_hidden_defect_classes():
+    assert len(MUTATION_TYPES) == 10
+    assert len(set(MUTATION_TYPES)) == 10
     assert {"off_by_one_boundary", "swallow_exception", "remove_timeout_validation",
-            "break_idempotency_key", "unbounded_memory_growth", "weaken_test_assertion"} == set(MUTATION_TYPES)
+            "break_idempotency_key", "unbounded_memory_growth", "weaken_test_assertion",
+            "concurrency_lock_loss", "authorization_bypass", "failure_as_success",
+            "sql_command_injection"} == set(MUTATION_TYPES)

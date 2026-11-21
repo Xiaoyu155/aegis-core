@@ -1,0 +1,9 @@
+{
+  "candidate_sha256": "ea49d4e6fb8075b30fc61273d8b40841663460ffdda535ebf69534ded8e1ce12",
+  "defect_type": "unbounded_memory_growth",
+  "language": "javascript",
+  "round": 1,
+  "sample_id": "b286319ef1b6a987e591fc53dd7276b64e7acafb19c071271f3a9c1e9dff964b",
+  "source": "class aegis_LRUCache {\n  constructor(options) { this.limit = options.maxEntries; this.map = new Map(); }\n  set(key, value) { this.map.set(key, value); while (this.map.size > this.limit) this.map.delete(this.map.keys().next().value); }\n}\nconst cache = new aegis_LRUCache({});\n",
+  "transform": "rename"
+}
