@@ -26,6 +26,9 @@ jobs:
       - name: Install core and pytest
         if: matrix.suite != 'full' || matrix.os != 'windows-latest' || matrix.python != '3.11'
         run: python -m pip install -e ".[test]"
+      - name: Verify Windows signing-key provisioning
+        if: matrix.suite == 'full' && matrix.os == 'windows-latest' && matrix.python == '3.12'
+        run: python -m pytest -q "tests/test_luna_initialize.py::test_key_generation_and_idempotency[keys]"
       - name: Run complete suite
         if: matrix.suite == 'full' && (matrix.os != 'windows-latest' || matrix.python != '3.11')
         run: python -m pytest -v

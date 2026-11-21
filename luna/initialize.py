@@ -1,6 +1,7 @@
 """Provision Luna's local signing keys and report production preflight blockers."""
 from __future__ import annotations
 
+import base64
 import os
 from pathlib import Path
 import stat
@@ -38,32 +39,49 @@ def _windows_acl(path: Path, *, protect=False):
 $ErrorActionPreference = 'Stop'
 $path = $env:LUNA_KEY_ACL_TARGET
 $user = [Security.Principal.WindowsIdentity]::GetCurrent().User
-$acl = Get-Acl -LiteralPath $path
+$isDirectory = Test-Path -LiteralPath $path -PathType Container
 if ($env:LUNA_KEY_ACL_PROTECT -eq '1') {
+    if ($isDirectory) {
+        $acl = [Security.AccessControl.DirectorySecurity]::new()
+        $inherit = [Security.AccessControl.InheritanceFlags]'ContainerInherit, ObjectInherit'
+    } else {
+        $acl = [Security.AccessControl.FileSecurity]::new()
+        $inherit = [Security.AccessControl.InheritanceFlags]::None
+    }
+    $acl.SetOwner($user)
     $acl.SetAccessRuleProtection($true, $false)
-    foreach ($rule in @($acl.Access)) { $acl.RemoveAccessRuleSpecific($rule) }
     $rule = [Security.AccessControl.FileSystemAccessRule]::new(
-        $user, 'FullControl', 'ContainerInherit,ObjectInherit', 'None', 'Allow')
+        $user, [Security.AccessControl.FileSystemRights]::FullControl,
+        $inherit, [Security.AccessControl.PropagationFlags]::None,
+        [Security.AccessControl.AccessControlType]::Allow)
     $acl.SetAccessRule($rule)
     Set-Acl -LiteralPath $path -AclObject $acl
-    $acl = Get-Acl -LiteralPath $path
 }
-$rules = @($acl.GetAccessRules($true, $true, [Security.Principal.SecurityIdentifier]))
-if ($acl.GetOwner([Security.Principal.SecurityIdentifier]).Value -ne $user.Value -or
-    $rules.Count -ne 1 -or $rules[0].IdentityReference.Value -ne $user.Value -or
-    $rules[0].AccessControlType -ne 'Allow' -or
-    ($rules[0].FileSystemRights -band [Security.AccessControl.FileSystemRights]::FullControl) -ne
-        [Security.AccessControl.FileSystemRights]::FullControl -or
-    ((Test-Path -LiteralPath $path -PathType Container) -and !$acl.AreAccessRulesProtected)) {
-    exit 3
+$acl = Get-Acl -LiteralPath $path
+$sidType = [Security.Principal.SecurityIdentifier]
+if ($acl.GetOwner($sidType).Value -ne $user.Value) { throw 'Unexpected key owner' }
+$rules = @($acl.GetAccessRules($true, $true, $sidType))
+if ($rules.Count -ne 1) { throw 'Expected one key access rule' }
+$rule = $rules[0]
+if ($rule.IdentityReference.Value -ne $user.Value) { throw 'Unexpected key trustee' }
+if ($rule.AccessControlType -ne 'Allow') { throw 'Expected an Allow rule' }
+$full = [Security.AccessControl.FileSystemRights]::FullControl
+if (($rule.FileSystemRights -band $full) -ne $full) { throw 'Expected FullControl' }
+if ($isDirectory) {
+    $inherit = [Security.AccessControl.InheritanceFlags]'ContainerInherit, ObjectInherit'
+    if (!$acl.AreAccessRulesProtected) { throw 'Directory accepts inherited rules' }
+    if ($rule.InheritanceFlags -ne $inherit) { throw 'Key files would not inherit protection' }
+    if ($rule.PropagationFlags -ne 'None') { throw 'Unexpected access rule propagation' }
 }
 """
-    result = subprocess.run(["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", script],
+    command = base64.b64encode(script.encode("utf-16-le")).decode("ascii")
+    result = subprocess.run(["powershell.exe", "-NoProfile", "-NonInteractive", "-EncodedCommand", command],
                             env=os.environ | {"LUNA_KEY_ACL_TARGET": str(path),
                                               "LUNA_KEY_ACL_PROTECT": str(int(protect))},
                             capture_output=True, timeout=20, check=False)
     if result.returncode:
-        raise ValueError(f"无法保护或验证 Windows 密钥 ACL：{path}")
+        detail = result.stderr.decode(errors="replace").strip()[:500]
+        raise ValueError(f"无法保护或验证 Windows 密钥 ACL：{path} ({result.returncode}) {detail}")
 
 
 def _reject_link(path: Path):
@@ -124,7 +142,7 @@ def provision_keys(root: Path, requested=None) -> dict:
         if not path.is_file() or path.stat().st_nlink != 1:
             raise ValueError(f"密钥材料缺失或不是独立文件：{path}")
         if os.name == "nt":
-            _windows_acl(path)
+            _windows_acl(path, protect=created)
         elif path.stat().st_uid != os.getuid() or path.stat().st_mode & 0o022:
             raise ValueError(f"密钥文件所有者或权限不安全：{path}")
     state = inspect_keys(base)
