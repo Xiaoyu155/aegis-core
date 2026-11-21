@@ -39,7 +39,7 @@ def _windows_acl(path: Path, *, protect=False):
 $ErrorActionPreference = 'Stop'
 $path = $env:LUNA_KEY_ACL_TARGET
 $user = [Security.Principal.WindowsIdentity]::GetCurrent().User
-$isDirectory = Test-Path -LiteralPath $path -PathType Container
+$isDirectory = [IO.Directory]::Exists($path)
 if ($env:LUNA_KEY_ACL_PROTECT -eq '1') {
     if ($isDirectory) {
         $acl = [Security.AccessControl.DirectorySecurity]::new()
@@ -55,9 +55,18 @@ if ($env:LUNA_KEY_ACL_PROTECT -eq '1') {
         $inherit, [Security.AccessControl.PropagationFlags]::None,
         [Security.AccessControl.AccessControlType]::Allow)
     $acl.SetAccessRule($rule)
-    Set-Acl -LiteralPath $path -AclObject $acl
+    if ($isDirectory) {
+        [IO.Directory]::SetAccessControl($path, $acl)
+    } else {
+        [IO.File]::SetAccessControl($path, $acl)
+    }
 }
-$acl = Get-Acl -LiteralPath $path
+$sections = [Security.AccessControl.AccessControlSections]'Owner, Access'
+if ($isDirectory) {
+    $acl = [IO.Directory]::GetAccessControl($path, $sections)
+} else {
+    $acl = [IO.File]::GetAccessControl($path, $sections)
+}
 $sidType = [Security.Principal.SecurityIdentifier]
 if ($acl.GetOwner($sidType).Value -ne $user.Value) { throw 'Unexpected key owner' }
 $rules = @($acl.GetAccessRules($true, $true, $sidType))
@@ -74,6 +83,7 @@ if ($isDirectory) {
     if ($rule.PropagationFlags -ne 'None') { throw 'Unexpected access rule propagation' }
 }
 """
+    script = "try {\n" + script + "\n} catch { [Console]::Error.WriteLine($_.Exception.Message); exit 1 }"
     command = base64.b64encode(script.encode("utf-16-le")).decode("ascii")
     result = subprocess.run(["powershell.exe", "-NoProfile", "-NonInteractive", "-EncodedCommand", command],
                             env=os.environ | {"LUNA_KEY_ACL_TARGET": str(path),
