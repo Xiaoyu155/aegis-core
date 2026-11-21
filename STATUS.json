@@ -1,6 +1,6 @@
 {
   "phase": 19,
-  "status": "v2.0_pr_open_ci_in_progress",
+  "status": "v2.0_pr_open_code_validation_green",
   "version": "2.0.0",
   "branch": "feat/aegis-v2.0-autonomous-gate",
   "base_branch": "feat/aegis-v1.3-overnight",
@@ -11,7 +11,8 @@
     "head_branch": "feat/aegis-v2.0-autonomous-gate",
     "base_branch": "feat/aegis-v1.3-overnight",
     "implementation_commit_sha": "4655cede08db2d9f1b1f9c833f3cdc03f2a6de51",
-    "implementation_commit_pull_mergeable": false
+    "implementation_commit_pull_mergeable": false,
+    "validated_head_sha": "713dd53a1430817c144aa1e8fc4e3d16af9e53bf"
   },
   "preservation": {
     "baseline_tests": 1696,
@@ -955,12 +956,16 @@
       "full/v16-gates"
     ],
     "pull_request_event": {
-      "run_id": 44862965021,
-      "url": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44862965021",
-      "status": "in_progress"
+      "run_id": 44863199448,
+      "url": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44863199448",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "713dd53a1430817c144aa1e8fc4e3d16af9e53bf"
     },
-    "final_head_validation": "pending",
-    "status_commit_validation_note": "The STATUS metadata commit triggers the same 8-job matrix again."
+    "final_head_validation": "success for the validated implementation/status revision above",
+    "status_commit_validation_note": "The following status-only metadata commit triggers a new 8-job matrix; PR checks must be consulted for its final result.",
+    "completed_job_count": 8,
+    "successful_job_count": 8
   },
   "v2_0_overnight": {
     "implementation_commit_sha": "4655cede08db2d9f1b1f9c833f3cdc03f2a6de51",
