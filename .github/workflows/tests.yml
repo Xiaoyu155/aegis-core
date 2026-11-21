@@ -32,7 +32,7 @@ jobs:
       - name: Windows local handoff bootstrap (includes full pytest suite)
         if: matrix.suite == 'full' && matrix.os == 'windows-latest' && matrix.python == '3.11'
         shell: pwsh
-        run: '& ./scripts/bootstrap_local.ps1'
+        run: '& ./scripts/bootstrap_local.ps1 -TestOnly'
       - name: Run v1.1 invariant, sampling and merge preflight gates
         if: matrix.suite == 'v16-gates'
         run: python -m pytest -q tests/test_v16_frontend_invariants.py tests/test_v16_runtime_sampling.py tests/test_v16_pr_orchestrator.py tests/test_aegis_vs_gpt_zh.py

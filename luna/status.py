@@ -2,13 +2,26 @@
 from __future__ import annotations
 
 import json
+import sqlite3
 from pathlib import Path
 
 from aegis_core.env_doctor import EnvDoctor
 from aegis_core.live_dashboard import DashboardReadModel
 
 
-def status_snapshot(repo_root: str | Path = ".") -> dict:
+from .model_router import QuotaLedger, config_path, load_config
+
+
+def _quota(root, models):
+    try:
+        path = config_path(root, models)
+        config = load_config(path, root) if path.is_file() else None
+        return QuotaLedger(root, config).snapshot() if config else {"models": []}
+    except (OSError, ValueError, sqlite3.Error) as error:
+        return {"models": [], "error": str(error)}
+
+
+def status_snapshot(repo_root: str | Path = ".", *, models=None) -> dict:
     root = Path(repo_root).expanduser().resolve()
     doctor = EnvDoctor(root, cleanup=False)
     try:
@@ -35,6 +48,10 @@ def status_snapshot(repo_root: str | Path = ".") -> dict:
             "project_health": environment.get("status"),
             "tests_and_tickets": overview.get("tickets", 0),
             "running": overview.get("running", 0), "risk_interceptions": len(quarantine),
+            "ticket_timeline": dashboard.tickets(limit=100)["items"],
+            "interceptions": [{key: value for key, value in item.items() if key != "preview"}
+                              for item in quarantine],
+            "model_quota": _quota(root, models),
             "pending_acceptance": pending, "luna_runs": len(reports),
             "signing_key": "就绪" if security.get("key_ready") else "缺少或未验证",
             "disk": environment.get("disk", {}),
@@ -53,4 +70,10 @@ def format_status(snapshot: dict) -> str:
              f"磁盘可用：{disk.get('free_bytes', '未知')} bytes"]
     if snapshot.get("latest_report"):
         lines.append(f"最近战报：{snapshot['latest_report']}")
+    quota = snapshot.get("model_quota", {})
+    if quota.get("error"):
+        lines.append("配额读取失败：" + quota["error"])
+    for item in quota.get("models", []):
+        lines.append(f"{item['id']} 剩余配额：{item['tokens_remaining']} tokens / "
+                     f"{item['requests_remaining']} 次")
     return "\n".join(lines)

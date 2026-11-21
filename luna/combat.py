@@ -16,6 +16,8 @@ from aegis_core.env_doctor import EnvDoctor
 from aegis_core.enforce import inspect_keys, key_directory
 from aegis_core.sandbox import run_git
 
+from .model_router import config_path, load_config
+
 
 def _git(root: Path, *args: str, check=True):
     return run_git(root, *args, check=check).stdout.decode("utf-8", errors="replace").strip()
@@ -50,13 +52,36 @@ def _ci_state(root: Path) -> dict:
         return {"status": "unknown", "reason": type(error).__name__, "branch": branch}
 
 
-def _model_gateway(config_path: Path) -> dict:
+def _model_gateway(config_path: Path, root: Path | None = None) -> dict:
     if not config_path.is_file():
         return {"status": "blocked", "reason": "model routing configuration is missing"}
     try:
-        config = json.loads(config_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
+        production = load_config(config_path, root or config_path.parent)
+        config = json.loads(config_path.read_text(encoding="utf-8-sig")) if not production else None
+    except (OSError, ValueError):
         return {"status": "blocked", "reason": "model routing configuration is invalid"}
+    if production:
+        from urllib.parse import urlsplit
+        checked = []
+        ready = set()
+        for slot, endpoint in production.models.items():
+            reachable = False
+            if endpoint.configured:
+                parsed = urlsplit(endpoint.base_url)
+                try:
+                    with socket.create_connection((parsed.hostname, parsed.port or
+                                                   (443 if parsed.scheme == "https" else 80)),
+                                                  timeout=0.35):
+                        reachable = True
+                except (OSError, ValueError):
+                    pass
+            if reachable:
+                ready.add(slot)
+            checked.append({"slot_id": slot, "configured": endpoint.configured,
+                            "reachable": reachable, "status": "ready" if reachable else "blocked"})
+        missing = [role for role, route in production.routes.items() if ready.isdisjoint(route)]
+        return {"status": "blocked" if missing else "ready", "ready_slots": sorted(ready),
+                "checked_slots": checked, "unavailable_roles": missing}
     checked, ready = [], []
     for tier, nodes in config.get("tiers", {}).items():
         for node in nodes:
@@ -136,7 +161,7 @@ def combat_check(repo_root: str | Path = ".", *, models: str | Path | None = Non
     finally:
         doctor.cleanup_temporary_configs()
     key_state = inspect_keys(keys_dir or key_directory())
-    model_path = Path(models).expanduser().resolve() if models else root / "config" / "models.yaml"
+    model_path = config_path(root, models)
     python_ok = sys.version_info >= (3, 11)
     if environment.get("python", {}).get("expected"):
         try:
@@ -156,7 +181,7 @@ def combat_check(repo_root: str | Path = ".", *, models: str | Path | None = Non
         "git_permissions": _git_permissions(root),
         "sandbox_isolation": _sandbox_state(root),
         "ci": _ci_state(root),
-        "model_gateway": _model_gateway(model_path),
+        "model_gateway": _model_gateway(model_path, root),
     }
     status = "READY" if all(item.get("status") == "ready" for item in checks.values()) else "BLOCKED"
     blockers = [name for name, value in checks.items() if value.get("status") != "ready"]

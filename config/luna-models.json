@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "window_sec": 3600,
+  "task_token_limit": 48000,
+  "task_request_limit": 12,
+  "max_output_tokens": 4096,
+  "retries": 1,
+  "roles": {
+    "planner": [
+      "reasoning",
+      "local"
+    ],
+    "reviewer": [
+      "reasoning",
+      "local"
+    ],
+    "coder": [
+      "coding",
+      "local"
+    ]
+  },
+  "models": {
+    "reasoning": {
+      "model_env": "LUNA_REASONING_MODEL",
+      "timeout_sec": 20,
+      "token_limit": 120000,
+      "request_limit": 120,
+      "base_url_env": "LUNA_REASONING_BASE_URL",
+      "api_key_env": "LUNA_REASONING_API_KEY"
+    },
+    "coding": {
+      "model_env": "LUNA_CODING_MODEL",
+      "timeout_sec": 20,
+      "token_limit": 120000,
+      "request_limit": 120,
+      "base_url_env": "LUNA_CODING_BASE_URL",
+      "api_key_env": "LUNA_CODING_API_KEY"
+    },
+    "local": {
+      "model_env": "LUNA_LOCAL_MODEL",
+      "timeout_sec": 20,
+      "token_limit": 120000,
+      "request_limit": 120,
+      "base_url": "http://127.0.0.1:11434/v1"
+    }
+  }
+}
