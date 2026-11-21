@@ -220,7 +220,8 @@ def run_requirement(requirement: str, repo: str | Path = ".", *, models: str | P
     root = Path(repo).expanduser().resolve(strict=True)
     if not root.is_dir() or not requirement.strip():
         raise ValueError("repo must be a directory and requirement must be nonempty")
-    if _git(root, "rev-parse", "--show-toplevel") != str(root):
+    git_root = Path(_git(root, "rev-parse", "--show-toplevel")).resolve(strict=True)
+    if git_root != root:
         raise ValueError("--repo must name the Git repository root")
     recorder = FlightRecorder(root, run_id=run_id, requirement=requirement)
     plan_steps, intercepts, evidence, deliverables = [], [], [], []
