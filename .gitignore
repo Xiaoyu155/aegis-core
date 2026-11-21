@@ -3,6 +3,7 @@ __pycache__/
 .pytest_cache/
 *.egg-info/
 .worktrees/
+artifacts/luna_logs/
 *.sqlite*
 dist/
 training/runs/

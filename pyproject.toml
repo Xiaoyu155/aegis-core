@@ -11,13 +11,14 @@ dependencies = ["cryptography>=41"]
 
 [project.scripts]
 aegis = "aegis_core.cli:main"
+luna = "luna.cli:main"
 
 [project.optional-dependencies]
 test = ["pytest>=8", "numpy>=1.24", "Pillow>=10", "fonttools>=4.50"]
 training = ["numpy>=1.24"]
 
 [tool.setuptools.packages.find]
-include = ["aegis_core*"]
+include = ["aegis_core*", "luna*"]
 
 [tool.setuptools.package-data]
 aegis_core = ["data/feature_encoder.json", "data/model_weights.json", "data/replay_anchors.json.gz"]

@@ -62,11 +62,19 @@ def load_evidence(root: Path) -> dict:
     model_receipt = _read_json(root / "artifacts/mega_campaign_v14/workorders/omni-eval/v14-batch-omni-eval-1.batch.json")
     pairs = [json.loads(line) for line in (root / "datasets/grpo_tournament_pairs.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()]
 
-    milestones = status["milestones"]
+    milestones = status.get("milestones", {})
+    if "m2_runtime_profiler_sampling" not in milestones or "m3_pr_orchestrator" not in milestones:
+        # v2.0 nests the v1.6 evidence under previous_phase_16 while keeping the
+        # current release status at the top level.
+        milestones = status.get("previous_phase_16", {}).get("milestones", milestones)
     profiler = milestones["m2_runtime_profiler_sampling"]["high_frequency_probe"]
     fleet = milestones["m3_pr_orchestrator"]["fleet_audit"]
-    ci = status["github_actions"]
-    latest_successes = [r for r in ci["latest_successful_runs"] if r.get("result") == "8/8 success"]
+    ci = status.get("github_actions", {})
+    previous_ci = status.get("previous_phase_16", {}).get("github_actions", {})
+    ci_jobs = ci.get("required_jobs", ci.get("expected_jobs_per_event",
+                                                   previous_ci.get("required_jobs")))
+    ci_head = ci.get("latest_verified_head") or ci.get("pull_request_event", {}).get("head_sha") \
+        or previous_ci.get("latest_verified_head")
     counts = manifest["counts"]
     job10 = [row for row in pairs if row.get("chosen_candidate") == "job10_correct"]
     candidates = {row["rejected_candidate"]: row for row in job10}
@@ -100,8 +108,8 @@ def load_evidence(root: Path) -> dict:
     return {
         "version": status["version"],
         "tests": status["tests"]["passed"],
-        "ci_jobs": ci["required_jobs"],
-        "ci_head": ci["latest_verified_head"],
+        "ci_jobs": ci_jobs,
+        "ci_head": ci_head,
         "sft": counts["sft_examples"],
         "preference_pairs": counts["preference_pairs"],
         "truncated_rows": counts["truncated_rows"],

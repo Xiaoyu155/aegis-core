@@ -153,6 +153,17 @@ python -m aegis_core --help
 完整流程、退出码、账本位置及数据来源见 [控制塔说明](docs/control_tower.md)；
 Windows 环境初始化与 QLoRA/GRPO 启动见 [三条接管命令](LOCAL_HANDOFF.md)。
 
+## Luna 产品总控层
+
+```bash
+luna run "为订单数量加入边界校验，并为非法输入返回明确结果" --repo .
+luna status --repo .
+luna dashboard --repo .
+luna combat-check --repo .
+```
+
+Luna 面向产品需求，Aegis 继续执行确定性探针、隔离开发、变异门禁、L3 审查、签发与回放。产品日志位于 `artifacts/luna_logs/`。本地离线演练可运行 `luna run "将库存数量限制在 0 到 10，非法输入返回空值" --repo . --demo`。命令职责、外部前提与演练限制见 [Luna 产品入口](docs/luna_product.md)。
+
 ## v2.0 自治门禁
 
 v2.0 增加 Python/JS 双语硬样本、三轮红蓝逃逸评估、Ed25519 enforce 令牌、

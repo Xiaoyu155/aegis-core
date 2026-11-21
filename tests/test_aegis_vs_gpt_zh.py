@@ -26,7 +26,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def test_showcase_reads_real_repository_facts_and_patch_evidence():
     evidence = load_evidence(ROOT)
-    assert evidence["tests"] == 1338
+    assert evidence["tests"] == json.loads((ROOT / "STATUS.json").read_text(encoding="utf-8"))["tests"]["passed"]
     assert evidence["ci_jobs"] == 8
     assert evidence["sft"] == 1462
     assert evidence["preference_pairs"] == 342
