@@ -155,8 +155,9 @@ class AuditLedger:
     def verify(self) -> dict:
         # A read-only doctor/preflight on a clean checkout must not dirty it by
         # creating an empty .lock file when no audit stream has ever existed.
-        if not self.path.exists() and not self.head_path.exists():
-            return {"valid": True, "entries": 0, "head_hash": _ZERO_HASH}
+        if not self.path.exists():
+            return {"valid": False, "status": "missing", "entries": 0,
+                    "head_hash": _ZERO_HASH, "error": "audit ledger file is missing"}
         with _file_lock(self.lock_path):
             try:
                 rows = self._read_unlocked()

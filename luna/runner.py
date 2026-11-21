@@ -171,7 +171,8 @@ def _signed_package(root: Path, recorder: FlightRecorder, report_path: Path,
                 "policy_sha256": policy_sha256(engine_root),
                 "report_path": str(report_path.relative_to(root)),
                 "machine_log_path": str(recorder.machine_path.relative_to(root)),
-                "machine_log_sha256": sha256_file(recorder.machine_path)}
+                "machine_log_sha256": sha256_file(recorder.machine_path),
+                "report_sha256": sha256_file(report_path)}
     manifest_path = logs / f"{recorder.run_id}_manifest.json"
     manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, sort_keys=True,
                                         indent=2, allow_nan=False) + "\n", encoding="utf-8")
@@ -191,7 +192,7 @@ def _signed_package(root: Path, recorder: FlightRecorder, report_path: Path,
                                expected_manifest_sha256=sha256_file(manifest_path),
                                expected_policy_version="luna-v1",
                                expected_policy_sha256=manifest["policy_sha256"],
-                               directory=selected_keys)
+                               directory=selected_keys, manifest_path=manifest_path)
         if not checked.get("authorized"):
             raise LunaBlocked("Ed25519 verification rejected the delivery manifest")
         signature_path = logs / f"{recorder.run_id}_signature.json"
@@ -223,7 +224,14 @@ def run_requirement(requirement: str, repo: str | Path = ".", *, models: str | P
     git_root = Path(_git(root, "rev-parse", "--show-toplevel")).resolve(strict=True)
     if git_root != root:
         raise ValueError("--repo must name the Git repository root")
-    recorder = FlightRecorder(root, run_id=run_id, requirement=requirement)
+    dirty_before_recorder = _dirty_paths(root)
+    if dirty_before_recorder:
+        return {"status": "BLOCKED", "run_id": run_id, "reason":
+                "repository baseline must be clean before an Aegis run",
+                "machine_log": None, "report": None, "chain": None}
+    recorder_temp = tempfile.TemporaryDirectory(prefix="luna-recorder-")
+    recorder = FlightRecorder(root, run_id=run_id, requirement=requirement,
+                              directory=recorder_temp.name)
     plan_steps, intercepts, evidence, deliverables = [], [], [], []
     autopilot = None
     final_status = "BLOCKED"
@@ -358,30 +366,19 @@ def run_requirement(requirement: str, repo: str | Path = ".", *, models: str | P
         deliverables.append(f"交付分支 `{delivery['branch']}`，提交 `{delivery['commit'][:12]}`，变更 {', '.join(delivery['changed_files'])}。")
 
         report_path = recorder.report_path
-        # Render once before signing so the signed manifest binds to the exact report bytes.
-        report_path = recorder.render_report(understanding=understanding, plan=plan_steps,
-                                             interceptions=intercepts or ["未发现作弊或门禁绕过；错误候选均由 Aegis 门禁判负。"],
-                                             evidence=evidence, deliverables=deliverables,
-                                             final_status="READY_TO_REVIEW")
-        signing = _signed_package(root, recorder, report_path, delivery, engine_root, keys_dir,
-                                  demo=demo, autopilot=autopilot, requirement=requirement)
-        recorder.record("Ed25519 签发与交付包封装", command="Aegis issue_token + verify_token",
-                        verdict="SIGNATURE_VERIFIED",
-                        replay_handle=replay, details={"manifest_sha256": signing["manifest_sha256"],
-                                                      "key_fingerprint": signing["key_fingerprint"],
-                                                      "ephemeral_key": signing["ephemeral_key"]})
-        deliverables.extend([f"签名清单 SHA-256：`{signing['manifest_sha256']}`（Ed25519 验签通过）。",
-                             f"交付包 `{signing['package']}`（包含最终战报与机器日志）。",
-                             "建议：由负责人审阅交付分支后再合并；Luna 不会自动改写主分支。"])
         final_status = "SUCCEEDED"
+        deliverables.extend([f"交付分支 `{delivery['branch']}`，提交 `{delivery['commit'][:12]}`。",
+                             "最终日志与战报将由 Ed25519 清单绑定。"])
         recorder.record("任务交付完成", command="luna run", verdict=final_status,
                         diff_sha256=autopilot["winner"]["patch_sha256"], replay_handle=replay,
-                        details={"branch": delivery["branch"], "commit": delivery["commit"],
-                                 "manifest_sha256": signing["manifest_sha256"]})
-        report_path = recorder.render_report(understanding=understanding, plan=plan_steps,
-                                             interceptions=intercepts or ["未发现作弊或门禁绕过；所有候选都经过固定验收探针、变异探针和 L3 审查。"],
-                                             evidence=evidence, deliverables=deliverables,
-                                             final_status=final_status)
+                        details={"branch": delivery["branch"], "commit": delivery["commit"]})
+        recorder.relocate(root / "artifacts" / "luna_logs")
+        report_path = recorder.render_report(
+            understanding=understanding, plan=plan_steps,
+            interceptions=intercepts or ["未发现作弊或门禁绕过；所有候选都经过固定验收探针、变异探针和 L3 审查。"],
+            evidence=evidence, deliverables=deliverables, final_status=final_status)
+        signing = _signed_package(root, recorder, report_path, delivery, engine_root, keys_dir,
+                                  demo=demo, autopilot=autopilot, requirement=requirement)
         with zipfile.ZipFile(signing["package"], "w", compression=zipfile.ZIP_DEFLATED) as package:
             for path in (report_path, recorder.machine_path, Path(signing["manifest"]),
                          Path(signing["signature"]), Path(signing["patch"])):
@@ -398,6 +395,7 @@ def run_requirement(requirement: str, repo: str | Path = ".", *, models: str | P
                                                                           "BLOCKED_MISSING_CONSTRAINT"}:
             recorder.record("任务阻断", command="luna run", verdict="BLOCKED",
                             details={"reason": str(error), "error_type": type(error).__name__})
+        recorder.relocate(root / "artifacts" / "luna_logs")
         report = recorder.render_report(understanding=understanding, plan=plan_steps,
                                         interceptions=intercepts or [str(error)], evidence=evidence,
                                         deliverables=deliverables or ["未签发交付包；按阻断原因补齐前提后重跑。"],
@@ -408,3 +406,4 @@ def run_requirement(requirement: str, repo: str | Path = ".", *, models: str | P
                 "report": str(report), "chain": recorder.head_hash}
     finally:
         doctor.cleanup_temporary_configs()
+        recorder_temp.cleanup()

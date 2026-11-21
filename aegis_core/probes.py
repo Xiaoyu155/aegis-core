@@ -98,6 +98,11 @@ def classify_probe_failure(exit_code, output, *, kind, changed=False):
             r"|(?:Cannot find (?:module|package)|No module named|ModuleNotFoundError:)\s*['\"]?(?:@playwright/|playwright\b|puppeteer\b|pytest\b)"
             r"|(?:ECONNREFUSED|ERR_CONNECTION_REFUSED|EADDRINUSE|EACCES|EPERM)", output, re.I):
         return "ENVIRONMENT_UNAVAILABLE"
+    reported_errors = re.findall(r"(?m)^E\s+([A-Za-z_]\w*)\s*:", output)
+    runtime_errors = {"ZeroDivisionError", "ValueError", "TypeError", "KeyError", "IndexError",
+                      "OverflowError", "AttributeError", "RuntimeError", "NameError", "UnboundLocalError"}
+    if reported_errors and reported_errors[-1] in runtime_errors:
+        return "EXECUTION_ERROR"
     if kind == "browser_visual" and re.search(
             r"TimeoutError|(?:page|locator)\.[^\n]*Timeout\s+\d+\s*ms exceeded", output, re.I):
         return "BROWSER_WAIT_TIMEOUT"

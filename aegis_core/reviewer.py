@@ -335,7 +335,14 @@ def audit_candidate(root: Path, baseline: str, changed_files):
     audited = []
     from .invariant_guard import scan_changed_files
     invariant_report = scan_changed_files(root, changed_files, baseline=baseline)
-    for item in invariant_report["findings"]:
+    current_report = scan_changed_files(root, changed_files)
+    reviewed = {}
+    for item in [*invariant_report["findings"],
+                 *(finding for finding in current_report["findings"]
+                   if finding["severity"].upper() in {"CRITICAL", "HIGH"})]:
+        key = (item["code"], item["path"], item["symbol"], item["line"], item["detail"])
+        reviewed[key] = item
+    for item in reviewed.values():
         findings.append(Finding(item["code"], item["path"], item["symbol"], item["line"], item["detail"]))
     for relative in sorted(set(changed_files)):
         path = root / relative

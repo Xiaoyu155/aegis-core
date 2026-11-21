@@ -105,7 +105,7 @@ for (const [value, expected] of {json.dumps(cases)}) {{
   test(JSON.stringify(value), () => assert.strictEqual(fn(value), expected, 'AEGIS_ACCEPTANCE'));
 }}
 """
-        command = ["node", "--test", "--test-isolation=none", "--test-reporter=tap", filename]
+        command = ["node", "--test", "--test-reporter=tap", filename]
     return filename, source, command
 
 
@@ -135,11 +135,23 @@ def compile_probe(spec, repo, base, *, timeout=60, budget=None):
 
 
 def is_true_red(receipt):
-    output = receipt["stdout"] + "\n" + receipt["stderr"]
-    return (receipt["exit_code"] == 1 and receipt["failure_code"] == "ASSERTION_FAILED"
-            and not receipt["changed"] and
-            bool(re.search(r"AssertionError: AEGIS_ACCEPTANCE|(?m:^    AEGIS_ACCEPTANCE\s*$)", output)))
-
+    output = receipt.get("stdout", "") + "\n" + receipt.get("stderr", "")
+    if receipt.get("exit_code") != 1 or receipt.get("changed"):
+        return False
+    acceptance_failure = bool(re.search(
+        r"AssertionError: AEGIS_ACCEPTANCE|(?m:^    AEGIS_ACCEPTANCE\s*$)", output))
+    if receipt.get("failure_code") == "ASSERTION_FAILED" and acceptance_failure:
+        return True
+    if receipt.get("failure_code") != "EXECUTION_ERROR":
+        return False
+    runtime_errors = (
+        "ZeroDivisionError", "ValueError", "TypeError", "KeyError", "IndexError",
+        "OverflowError", "AttributeError", "RuntimeError", "NameError", "UnboundLocalError",
+    )
+    reported_errors = re.findall(r"(?m)^E\s+([A-Za-z_]\w*)\s*:", output)
+    if reported_errors:
+        return reported_errors[-1] in runtime_errors
+    return any(re.search(rf"(?m)^{error}\s*:", output) for error in runtime_errors)
 
 def is_true_green(receipt, cases):
     """Require evidence that all generated cases ran, even on an exit code of zero."""
