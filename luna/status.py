@@ -30,7 +30,8 @@ def status_snapshot(repo_root: str | Path = ".") -> dict:
         if rows and rows[-1].get("verdict") not in {"SUCCEEDED", "SIGNATURE_VERIFIED"}:
             pending.append({"run_id": rows[-1].get("run_id"), "verdict": rows[-1].get("verdict"),
                             "step": rows[-1].get("step")})
-    ready = not environment.get("blocking")
+    signing_key_ready = bool(security.get("key_ready"))
+    ready = not environment.get("blocking") and signing_key_ready
     return {"status": "HEALTHY" if ready else "ATTENTION_REQUIRED", "repo": str(root),
             "project_health": environment.get("status"),
             "tests_and_tickets": overview.get("tickets", 0),

@@ -120,6 +120,7 @@ def test_luna_dashboard_serves_product_status_api(tmp_path, suffix):
         with urlopen(f"http://127.0.0.1:{server.server_address[1]}/api/status{suffix}", timeout=3) as response:
             payload = json.loads(response.read())
             assert response.status == 200
+            assert payload["status"] != "HEALTHY"
             assert payload["project_health"] in {"READY", "READY_WITH_MISSING_CONFIG_TEMPLATES", "SPARSE_MODE"}
     finally:
         server.shutdown()
@@ -239,8 +240,8 @@ def test_dirty_baseline_is_logged_and_blocked_before_any_candidate_runs(tmp_path
     result = run_requirement("Fix stock bounds", root, run_id="dirty-baseline", demo=True)
     assert result["status"] == "BLOCKED"
     assert "clean" in result["reason"]
-    verified = verify_jsonl(result["machine_log"])
-    assert verified["valid"] and verified["entries"] >= 2
+    assert result["machine_log"] is None
+    assert not (root / "artifacts" / "luna_logs" / "dirty-baseline.jsonl").exists()
 
 
 def test_luna_run_end_to_end_red_intercept_green_signature_and_delivery_branch(tmp_path, capsys):

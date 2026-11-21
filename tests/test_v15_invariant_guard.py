@@ -112,7 +112,7 @@ BENIGN = [
     function("lock.release()", args="lock"),
     function("return int(balance)", "balance_units", "balance"),
     "def example():\n    return {'access_token': token}\n",
-    function("if size < 0:\n        raise ValueError()\n    return broker.place_order(size=size)",
+    function("if size <= 0:\n        raise ValueError()\n    return broker.place_order(size=size)",
              "create_order", "size, broker"),
     function("if margin == 0:\n        raise ValueError()\n    return capital / margin", "calc", "capital, margin"),
     function("if leverage == 0:\n        raise ValueError()\n    return capital / leverage",
