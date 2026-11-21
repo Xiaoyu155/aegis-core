@@ -1,69 +1,40 @@
 {
-  "phase": 18,
-  "status": "pr_open_ci_verified_for_implementation_commit",
-  "version": "1.3.0",
-  "branch": "feat/aegis-v1.3-overnight",
-  "base_branch": "feat/aegis-v1.2-precision",
-  "base_commit": "3ea69eb2daa9e88d7f58ea32ce03bcbb0b566580",
+  "phase": 19,
+  "status": "v2.0_pr_open_ci_in_progress",
+  "version": "2.0.0",
+  "branch": "feat/aegis-v2.0-autonomous-gate",
+  "base_branch": "feat/aegis-v1.3-overnight",
+  "base_commit": "cc7f2f8ff5f6f56d3c12842117339e186e01a0d0",
   "pull_request": {
-    "number": 20,
-    "url": "https://github.com/Xiaoyu155/aegis-core/pull/20",
-    "head_branch": "feat/aegis-v1.3-overnight",
-    "base_branch": "feat/aegis-v1.2-precision",
-    "implementation_commit_sha": "6887da7439d4e9401c6954be33b75ada1f4774bc",
-    "implementation_commit_pull_mergeable": null
+    "number": 21,
+    "url": "https://github.com/Xiaoyu155/aegis-core/pull/21",
+    "head_branch": "feat/aegis-v2.0-autonomous-gate",
+    "base_branch": "feat/aegis-v1.3-overnight",
+    "implementation_commit_sha": "4655cede08db2d9f1b1f9c833f3cdc03f2a6de51",
+    "implementation_commit_pull_mergeable": false
   },
   "preservation": {
-    "phase17_tests_preserved": 1500,
-    "phase17_tests_still_collected": 1500,
-    "training_directory_preserved": true,
+    "baseline_tests": 1696,
+    "current_tests_collected": 2502,
+    "existing_training_preserved": true,
     "bootstrap_local_ps1_preserved": true,
     "existing_datasets_preserved": true,
-    "new_dataset_path": "datasets/release_v13_augmented/",
+    "new_dataset_path": "datasets/release_v20/",
     "changes_under_preserved_paths": false,
     "external_business_repositories_modified": []
   },
   "tests": {
-    "total_collected": 1696,
-    "passed": 1696,
-    "new_tests": 196,
-    "new_tests_by_milestone": {
-      "m1_semantic_patcher": 54,
-      "m2_env_doctor": 45,
-      "m3_synthetic_hard_negatives": 50,
-      "m4_live_dashboard": 47
-    },
+    "total_collected": 2502,
+    "passed": 2502,
+    "failed": 0,
+    "skipped": 0,
+    "new_vs_v1_3_baseline": 806,
     "local_verification": {
       "command": "/tmp/aegis-overnight-venv/bin/python -m pytest -q",
       "python": "3.12.14",
-      "result": "1696 passed",
-      "elapsed_seconds": 453.38,
-      "loopback_http_integration": "passed with network permission enabled"
-    },
-    "github_actions": {
-      "expected_jobs_per_event": 8,
-      "passed_per_event": 8,
-      "matrix": [
-        "Linux/Windows",
-        "Python 3.11/3.12"
-      ],
-      "suites": [
-        "full",
-        "v16-gates"
-      ],
-      "push_event": {
-        "run_id": 44792549518,
-        "url": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44792549518",
-        "head_sha": "6887da7439d4e9401c6954be33b75ada1f4774bc",
-        "result": "success"
-      },
-      "pull_request_event": {
-        "run_id": 44794091049,
-        "url": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44794091049",
-        "head_sha": "6887da7439d4e9401c6954be33b75ada1f4774bc",
-        "result": "success"
-      },
-      "status_commit_validation_note": "These passing runs verify the implementation commit listed above. This STATUS metadata update triggers the same matrix again."
+      "result": "2502 passed",
+      "elapsed_seconds": 452.14,
+      "loopback_dashboard_integration": "passed"
     }
   },
   "milestones": {
@@ -958,5 +929,115 @@
     "ci_matrix": "Linux/Windows × Python 3.11/3.12; full and v16-gates suites",
     "pr_created_after_push_ci_green": true,
     "status_metadata_commit_validation": "pending"
+  },
+  "history": [
+    {
+      "phase": 18,
+      "version": "1.3.0",
+      "branch": "feat/aegis-v1.3-overnight",
+      "pull_request": {
+        "number": 20,
+        "url": "https://github.com/Xiaoyu155/aegis-core/pull/20",
+        "head_branch": "feat/aegis-v1.3-overnight",
+        "base_branch": "feat/aegis-v1.2-precision",
+        "implementation_commit_sha": "6887da7439d4e9401c6954be33b75ada1f4774bc",
+        "implementation_commit_pull_mergeable": null
+      },
+      "tests_collected": 1696,
+      "tests_passed": 1696
+    }
+  ],
+  "github_actions": {
+    "expected_jobs_per_event": 8,
+    "matrix": [
+      "Linux/Windows",
+      "Python 3.11/3.12",
+      "full/v16-gates"
+    ],
+    "pull_request_event": {
+      "run_id": 44862965021,
+      "url": "https://github.com/Xiaoyu155/aegis-core/actions/runs/44862965021",
+      "status": "in_progress"
+    },
+    "final_head_validation": "pending",
+    "status_commit_validation_note": "The STATUS metadata commit triggers the same 8-job matrix again."
+  },
+  "v2_0_overnight": {
+    "implementation_commit_sha": "4655cede08db2d9f1b1f9c833f3cdc03f2a6de51",
+    "dataset": {
+      "sample_count": 2000,
+      "hard_negative_count": 1600,
+      "hard_positive_count": 400,
+      "redlight_verified_negatives": 1600,
+      "hard_positive_tests_passed": 400,
+      "zero_token_truncation": true,
+      "tokenizer": "Qwen/Qwen2.5-Coder-3B-Instruct",
+      "manifest_sha256": "99e42d5bf22f5ce62f1ab4b3be8ce86946172662e8c8a0ffc4b1bdd66c2fc532",
+      "negative_samples_per_defect_per_language": 80,
+      "positive_samples_per_defect_per_language": 20
+    },
+    "defect_types": [
+      "off_by_one_boundary",
+      "swallow_exception",
+      "remove_timeout_validation",
+      "break_idempotency_key",
+      "unbounded_memory_growth",
+      "concurrency_lock_loss",
+      "authorization_bypass",
+      "failure_as_success",
+      "sql_command_injection",
+      "weaken_test_assertion"
+    ],
+    "adversarial_self_play": {
+      "rounds": 3,
+      "negative_attempts_per_round": 8000,
+      "hard_positives_per_round": 400,
+      "final_false_positive_rate": 0.0,
+      "final_recall": 1.0,
+      "final_per_class_min_recall": 1.0,
+      "final_escape_rate": 0.0,
+      "pre_hardening_escape_rate": 0.01,
+      "pre_hardening_escaped_samples": 80,
+      "permanent_regression_cases": 80,
+      "report": "artifacts/v20_adversarial_report.json",
+      "pre_hardening_report": "artifacts/v20_adversarial_pre_hardening.json"
+    },
+    "performance": {
+      "simulated_repository_files": 500,
+      "changed_files": 50,
+      "diff_lines": 5000,
+      "p95_ms": 2.953971999886562,
+      "total_scan_ms": 104.52028300142047,
+      "wall_ms": 120.12076600012733,
+      "peak_memory_mib": 2.7590370178222656,
+      "passed": true,
+      "report": "artifacts/v20_performance.json"
+    },
+    "enforcement": {
+      "algorithm": "Ed25519",
+      "token_issue_and_verify": "passed in isolated temporary key directory",
+      "physical_pre_commit_block_and_allow": "passed in isolated temporary Git repository",
+      "pre_push_scan": "passed",
+      "manifest_tamper_fail_closed": "passed",
+      "strict_doctor": "READY with no strict errors",
+      "audit_verify": "valid",
+      "persistent_test_keys": false,
+      "persistent_test_sandbox": false
+    },
+    "dashboard": {
+      "command": "aegis serve --port 8765",
+      "bind": "loopback only",
+      "runtime_dependencies": "Python standard library"
+    },
+    "cleanup": {
+      "worktrees_remaining": 0,
+      "pressure_sandboxes_remaining": 0,
+      "temporary_keys_remaining": 0,
+      "root_aegis_temp_ledger_removed": true
+    },
+    "limits": [
+      "The measured recall is over the released synthetic corpus and five deterministic transformations.",
+      "The JS/TS scanner uses conservative structural patterns and is not a whole-program data-flow proof."
+    ]
   }
 }
