@@ -88,7 +88,9 @@ class SelfHealLoop:
                                   "--repo", ".", "--path", relative_target,
                                   "--test", generated_command[-1], "--symbol", probe_spec["symbol"],
                                   "--max-mutants", "2",
-                                  "--timeout", str(min(1.0, timeout_sec))]
+                                  # Keep the probe viable inside short tournament budgets while
+                                  # allowing slower Windows interpreters to start on normal runs.
+                                  "--timeout", str(min(2.0, max(1.0, timeout_sec / 5.0)))]
         mutations = [mutation_probe_command, *(mutation_commands or [])]
         tournament = CandidateTournament(self.root, dynamic_commands=dynamic,
                                          mutation_commands=mutations, static_commands=static_commands,
