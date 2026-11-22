@@ -24,7 +24,7 @@ def test_dashboard_security_overview_reads_key_status_ledger_and_reports(tmp_pat
                                       "python:rename": 1.0, "javascript:rename": 0.9}}}}]}
     (artifacts / "v20_adversarial_report.json").write_text(json.dumps(sample_report), encoding="utf-8")
     overview = DashboardReadModel(repo).security_overview()
-    assert overview["enforce"]["ledger_integrity"] == "valid"
+    assert overview["enforce"]["ledger_integrity"] == "tampered"
     assert overview["p95_ms"] == 12.5
     assert overview["defect_matrix"][0]["recall"] == ["100.0%", "90.0%"]
 

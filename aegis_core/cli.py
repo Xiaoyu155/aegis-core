@@ -752,6 +752,10 @@ def main(argv: list[str] | None = None) -> int:
     synth2.add_argument("--tokenizer", default="Qwen/Qwen2.5-Coder-3B-Instruct")
     synth2.add_argument("--max-tokens", type=int, default=4096)
     synth2.add_argument("--timeout", type=float, default=180)
+    synth3 = commands.add_parser("synthesize-v21-diverse", help="build an AST-diverse v2.1 finance redlight dataset")
+    synth3.add_argument("--repo", default=".")
+    synth3.add_argument("--out")
+    synth3.add_argument("--samples", type=int, default=240)
     selfplay = commands.add_parser("self-play", help="run three deterministic red/blue evasion rounds")
     selfplay.add_argument("--dataset", default="datasets/release_v20/hard_samples_v2.jsonl")
     selfplay.add_argument("--out", default="artifacts/v20_adversarial_report.json")
@@ -1131,6 +1135,11 @@ def main(argv: list[str] | None = None) -> int:
                                          positives_per_type=args.positives_per_type,
                                          tokenizer_id=args.tokenizer, max_tokens=args.max_tokens,
                                          timeout=args.timeout)
+            code = 0
+        elif args.command == "synthesize-v21-diverse":
+            from .v20_samples import generate_v21_diverse_release
+            result = generate_v21_diverse_release(args.repo, output_dir=args.out,
+                                                  sample_count=args.samples)
             code = 0
         elif args.command == "self-play":
             from .adversarial_self_play import run_self_play

@@ -84,7 +84,11 @@ class SelfHealLoop:
         probe = compile_structured_probe(probe_spec, self.root, base, timeout=timeout_sec)
         generated_command = probe["command"]
         dynamic = [generated_command, *(dynamic_commands or [])]
-        mutation_probe_command = [*generated_command, "-k", "randomized"]
+        mutation_probe_command = [sys.executable, "-B", "-m", "aegis_core.ast_mutator",
+                                  "--repo", ".", "--path", relative_target,
+                                  "--test", generated_command[-1], "--symbol", probe_spec["symbol"],
+                                  "--max-mutants", "4",
+                                  "--timeout", str(min(1.5, timeout_sec))]
         mutations = [mutation_probe_command, *(mutation_commands or [])]
         tournament = CandidateTournament(self.root, dynamic_commands=dynamic,
                                          mutation_commands=mutations, static_commands=static_commands,

@@ -111,21 +111,34 @@ def _windows_private_key_acl_safe(private_path: Path) -> bool:
                                 timeout=10, check=False)
     except (OSError, subprocess.SubprocessError):
         return False
-    if result.returncode:
+    if result.returncode or not result.stdout.strip():
         return False
-    broad_principals = ("everyone:", "users:", "builtin\\users:",
-                        "authenticated users:", "s-1-1-0:", "s-1-5-11:",
-                        "s-1-5-32-545:")
+    broad_names = {"everyone", "users", "authenticated users", "所有人", "用户"}
+    broad_sids = {"s-1-1-0", "s-1-5-11", "s-1-5-32-545"}
+    ace_flags = {"I", "OI", "CI", "IO", "NP", "NX"}
+    known_rights = {"F", "M", "RX", "R", "W", "RD", "WD", "AD", "REA", "WEA",
+                    "RA", "WA", "AS", "RC", "WDAC", "WO", "S", "DE", "DC"}
     readable_rights = {"F", "M", "RX", "R", "RD", "RA", "REA", "RC", "WDAC"}
+    ace_pattern = re.compile(r"^\s*(?P<principal>.+?):(?P<rights>(?:\([A-Za-z]+\)\s*)+)$")
+    parsed_aces = 0
     for line in result.stdout.splitlines():
-        lowered = line.casefold().replace("/", "\\")
-        if not any(principal in lowered for principal in broad_principals):
+        match = ace_pattern.fullmatch(line)
+        if match is None:
             continue
-        rights = re.findall(r"\(([^()]*)\)", line)
-        if any(token.strip().upper() in readable_rights
-               for group in rights for token in group.split(",")):
+        principal = match.group("principal").strip().casefold().replace("/", "\\")
+        if principal == Path(private_path).name.casefold():
             return False
-    return True
+        rights = [token.upper() for token in re.findall(r"\(([A-Za-z]+)\)", match.group("rights"))]
+        if (not rights or not any(token in known_rights for token in rights)
+                or any(token not in ace_flags | known_rights for token in rights)):
+            return False
+        parsed_aces += 1
+        principal_parts = {part.strip() for part in re.split(r"[\\:\s]+", principal) if part.strip()}
+        is_broad = bool(principal_parts & broad_names or principal_parts & broad_sids
+                        or re.search(r"\bs-1-1-0\b|\bs-1-5-11\b|\bs-1-5-32-545\b", principal))
+        if is_broad and any(token in readable_rights for token in rights):
+            return False
+    return parsed_aces > 0
 
 
 def inspect_keys(directory: str | Path | None = None, *, now: datetime | None = None) -> dict:

@@ -31,7 +31,8 @@ _SQL_SELECT = re.compile(r"\bSELECT\s+\*\s+FROM\s+([\w.]+)(.*)", re.I | re.S)
 _SENSITIVE = re.compile(r"(?:^|_)(?:api_?key|access_?token|secret(?:_?key)?|password|private_?key)(?:_|$)", re.I)
 _MONEY = re.compile(r"price|balance|notional|amount|quantity|equity|pnl|profit|fee|capital|cash|margin|leverage|collateral|exposure|stake|position|volume|shares|contracts|units|qty|size|reserve|funds", re.I)
 _ORDER_SIZE = re.compile(r"quantity|qty|size|volume|notional|amount|shares|contracts|units|stake|position", re.I)
-_DIVISOR = re.compile(r"price|balance|notional|amount|quantity|equity|pnl|profit|fee|capital|cash|margin|leverage|collateral|exposure|stake|position|volume|shares|contracts|units|qty|size|reserve|funds|rate|ratio|factor|denominator|divisor|multiplier", re.I)
+_DIVISOR = re.compile(r"price|principal|balance|nav|net_asset_value|notional|amount|quantity|equity|pnl|profit|fee|capital|cash|margin|leverage|collateral|exposure|stake|position|volume|shares|contracts|units|qty|size|reserve|funds|rate|ratio|factor|denom|denominator|divisor|multiplier", re.I)
+_POSITION = re.compile(r"position|inventory|holding", re.I)
 _NETWORK_MODULES = {"requests", "httpx", "urllib3"}
 _RESOURCE_CALLS = {"connect", "acquire", "open", "Popen", "create_connection"}
 _JS_EXTENSIONS = {".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", ".html"}
@@ -399,7 +400,9 @@ def _literal_sql(node: ast.AST) -> str:
 
 
 def _variable_names(node: ast.AST) -> set[str]:
-    return {item.id for item in ast.walk(node) if isinstance(item, ast.Name)}
+    names = {item.id for item in ast.walk(node) if isinstance(item, ast.Name)}
+    names.update(_text(item) for item in ast.walk(node) if isinstance(item, ast.Attribute))
+    return names
 
 
 def _rejects_value(test: ast.AST, name: str, *, nonpositive_only: bool) -> bool | None:
@@ -460,7 +463,7 @@ def _effective_guard(node: ast.If, name: str, *, nonpositive_only: bool) -> bool
     return False
 
 
-def _clamps_variable(node: ast.stmt, name: str) -> bool:
+def _clamps_variable(node: ast.stmt, name: str, *, strictly_positive: bool = False) -> bool:
     if isinstance(node, ast.Assign):
         targets, value = node.targets, node.value
     elif isinstance(node, ast.AnnAssign):
@@ -469,7 +472,7 @@ def _clamps_variable(node: ast.stmt, name: str) -> bool:
         return False
     if value is None or not any(name in _variable_names(target) for target in targets):
         return False
-    return _has_nonnegative_floor(value, name)
+    return _has_nonnegative_floor(value, name, strictly_positive=strictly_positive)
 
 
 def _has_nonnegative_floor(expression: ast.AST, name: str, *, strictly_positive: bool = False) -> bool:
@@ -486,12 +489,47 @@ def _has_nonnegative_floor(expression: ast.AST, name: str, *, strictly_positive:
     return any(value > 0 if strictly_positive else value >= 0 for value in floors)
 
 
-def _guarded_before(function, line: int, name: str, *, nonpositive_only: bool) -> bool:
+def _guarded_before(function, line: int, name: str, *, nonpositive_only: bool,
+                    strictly_positive_floor: bool = False) -> bool:
     for statement in function.body:
         if statement.lineno >= line:
             break
         if isinstance(statement, ast.If) and _effective_guard(statement, name, nonpositive_only=nonpositive_only):
             return True
+        if _clamps_variable(statement, name, strictly_positive=strictly_positive_floor):
+            return True
+    return False
+
+
+def _rejects_negative(test: ast.AST, name: str) -> bool | None:
+    """Return which side of a simple comparison contains negative values."""
+    if not isinstance(test, ast.Compare) or len(test.ops) != 1:
+        return None
+    left, right = test.left, test.comparators[0]
+    left_is_name, right_is_name = _text(left) == name, _text(right) == name
+    other = right if left_is_name else left if right_is_name else None
+    if not isinstance(other, ast.Constant) or type(other.value) not in {int, float} or other.value != 0:
+        return None
+    operator = test.ops[0]
+    if (isinstance(operator, (ast.Lt, ast.LtE)) and left_is_name
+            or isinstance(operator, (ast.Gt, ast.GtE)) and right_is_name):
+        return True
+    if (isinstance(operator, (ast.Gt, ast.GtE)) and left_is_name
+            or isinstance(operator, (ast.Lt, ast.LtE)) and right_is_name):
+        return False
+    return None
+
+
+def _negative_value_guarded_before(function, line: int, name: str) -> bool:
+    for statement in function.body:
+        if statement.lineno >= line:
+            break
+        if isinstance(statement, ast.If):
+            rejects = _rejects_negative(statement.test, name)
+            if rejects is True and _guard_exits(statement.body):
+                return True
+            if rejects is False and _guard_exits(statement.orelse):
+                return True
         if _clamps_variable(statement, name):
             return True
     return False
@@ -582,12 +620,28 @@ class _Guard:
                     relevant_names.add(denominator)
                 if not relevant_names:
                     continue
-                guarded = all(_guarded_before(node, item.lineno, name, nonpositive_only=False)
+                guarded = all(_guarded_before(node, item.lineno, name, nonpositive_only=False,
+                                               strictly_positive_floor=True)
                               or _has_nonnegative_floor(item.right, name, strictly_positive=True)
                               for name in relevant_names)
                 if not guarded:
                     self.add("FINANCE_UNGUARDED_LEVERAGE", "finance", item,
                              f"Division by {denominator} has no effective zero or positive-value guard", symbol=symbol)
+        for item in ast.walk(node):
+            if not isinstance(item, ast.Return) or item.value is None:
+                continue
+            returned = ast.get_source_segment(self.source, item.value) or _text(item.value)
+            names = _variable_names(item.value)
+            position_names = sorted(name for name in names if _POSITION.search(name))
+            if not position_names and _POSITION.search(returned):
+                position_names = [name for name in names if _ORDER_SIZE.search(name)]
+            unsafe = [name for name in position_names
+                      if not _negative_value_guarded_before(node, item.lineno, name)
+                      and not _has_nonnegative_floor(item.value, name)]
+            if unsafe:
+                self.add("FINANCE_UNGUARDED_POSITION_RETURN", "finance", item,
+                         "Returned position-like value can remain negative without a rejecting guard: "
+                         + ", ".join(unsafe), symbol=symbol)
 
     def _database(self, node, calls, segment, symbol):
         writes = []
