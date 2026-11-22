@@ -6,8 +6,10 @@ import base64
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import stat
+import subprocess
 
 
 class EnforceError(RuntimeError):
@@ -101,6 +103,51 @@ def create_keypair(directory: str | Path | None = None, *, expires_days: int = 9
             "private_key_permissions": "0600"}
 
 
+def _windows_private_key_acl_safe(private_path: Path) -> bool:
+    """Fail closed if icacls cannot prove that broad built-in groups lack read access."""
+    try:
+        result = subprocess.run(["icacls", str(private_path)], capture_output=True,
+                                text=True, encoding="utf-8", errors="replace",
+                                timeout=10, check=False)
+    except (OSError, subprocess.SubprocessError):
+        return False
+    if result.returncode or not result.stdout.strip():
+        return False
+    broad_names = {"everyone", "users", "authenticated users", "所有人", "用户"}
+    broad_sids = {"s-1-1-0", "s-1-5-11", "s-1-5-32-545"}
+    ace_flags = {"I", "OI", "CI", "IO", "NP", "NX"}
+    known_rights = {"F", "M", "RX", "R", "W", "RD", "WD", "AD", "REA", "WEA",
+                    "RA", "WA", "AS", "RC", "WDAC", "WO", "S", "DE", "DC"}
+    readable_rights = {"F", "M", "RX", "R", "RD", "RA", "REA", "RC", "WDAC"}
+    ace_pattern = re.compile(r"^\s*(?P<principal>.+?):(?P<rights>(?:\([A-Za-z]+\)\s*)+)$")
+    parsed_aces = 0
+    path_prefix = str(private_path).replace("/", "\\")
+    for line in result.stdout.splitlines():
+        stripped_line = line.strip().replace("/", "\\")
+        # icacls prefixes the first ACE with the queried path. Exclude that
+        # prefix before identifying the principal, since e.g. C:\\Users is a
+        # path component and must not be mistaken for BUILTIN\\Users.
+        if stripped_line.casefold().startswith(path_prefix.casefold()):
+            stripped_line = stripped_line[len(path_prefix):].strip()
+        match = ace_pattern.fullmatch(stripped_line)
+        if match is None:
+            continue
+        principal = match.group("principal").strip().casefold().replace("/", "\\")
+        if principal == Path(private_path).name.casefold():
+            return False
+        rights = [token.upper() for token in re.findall(r"\(([A-Za-z]+)\)", match.group("rights"))]
+        if (not rights or not any(token in known_rights for token in rights)
+                or any(token not in ace_flags | known_rights for token in rights)):
+            return False
+        parsed_aces += 1
+        principal_parts = {part.strip() for part in re.split(r"[\\:\s]+", principal) if part.strip()}
+        is_broad = bool(principal_parts & broad_names or principal_parts & broad_sids
+                        or re.search(r"\bs-1-1-0\b|\bs-1-5-11\b|\bs-1-5-32-545\b", principal))
+        if is_broad and any(token in readable_rights for token in rights):
+            return False
+    return parsed_aces > 0
+
+
 def inspect_keys(directory: str | Path | None = None, *, now: datetime | None = None) -> dict:
     private_path, public_path, metadata_path = _paths(directory)
     state = {"algorithm": "Ed25519", "private_key_path": str(private_path),
@@ -118,7 +165,9 @@ def inspect_keys(directory: str | Path | None = None, *, now: datetime | None = 
         if not state["permissions_valid"]:
             state["errors"].append("private_key_permissions_must_be_0600")
     else:
-        state["permissions_valid"] = True
+        state["permissions_valid"] = _windows_private_key_acl_safe(private_path)
+        if not state["permissions_valid"]:
+            state["errors"].append("private_key_permissions_grant_broad_read_access")
     try:
         serialization, _, _ = _crypto()
         private_key = serialization.load_pem_private_key(private_path.read_bytes(), password=None)
@@ -193,6 +242,33 @@ def _unb64(value: str) -> bytes:
     return base64.urlsafe_b64decode(value + "=" * (-len(value) % 4))
 
 
+def _manifest_artifacts(manifest_path: str | Path, manifest: dict) -> dict[str, str]:
+    names = {"machine_log_path": "machine_log_sha256", "report_path": "report_sha256"}
+    present = any(name in manifest for name in (*names, *names.values()))
+    if not present:
+        return {}
+    if any(not isinstance(manifest.get(path_field), str) or
+           not isinstance(manifest.get(hash_field), str) or
+           not re.fullmatch(r"[a-f0-9]{64}", manifest[hash_field])
+           for path_field, hash_field in names.items()):
+        raise ValueError("manifest must bind both the final machine log and report hashes")
+    repository = Path(manifest.get("repository", Path(manifest_path).resolve().parent.parent.parent))
+    if not repository.is_absolute():
+        repository = Path(manifest_path).resolve().parent / repository
+    repository = repository.resolve()
+    hashes = {}
+    for path_field, hash_field in names.items():
+        relative = Path(manifest[path_field])
+        artifact = (repository / relative).resolve()
+        if relative.is_absolute() or not artifact.is_relative_to(repository):
+            raise ValueError("manifest artifact path escapes repository")
+        actual = manifest_sha256(artifact)
+        if actual != manifest[hash_field]:
+            raise ValueError(f"manifest artifact hash mismatch: {path_field}")
+        hashes[relative.as_posix()] = actual
+    return hashes
+
+
 def issue_token(manifest_path: str | Path, *, policy_version: str,
                 expires_in_seconds: int = 3600, directory: str | Path | None = None,
                 policy_digest: str | None = None,
@@ -211,9 +287,17 @@ def issue_token(manifest_path: str | Path, *, policy_version: str,
     if current.tzinfo is None:
         current = current.replace(tzinfo=timezone.utc)
     issued = current.astimezone(timezone.utc)
+    manifest_file = Path(manifest_path).expanduser().resolve()
+    manifest_digest = manifest_sha256(manifest_file)
+    try:
+        manifest_data = json.loads(manifest_file.read_text(encoding="utf-8"))
+        artifacts = _manifest_artifacts(manifest_file, manifest_data)
+    except (OSError, json.JSONDecodeError, TypeError, ValueError) as error:
+        raise EnforceError("invalid delivery manifest artifacts: " + str(error)) from error
     payload = {"schema_version": "aegis.enforce_token.v1", "algorithm": "Ed25519",
-               "manifest_sha256": manifest_sha256(manifest_path), "policy_version": policy_version,
+               "manifest_sha256": manifest_digest, "policy_version": policy_version,
                "policy_sha256": policy_digest,
+               "artifacts_sha256": artifacts or None,
                "issued_at": issued.isoformat(),
                "expires_at": (issued + timedelta(seconds=expires_in_seconds)).isoformat()}
     body = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"),
@@ -226,7 +310,7 @@ def issue_token(manifest_path: str | Path, *, policy_version: str,
 
 def verify_token(token: str, *, expected_manifest_sha256: str,
                  expected_policy_version: str, expected_policy_sha256: str | None = None,
-                 directory: str | Path | None = None,
+                 directory: str | Path | None = None, manifest_path: str | Path | None = None,
                  now: datetime | None = None) -> dict:
     try:
         payload_part, signature_part = token.split(".", 1)
@@ -262,6 +346,20 @@ def verify_token(token: str, *, expected_manifest_sha256: str,
         return {"authorized": False, "reason": "token_expired", "payload": payload}
     if payload.get("manifest_sha256") != expected_manifest_sha256:
         return {"authorized": False, "reason": "manifest_mismatch", "payload": payload}
+    artifact_hashes = payload.get("artifacts_sha256")
+    if artifact_hashes:
+        if manifest_path is None:
+            return {"authorized": False, "reason": "artifacts_unverified", "payload": payload}
+        try:
+            path = Path(manifest_path).expanduser().resolve()
+            if manifest_sha256(path) != expected_manifest_sha256:
+                return {"authorized": False, "reason": "manifest_mismatch", "payload": payload}
+            manifest_data = json.loads(path.read_text(encoding="utf-8"))
+            if _manifest_artifacts(path, manifest_data) != artifact_hashes:
+                return {"authorized": False, "reason": "artifact_mismatch", "payload": payload}
+        except (OSError, json.JSONDecodeError, TypeError, ValueError) as error:
+            return {"authorized": False, "reason": "artifact_mismatch", "detail": str(error),
+                    "payload": payload}
     if payload.get("policy_version") != expected_policy_version:
         return {"authorized": False, "reason": "policy_mismatch", "payload": payload}
     if payload.get("policy_sha256") != expected_policy_sha256:

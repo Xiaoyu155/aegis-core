@@ -5,17 +5,18 @@ import json
 from pathlib import Path
 
 from aegis_core.env_doctor import EnvDoctor
+from aegis_core.enforce import inspect_keys, key_directory
 from aegis_core.live_dashboard import DashboardReadModel
 
 
-def status_snapshot(repo_root: str | Path = ".") -> dict:
+def status_snapshot(repo_root: str | Path = ".", *, dashboard: DashboardReadModel | None = None) -> dict:
     root = Path(repo_root).expanduser().resolve()
     doctor = EnvDoctor(root, cleanup=False)
     try:
         environment = doctor.check(strict=False)
     finally:
         doctor.cleanup_temporary_configs()
-    dashboard = DashboardReadModel(root)
+    dashboard = dashboard or DashboardReadModel(root)
     overview = dashboard.overview()
     security = dashboard.security_overview().get("enforce", {})
     quarantine = dashboard.quarantine(limit=500).get("items", [])
@@ -30,13 +31,16 @@ def status_snapshot(repo_root: str | Path = ".") -> dict:
         if rows and rows[-1].get("verdict") not in {"SUCCEEDED", "SIGNATURE_VERIFIED"}:
             pending.append({"run_id": rows[-1].get("run_id"), "verdict": rows[-1].get("verdict"),
                             "step": rows[-1].get("step")})
-    ready = not environment.get("blocking")
+    key_state = inspect_keys(key_directory())
+    signing_key_ready = key_state.get("valid") is True
+    ready = not environment.get("blocking") and signing_key_ready and not pending
     return {"status": "HEALTHY" if ready else "ATTENTION_REQUIRED", "repo": str(root),
             "project_health": environment.get("status"),
             "tests_and_tickets": overview.get("tickets", 0),
             "running": overview.get("running", 0), "risk_interceptions": len(quarantine),
             "pending_acceptance": pending, "luna_runs": len(reports),
-            "signing_key": "就绪" if security.get("key_ready") else "缺少或未验证",
+            "signing_key": "就绪" if signing_key_ready else "缺少或未验证",
+            "key_state": key_state,
             "disk": environment.get("disk", {}),
             "latest_report": str(reports[-1]) if reports else None}
 

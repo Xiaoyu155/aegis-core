@@ -97,11 +97,17 @@ def tree_hash(root: Path) -> str:
 
 
 def run_exam_gate(worktree_path: Path, test_cmd: str | list[str] = "pytest", *, timeout: float = 60,
-                  probe_kind="unit", probe_script_sha256=None, probe_runtime_sha256=None) -> dict:
+                  probe_kind="unit", probe_script_sha256=None, probe_runtime_sha256=None,
+                  environment_overrides: dict[str, str] | None = None) -> dict:
     path = Path(worktree_path).resolve()
     command = shlex.split(test_cmd, posix=os.name != "nt") if isinstance(test_cmd, str) else list(test_cmd)
     if not command:
         raise ValueError("empty exam command")
+    if environment_overrides is not None:
+        if (type(environment_overrides) is not dict
+                or any(type(key) is not str or type(value) is not str
+                       for key, value in environment_overrides.items())):
+            raise ValueError("environment_overrides must map strings to strings")
     before = tree_hash(path)
     timed_out = False
     killed_process_group = False
@@ -116,6 +122,7 @@ def run_exam_gate(worktree_path: Path, test_cmd: str | list[str] = "pytest", *, 
         with tempfile.TemporaryDirectory(prefix="aegis-pycache-") as cache:
             environment = dict(os.environ, PYTHONPYCACHEPREFIX=cache,
                                PYTHONDONTWRITEBYTECODE="1")
+            environment.update(environment_overrides or {})
             options = {}
             if os.name == "nt":
                 options["creationflags"] = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)

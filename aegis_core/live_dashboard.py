@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import sqlite3
+import time
 from urllib.parse import parse_qs, urlsplit
 
 
@@ -32,7 +33,7 @@ function row(table,values){const tr=document.createElement("tr");values.forEach(
 async function get(path){const r=await fetch(path,{cache:"no-store"});if(!r.ok)throw Error(r.status);return(await r.json()).data}
 async function refresh(){try{const o=await get("/api/overview"),t=await get("/api/tickets"),r=await get("/api/traces"),f=await get("/api/fleet"),q=await get("/api/quarantine");
 $("clock").textContent="最后更新 "+new Date().toLocaleTimeString();$("overview").replaceChildren();
-[["工单总数",o.tickets],["运行中",o.running],["探针轨迹",o.traces],["拦截记录",o.interceptions],["enforce 签名",o.enforce?.signature_status||"未启用"],["扫描 P95",(o.p95_ms??"—")+" ms"]].forEach(([label,value])=>{const d=document.createElement("div");d.className="card";const a=document.createElement("div");a.className="label";a.textContent=label;const b=document.createElement("div");b.className="value";b.textContent=esc(value);d.append(a,b);$("overview").appendChild(d)});
+[["项目状态",o.status||"未知"],["项目健康度",o.project_health||"未知"],["工单总数",o.tickets],["运行中",o.running],["探针轨迹",o.traces],["拦截记录",o.interceptions],["enforce 签名",o.enforce?.signature_status||"未启用"],["扫描 P95",(o.p95_ms??"—")+" ms"]].forEach(([label,value])=>{const d=document.createElement("div");d.className="card";const a=document.createElement("div");a.className="label";a.textContent=label;const b=document.createElement("div");b.className="value "+(label==="项目状态"?(value==="HEALTHY"?"ok":"warn"):"");b.textContent=esc(value);d.append(a,b);$("overview").appendChild(d)});
 const tt=$("tickets");tt.replaceChildren();t.items.forEach(x=>row(tt,[x.ticket_id,x.status,x.updated_at]));
 const tr=$("traces");tr.replaceChildren();r.items.forEach(x=>row(tr,[x.ticket_id+" / "+x.step_idx,x.actual_state_s1?.status||x.actual_state_s1?.failure_code||"recorded",x.action_a0?.op||"—"]));
 const e=o.enforce||{};$("security").textContent="签名："+(e.signature_status||"缺失")+" · 指纹："+(e.token_fingerprint||"—").slice(0,16)+" · 账本："+(e.ledger_integrity||"缺失");
@@ -266,6 +267,14 @@ def create_server(repo_root: str | Path = ".", *, port: int = 8765,
     if host not in {"127.0.0.1", "localhost", "::1"}:
         raise ValueError("dashboard binds to loopback only")
     model = DashboardReadModel(repo_root, db_path)
+    from functools import lru_cache
+    from luna.status import status_snapshot
+
+    @lru_cache(maxsize=1)
+    def _product_status_cache_key(_refresh_window: int):
+        # One stable status snapshot per second keeps the shared read model
+        # responsive when several browser requests refresh concurrently.
+        return status_snapshot(repo_root, dashboard=model)
 
     class Handler(BaseHTTPRequestHandler):
         server_version = "AegisDashboard/1.0"
@@ -307,6 +316,13 @@ def create_server(repo_root: str | Path = ".", *, port: int = 8765,
                 payload = handler() if parsed.path in {"/api/overview", "/api/fleet"} else handler(limit)
                 if parsed.path == "/api/overview":
                     payload.update(model.security_overview())
+                    product_status = _product_status_cache_key(int(time.monotonic()))
+                    payload.update({"status": product_status["status"],
+                                    "project_health": product_status.get("project_health"),
+                                    "pending_acceptance_count": len(product_status.get("pending_acceptance", [])),
+                                    "signing_key": product_status.get("signing_key"),
+                                    "tests_and_tickets": payload.get("tickets", 0)})
+                    payload.setdefault("enforce", {})["key_ready"] = product_status["key_state"].get("valid", False)
                 self._json(200, {"ok": True, "data": payload})
             except (ValueError, TypeError) as error:
                 self._json(400, {"ok": False, "error": str(error)})

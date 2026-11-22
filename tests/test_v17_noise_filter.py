@@ -21,9 +21,9 @@ NOISY_ASSETS = [
     ("prototypes/checkout.html", "static_html_prototype"),
     ("原型_columns.html", "static_html_prototype"),
     ("mockups/landing.html", "static_html_prototype"),
-    ("play/engine/game.js", "static_html_prototype"),
+    ("play/engine/game.js", None),
     ("eval/check-platform-config.js", "offline_evaluation_script"),
-    ("backend/scripts/updateIndex.js", "offline_script"),
+    ("backend/scripts/updateIndex.js", None),
     ("docs/snippets/request.js", "documentation_example"),
     ("fixtures\\legacy\\page.html", "test_fixture"),
 ]
@@ -33,12 +33,15 @@ NOISY_ASSETS = [
 def test_nonproduction_asset_paths_are_classified_and_suppressed(path, reason):
     result = classify_asset(path, "<script>eval(input)</script>")
     assert result["suppression_reason"] == reason
-    assert result["scope"] == "excluded_noise"
+    assert result["scope"] == ("excluded_noise" if reason else "first_party")
     source = ("<script>function run(input) { eval(input); }</script>"
               if path.lower().endswith(".html") else "function run(input) { eval(input); }")
     findings = inspect_source(source, path)
     assert findings
-    assert all(item["confidence"] == "SUPPRESSED_NOISE" for item in findings)
+    if reason is None:
+        assert all(item["confidence"] in {"CRITICAL", "HIGH", "MEDIUM"} for item in findings)
+    else:
+        assert all(item["confidence"] == "SUPPRESSED_NOISE" for item in findings)
     assert all(item["suppression_reason"] == reason for item in findings)
 
 
@@ -141,11 +144,10 @@ def test_timeout_without_a_valid_positive_default_remains_visible(source):
 
 
 @pytest.mark.parametrize("provider", ["wx", "tt", "ks", "my"])
-def test_miniapp_framework_finite_request_timeout_is_not_reported_as_missing(provider):
+def test_miniapp_request_without_explicit_timeout_is_reported(provider):
     findings = inspect_source(f"function load() {{ return {provider}.request({{ url: '/x' }}); }}", "src/api.js")
-    assert len(findings) == 1
-    assert findings[0]["confidence"] == "SUPPRESSED_NOISE"
-    assert findings[0]["suppression_reason"] == f"framework_default_timeout:{provider}.request"
+    assert any(item["code"] == "NETWORK_REQUEST_NO_TIMEOUT"
+               and item["confidence"] in {"HIGH", "MEDIUM"} for item in findings)
 
 
 @pytest.mark.parametrize("config,call", [
@@ -154,7 +156,7 @@ def test_miniapp_framework_finite_request_timeout_is_not_reported_as_missing(pro
     ('{"networkTimeout":{"request":3500}}', "ks.request({url:'/x'})"),
     ('{"networkTimeout":{"request":2000}}', "my.request({url:'/x'})"),
 ])
-def test_repository_miniapp_default_timeout_is_applied_to_changed_files(config, call, tmp_path):
+def test_repository_miniapp_default_timeout_does_not_suppress_changed_files(config, call, tmp_path):
     root = tmp_path / "miniapp"
     root.mkdir()
     (root / "app.json").write_text(config, encoding="utf-8")
@@ -167,9 +169,8 @@ def test_repository_miniapp_default_timeout_is_applied_to_changed_files(config, 
     base = subprocess.run(["git", "rev-parse", "HEAD"], cwd=root, check=True, capture_output=True, text=True).stdout.strip()
     (root / "index.js").write_text(f"function load() {{ {call}; }}\n", encoding="utf-8")
     report = scan_changed_files(root, ["index.js"], baseline=base)
-    assert report["findings"] == []
-    assert len(report["suppressed_findings"]) == 1
-    assert report["suppressed_findings"][0]["suppression_reason"].startswith("configured_timeout:repository_config")
+    assert any(item["code"] == "NETWORK_REQUEST_NO_TIMEOUT" for item in report["findings"])
+    assert report["suppressed_findings"] == []
 
 
 def test_noise_is_separated_from_gate_blocking_findings():

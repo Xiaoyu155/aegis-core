@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import ast
 import difflib
 import hashlib
 import json
@@ -460,4 +461,133 @@ def generate_v20_release(repo_root: str | Path = ".", *, output_dir: str | Path 
             output.rmdir()
         os.replace(staging, output)
     return {"status": "complete", "output": output.as_posix(), "manifest": manifest}
+
+
+_V21_NUMERATORS = (
+    "amount", "(amount + fee)", "(amount - fee)", "(amount * rate)",
+    "(amount + fee * rate)", "max(amount, fee)", "min(amount, fee)",
+    "abs(amount)", "(amount * rate + fee)", "sum((amount, fee))",
+)
+_V21_OPERATORS = ("/", "//", "%")
+_V21_DENOMINATORS = ("principal", "reserve", "rate", "fee", "amount")
+_V21_WRAPPERS = (
+    "return {expression}",
+    "value = {expression}\nreturn value",
+    "if enabled:\n    return {expression}\nreturn 0",
+    "try:\n    return {expression}\nexcept TypeError:\n    return 0",
+    "for _index in range(2):\n    value = {expression}\n    return value\nreturn 0",
+    "return {{'risk': {expression}}}",
+    "return ({expression}, amount)",
+    "return max(0, {expression})",
+)
+
+
+class _SkeletonNormalizer(ast.NodeTransformer):
+    """Erase identifiers and literals so diversity counts syntax, not naming."""
+
+    def visit_Name(self, node):
+        node.id = "IDENT"
+        return node
+
+    def visit_arg(self, node):
+        node.arg = "ARG"
+        return node
+
+    def visit_FunctionDef(self, node):
+        node.name = "FUNCTION"
+        return self.generic_visit(node)
+
+    def visit_Constant(self, node):
+        if type(node.value) in {int, float}:
+            node.value = 0
+        elif type(node.value) is str:
+            node.value = "STRING"
+        return node
+
+
+def ast_structure_skeleton(source: str) -> str:
+    tree = _SkeletonNormalizer().visit(ast.parse(source))
+    return ast.dump(ast.fix_missing_locations(tree), annotate_fields=True, include_attributes=False)
+
+
+def _v21_source(index: int) -> str:
+    shape_index = index % (len(_V21_NUMERATORS) * len(_V21_OPERATORS))
+    numerator = _V21_NUMERATORS[shape_index // len(_V21_OPERATORS)]
+    operator = _V21_OPERATORS[shape_index % len(_V21_OPERATORS)]
+    denominator = _V21_DENOMINATORS[index % len(_V21_DENOMINATORS)]
+    wrapper = _V21_WRAPPERS[(index // (len(_V21_NUMERATORS) * len(_V21_OPERATORS))) % len(_V21_WRAPPERS)]
+    expression = f"{numerator} {operator} {denominator}"
+    body = wrapper.format(expression=expression)
+    return ("def calculate_risk(amount, principal, fee=1, rate=2, reserve=3, enabled=True):\n"
+            + "\n".join("    " + line for line in body.splitlines()) + "\n")
+
+
+def generate_v21_diverse_release(repo_root: str | Path = ".", *, output_dir: str | Path | None = None,
+                                 sample_count: int = 240) -> dict:
+    """Create executable-to-scan finance negatives with audited AST diversity."""
+    if type(sample_count) is not int or not 200 <= sample_count <= 2000:
+        raise ValueError("sample_count must be in 200..2000")
+    root = Path(repo_root).resolve()
+    output = Path(output_dir) if output_dir else root / "datasets" / "release_v21_diverse"
+    if not output.is_absolute():
+        output = root / output
+    output = output.resolve()
+    if output.exists() and any(output.iterdir()):
+        raise FileExistsError(f"refusing to overwrite a nonempty release directory: {output}")
+    templates = []
+    unique_templates = []
+    repeated_templates = []
+    skeleton_hashes = set()
+    for candidate_index in range(240):
+        source = _v21_source(candidate_index)
+        findings = [item for item in scan_text(source, f"samples/risk_{candidate_index:04d}.py")
+                    if item["code"] == "UNGUARDED_DIVISOR"]
+        if not findings:
+            raise RuntimeError(f"sample {candidate_index} did not trigger its expected financial redlight")
+        skeleton = ast_structure_skeleton(source)
+        skeleton_hash = hashlib.sha256(skeleton.encode("utf-8")).hexdigest()
+        template = (source, skeleton_hash)
+        templates.append(template)
+        if skeleton_hash in skeleton_hashes:
+            repeated_templates.append(template)
+        else:
+            skeleton_hashes.add(skeleton_hash)
+            unique_templates.append(template)
+    ordered_templates = [*unique_templates, *repeated_templates]
+    while len(ordered_templates) < sample_count:
+        ordered_templates.extend(templates[:min(len(templates), sample_count - len(ordered_templates))])
+    samples = []
+    selected_skeleton_hashes = set()
+    for index, (source, skeleton_hash) in enumerate(ordered_templates[:sample_count]):
+        selected_skeleton_hashes.add(skeleton_hash)
+        row = {"sample_id": f"v21-risk-{index:04d}", "defect_type": "unguarded_financial_division",
+               "language": "python", "source": source,
+               "source_sha256": hashlib.sha256(source.encode("utf-8")).hexdigest(),
+               "ast_skeleton_sha256": skeleton_hash,
+               "expected_finding": "UNGUARDED_DIVISOR"}
+        row["sample_sha256"] = hashlib.sha256(_canonical_line(row).encode("utf-8")).hexdigest()
+        samples.append(row)
+    if len(selected_skeleton_hashes) < 200:
+        raise RuntimeError(f"only {len(selected_skeleton_hashes)} distinct normalized AST skeletons were generated")
+    payload = "".join(_canonical_line(row) + "\n" for row in samples)
+    payload_hash = hashlib.sha256(payload.encode("utf-8")).hexdigest()
+    manifest = {"schema_version": "aegis.release_v21_diverse.v1", "sample_count": sample_count,
+                "distinct_ast_skeleton_count": len(selected_skeleton_hashes),
+                "distinct_ast_skeleton_sha256": sorted(selected_skeleton_hashes),
+                "normalized_ast_skeleton": "ast.dump after replacing identifiers and numeric/string literals",
+                "redlight_finding": "UNGUARDED_DIVISOR",
+                "samples_sha256": payload_hash, "generator": "aegis_core.v20_samples.generate_v21_diverse_release"}
+    output.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix=".aegis-v21-diverse-", dir=output.parent) as temporary:
+        staging = Path(temporary) / output.name
+        staging.mkdir()
+        (staging / "samples.jsonl").write_text(payload, encoding="utf-8", newline="")
+        (staging / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False,
+                                                            sort_keys=True, indent=2) + "\n",
+                                                 encoding="utf-8", newline="")
+        if output.exists() and not any(output.iterdir()):
+            output.rmdir()
+        os.replace(staging, output)
+    return {"status": "complete", "output": output.as_posix(),
+            "manifest": manifest, "samples_sha256": payload_hash}
 

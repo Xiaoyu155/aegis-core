@@ -30,7 +30,6 @@ _NOISE_DIRECTORIES = {
     "__fixtures__": "test_fixture",
     "test-fixtures": "test_fixture",
     "eval": "offline_evaluation_script",
-    "scripts": "offline_script",
     "tools": "offline_tooling",
     "probe": "offline_probe",
     "probes": "offline_probe",
@@ -74,8 +73,6 @@ def classify_asset(path: str, source: str = "") -> dict:
             r"three(?:\.module)?\.js|gltfloader|copyright|license|three\.js", source[:12000], re.I):
         reason = "vendored_dependency"
     if reason is None and any(marker in lower for marker in ("原型", "prototype", "mockup", "static-prototype")):
-        reason = "static_html_prototype"
-    if reason is None and "play" in segments and parsed.suffix.lower() in {".html", ".js", ".mjs", ".jsx", ".ts", ".tsx"}:
         reason = "static_html_prototype"
     if reason is None and parsed.suffix.lower() == ".html":
         if any(token in segments for token in ("prototype", "prototypes", "mockup", "mockups", "static-prototype")):
@@ -267,21 +264,6 @@ def _configured_timeout_reason(finding: dict, source: str, context_sources: Iter
         for client in configured_clients:
             if re.search(rf"\b{re.escape(client)}\s*\.\s*(?:get|post|put|patch|delete|request)\s*\(", current_line):
                 return f"configured_timeout:{origin}:{client}.defaults"
-        miniapp_configured = bool(re.search(
-            rf"\bnetworkTimeout\s*:\s*\{{[^}}]*\brequest\s*:\s*{_POSITIVE_TIMEOUT}\b", masked_text, re.I | re.S))
-        if not miniapp_configured:
-            try:
-                payload = json.loads(text)
-            except (json.JSONDecodeError, TypeError):
-                payload = None
-            if isinstance(payload, dict):
-                network_timeout = payload.get("networkTimeout")
-                request_timeout = network_timeout.get("request") if isinstance(network_timeout, dict) else None
-                miniapp_configured = (isinstance(request_timeout, (int, float)) and
-                                      not isinstance(request_timeout, bool) and request_timeout > 0)
-        uses_miniapp = bool(re.search(r"\b(?:wx|tt|ks|my)\s*\.\s*request\s*\(", current_line))
-        if miniapp_configured and uses_miniapp:
-            return f"configured_timeout:{origin}:miniapp_networkTimeout.request"
         aliases = re.finditer(
             r"(?:const|let|var)\s+([\w$]+)\s*=\s*(?:axios|http|client)\.create\s*\(\s*\{[^}]*\btimeout\s*:\s*([\w$]+)",
             masked_text, re.I | re.S)
@@ -291,9 +273,6 @@ def _configured_timeout_reason(finding: dict, source: str, context_sources: Iter
                 continue
             if re.search(rf"\b{re.escape(alias)}\s*\.\s*(?:get|post|put|patch|delete|request)\s*\(", current_line):
                 return f"configured_timeout:{origin}:{alias}.create"
-    platform = re.search(r"\b(wx|tt|ks|my)\s*\.\s*request\s*\(", current_line)
-    if platform:
-        return f"framework_default_timeout:{platform.group(1)}.request"
     return None
 
 

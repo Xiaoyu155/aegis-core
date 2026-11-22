@@ -6,6 +6,7 @@ import hashlib
 import json
 import re
 from pathlib import Path
+import shutil
 import os
 import uuid
 
@@ -36,14 +37,15 @@ class FlightRecorder:
     """Append durable, tamper-evident events and render the five-part PM report."""
 
     def __init__(self, repo_root: str | Path, run_id: str | None = None,
-                 requirement: str = "") -> None:
+                 requirement: str = "", *, directory: str | Path | None = None) -> None:
         self.root = Path(repo_root).resolve()
         self.run_id = (run_id if run_id is not None else
                        datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
                        + "-" + uuid.uuid4().hex[:8])
         if not _RUN_ID.fullmatch(self.run_id):
             raise ValueError("run_id may contain only letters, digits, dot, underscore and hyphen")
-        self.directory = self.root / "artifacts" / "luna_logs"
+        self.directory = Path(directory).expanduser().resolve() if directory else (
+            self.root / "artifacts" / "luna_logs")
         self.directory.mkdir(parents=True, exist_ok=True)
         self.machine_path = self.directory / f"{self.run_id}.jsonl"
         self.report_path = self.directory / f"{self.run_id}_report.md"
@@ -54,6 +56,21 @@ class FlightRecorder:
         self.requirement = requirement
         self.events: list[dict] = []
         self.head_hash = ZERO_HASH
+
+    def relocate(self, directory: str | Path) -> None:
+        """Move the active log to persistent storage after Git baselines are frozen."""
+        destination = Path(directory).expanduser().resolve()
+        if destination == self.directory:
+            return
+        destination.mkdir(parents=True, exist_ok=True)
+        machine = destination / self.machine_path.name
+        report = destination / self.report_path.name
+        if machine.exists() or report.exists():
+            raise FileExistsError(f"Luna run id already exists: {self.run_id}")
+        shutil.move(str(self.machine_path), str(machine))
+        self.directory = destination
+        self.machine_path = machine
+        self.report_path = report
 
     def record(self, step: str, *, command=None, diff_sha256: str | None = None,
                probe_elapsed_ms: float | None = None, verdict: str = "RECORDED",

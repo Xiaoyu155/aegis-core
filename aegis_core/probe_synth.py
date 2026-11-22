@@ -25,6 +25,12 @@ COLLECTION = re.compile(
     rf"for (?:invalid inputs?|non-string events)\.?",
     re.IGNORECASE,
 )
+POSITIVE_FORMULA = re.compile(
+    r"(?P<path>[\w./-]+\.py)::(?P<symbol>[A-Za-z_]\w*) raises ValueError when "
+    r"(?P<argument>[A-Za-z_]\w*) <= 0 and returns (?P<numerator>[1-9][0-9]{0,8}) // "
+    r"(?P=argument) for positive integers\.?",
+    re.IGNORECASE,
+)
 PROBE_NAMES = {".py": "tests/test_aegis_probe.py", ".js": "tests/test_aegis_probe.mjs",
                ".mjs": "tests/test_aegis_probe.mjs", ".cjs": "tests/test_aegis_probe.mjs"}
 def _new_file_patch(filename, source):
@@ -35,14 +41,20 @@ def _new_file_patch(filename, source):
 
 
 def acceptance_rule(intent):
-    match = CLAMP.fullmatch(intent.strip()) or COLLECTION.fullmatch(intent.strip())
+    match = (POSITIVE_FORMULA.fullmatch(intent.strip()) or CLAMP.fullmatch(intent.strip())
+             or COLLECTION.fullmatch(intent.strip()))
     if match is None:
         return None
     rule = match.groupdict()
-    rule["kind"] = "clamp" if "low" in rule else "distinct_events"
+    if "numerator" in rule:
+        rule["kind"] = "positive_formula"
+        rule["numerator"] = int(rule["numerator"])
+    else:
+        rule["kind"] = "clamp" if "low" in rule else "distinct_events"
     if rule["kind"] == "clamp":
         rule["low"], rule["high"] = int(rule["low"]), int(rule["high"])
-    rule["fallback"] = None if rule["fallback"].lower() in {"none", "null"} else int(rule["fallback"])
+    if "fallback" in rule:
+        rule["fallback"] = None if rule["fallback"].lower() in {"none", "null"} else int(rule["fallback"])
     path = Path(rule["path"])
     if path.is_absolute() or ".." in path.parts or rule.get("low", 0) > rule.get("high", 0):
         raise ValueError("invalid acceptance target or integer interval")
@@ -53,6 +65,10 @@ def expected_value(rule, value):
     if rule["kind"] == "distinct_events":
         if type(value) is list and all(type(event) is str for event in value):
             return len(set(value))
+    elif rule["kind"] == "positive_formula":
+        if type(value) is int and value > 0:
+            return rule["numerator"] // value
+        return {"raises": "ValueError"}
     elif type(value) is int:
         return min(rule["high"], max(rule["low"], value))
     return rule["fallback"]
@@ -61,6 +77,9 @@ def expected_value(rule, value):
 def static_cases(rule):
     if rule["kind"] == "distinct_events":
         values = [[], ["open"], ["open", "close"], ["open", "open"], None, ["open", 1]]
+        return [(value, expected_value(rule, value)) for value in values]
+    if rule["kind"] == "positive_formula":
+        values = [-2, -1, 0, 1, 2, 3, 10, rule["numerator"], rule["numerator"] + 1]
         return [(value, expected_value(rule, value)) for value in values]
     low, high = rule["low"], rule["high"]
     return [(low + (high - low) // 2, low + (high - low) // 2),
@@ -73,7 +92,8 @@ def render_probe(rule, cases):
     suffix = Path(rule["path"]).suffix
     filename = PROBE_NAMES[suffix]
     if suffix == ".py":
-        source = f"""import importlib
+        source = f"""import builtins
+import importlib
 import sys
 from pathlib import Path
 
@@ -86,6 +106,10 @@ function = getattr(target, {rule['symbol']!r})
 
 @pytest.mark.parametrize("value, expected", {cases!r})
 def test_aegis_acceptance(value, expected):
+    if isinstance(expected, dict) and set(expected) == {{"raises"}}:
+        with pytest.raises(getattr(builtins, expected["raises"])):
+            function(value)
+        return
     result = function(value)
     assert type(result) is type(expected) and result == expected, "AEGIS_ACCEPTANCE"
 """
@@ -105,7 +129,7 @@ for (const [value, expected] of {json.dumps(cases)}) {{
   test(JSON.stringify(value), () => assert.strictEqual(fn(value), expected, 'AEGIS_ACCEPTANCE'));
 }}
 """
-        command = ["node", "--test", "--test-isolation=none", "--test-reporter=tap", filename]
+        command = ["node", "--test", "--test-reporter=tap", filename]
     return filename, source, command
 
 
@@ -135,11 +159,23 @@ def compile_probe(spec, repo, base, *, timeout=60, budget=None):
 
 
 def is_true_red(receipt):
-    output = receipt["stdout"] + "\n" + receipt["stderr"]
-    return (receipt["exit_code"] == 1 and receipt["failure_code"] == "ASSERTION_FAILED"
-            and not receipt["changed"] and
-            bool(re.search(r"AssertionError: AEGIS_ACCEPTANCE|(?m:^    AEGIS_ACCEPTANCE\s*$)", output)))
-
+    output = receipt.get("stdout", "") + "\n" + receipt.get("stderr", "")
+    if receipt.get("exit_code") != 1 or receipt.get("changed"):
+        return False
+    acceptance_failure = bool(re.search(
+        r"AssertionError: AEGIS_ACCEPTANCE|(?m:^    AEGIS_ACCEPTANCE\s*$)", output))
+    if receipt.get("failure_code") == "ASSERTION_FAILED" and acceptance_failure:
+        return True
+    if receipt.get("failure_code") != "EXECUTION_ERROR":
+        return False
+    runtime_errors = (
+        "ZeroDivisionError", "ValueError", "TypeError", "KeyError", "IndexError",
+        "OverflowError", "AttributeError", "RuntimeError", "NameError", "UnboundLocalError",
+    )
+    reported_errors = re.findall(r"(?m)^E\s+([A-Za-z_]\w*)\s*:", output)
+    if reported_errors:
+        return reported_errors[-1] in runtime_errors
+    return any(re.search(rf"(?m)^{error}\s*:", output) for error in runtime_errors)
 
 def is_true_green(receipt, cases):
     """Require evidence that all generated cases ran, even on an exit code of zero."""

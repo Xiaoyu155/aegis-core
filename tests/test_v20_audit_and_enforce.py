@@ -71,7 +71,7 @@ def test_audit_ledger_refuses_to_append_after_tampering(tmp_path):
 def test_audit_verification_is_read_only_for_a_pristine_checkout(tmp_path):
     path = tmp_path / ".aegis" / "audit.jsonl"
     report = AuditLedger(path).verify()
-    assert report["valid"] and report["entries"] == 0
+    assert report["valid"] is False and report["status"] == "missing" and report["entries"] == 0
     assert not path.parent.exists()
     assert not path.with_suffix(path.suffix + ".lock").exists()
 
