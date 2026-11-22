@@ -207,32 +207,30 @@ def _isolated_tree(repo_root: Path, target_path: Path, test_path: Path,
 
 
 def _run_probe(repo_root: Path, target_path: Path, test_path: Path, mutant_source: str,
-               *, timeout: float) -> dict:
+               *, timeout: float, runner: str = "direct") -> dict:
     from .sandbox import run_exam_gate
 
     with tempfile.TemporaryDirectory(prefix="aegis-ast-mutant-") as temporary:
         isolated = Path(temporary)
         _isolated_tree(repo_root, target_path, test_path, mutant_source, isolated)
         relative_test = test_path.relative_to(repo_root).as_posix()
-        runner = isolated / ".aegis_ast_probe_runner.py"
-        runner.write_text(_DIRECT_PROBE_RUNNER, encoding="utf-8")
-        command = [sys.executable, "-B", str(runner), str(isolated / relative_test)]
+        runner_path = isolated / ".aegis_ast_probe_runner.py"
+        if runner == "direct":
+            runner_path.write_text(_DIRECT_PROBE_RUNNER, encoding="utf-8")
+            command = [sys.executable, "-B", str(runner_path), str(isolated / relative_test)]
+        elif runner == "pytest":
+            command = [sys.executable, "-B", "-m", "pytest", "--noconftest", "-o", "addopts=",
+                       "-p", "no:cacheprovider", "-q", relative_test]
+        else:
+            raise ValueError("runner must be direct or pytest")
         digest = hashlib.sha256((isolated / relative_test).read_bytes()).hexdigest()
         receipt = run_exam_gate(isolated, command, timeout=timeout,
                                 probe_script_sha256={relative_test: digest},
                                 environment_overrides={"PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1"})
-        # Generated probes are parametrized assertion functions and can be run
-        # directly without starting pytest for every mutant. Retain the generic
-        # pytest path for user supplied probes with fixtures or multiple marks.
-        if receipt["exit_code"] == 78 and not receipt["timed_out"]:
-            command = [sys.executable, "-B", "-m", "pytest", "--noconftest", "-o", "addopts=",
-                       "-p", "no:cacheprovider", "-q", relative_test]
-            receipt = run_exam_gate(isolated, command, timeout=timeout,
-                                    probe_script_sha256={relative_test: digest},
-                                    environment_overrides={"PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1"})
         return {"passed": receipt["passed"], "exit_code": receipt["exit_code"],
                 "stdout": receipt["stdout"][-2000:], "stderr": receipt["stderr"][-2000:],
-                "timed_out": receipt["timed_out"]}
+                "timed_out": receipt["timed_out"], "failure_code": receipt.get("failure_code"),
+                "runner": runner}
 
 
 def run_mutation_campaign(repo_root: str | Path, target: str | Path, test: str | Path,
@@ -249,7 +247,14 @@ def run_mutation_campaign(repo_root: str | Path, target: str | Path, test: str |
         raise ValueError("target and test must be regular Python files inside repo_root")
     source = target_path.read_text(encoding="utf-8")
     mutants = generate_mutants(source, symbol=symbol, max_mutants=max_mutants)
-    baseline = _run_probe(root, target_path, test_path, source, timeout=timeout)
+    baseline = _run_probe(root, target_path, test_path, source, timeout=timeout, runner="direct")
+    if not baseline["passed"]:
+        # Validate a failed direct baseline with pytest before declaring the
+        # candidate red. This preserves fail-closed scoring while covering
+        # Windows Python environments with different script/import semantics.
+        direct_baseline = baseline
+        baseline = _run_probe(root, target_path, test_path, source, timeout=timeout, runner="pytest")
+        baseline["direct_runner_probe"] = direct_baseline
     outcomes = []
     if baseline["passed"]:
         for mutant in mutants:

@@ -344,11 +344,44 @@ def test_ast_mutation_campaign_executes_isolated_mutants_and_reports_real_kill_r
     assert {"reverse_comparison", "change_numeric_boundary", "raise_to_pass", "remove_guard"} <= kinds
     report = run_mutation_campaign(tmp_path, target.relative_to(tmp_path), probe.relative_to(tmp_path),
                                   max_mutants=64, timeout=5)
-    assert report["status"] == "complete"
+    assert report["status"] == "complete", report
     assert report["generated"] >= 4
     assert report["killed"] == report["generated"]
     assert report["mutation_kill_rate"] == 1.0
     assert report["passed"] is True
+
+
+def test_ast_mutation_campaign_rechecks_a_failed_direct_baseline_with_pytest(monkeypatch, tmp_path):
+    fixed = ("def exposure(capital):\n"
+             "    if capital <= 0:\n"
+             "        raise ValueError('capital must be positive')\n"
+             "    return 1000 // capital\n")
+    target, probe, _command, _rule, _cases = _formula_fixture(tmp_path, fixed)
+    from aegis_core import sandbox
+
+    receipts = []
+
+    def gate(_root, command, **_kwargs):
+        if isinstance(command, str):
+            command = command.split()
+        command = list(command)
+        receipts.append(command)
+        if len(receipts) == 1:
+            passed = False
+        elif "pytest" in command:
+            passed = True
+        else:
+            passed = False
+        return {"passed": passed, "exit_code": 0 if passed else 1, "stdout": "", "stderr": "",
+                "timed_out": False}
+
+    monkeypatch.setattr(sandbox, "run_exam_gate", gate)
+    report = run_mutation_campaign(tmp_path, target.relative_to(tmp_path), probe.relative_to(tmp_path),
+                                  max_mutants=1, timeout=1)
+    assert report["baseline"]["passed"] is True
+    assert report["baseline"]["runner"] == "pytest"
+    assert report["baseline"]["direct_runner_probe"]["passed"] is False
+    assert report["killed"] == report["generated"] == 1
 
 
 def test_ast_mutation_score_is_zero_when_the_candidate_does_not_pass_its_frozen_probe(tmp_path):
