@@ -223,7 +223,11 @@ def _run_probe(repo_root: Path, target_path: Path, test_path: Path, mutant_sourc
                        "-p", "no:cacheprovider", "-q", relative_test]
         else:
             raise ValueError("runner must be direct or pytest")
-        digest = hashlib.sha256((isolated / relative_test).read_bytes()).hexdigest()
+        probe_bytes = (isolated / relative_test).read_bytes()
+        # verify_probe_files normalizes tracked source line endings so the
+        # frozen probe digest survives Windows CRLF checkouts.
+        probe_digest_bytes = probe_bytes.replace(b"\r\n", b"\n") if b"\0" not in probe_bytes else probe_bytes
+        digest = hashlib.sha256(probe_digest_bytes).hexdigest()
         receipt = run_exam_gate(isolated, command, timeout=timeout,
                                 probe_script_sha256={relative_test: digest},
                                 environment_overrides={"PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1"})

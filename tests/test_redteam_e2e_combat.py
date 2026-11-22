@@ -351,6 +351,20 @@ def test_ast_mutation_campaign_executes_isolated_mutants_and_reports_real_kill_r
     assert report["passed"] is True
 
 
+def test_ast_mutation_probe_hash_matches_windows_crlf_normalization(tmp_path):
+    fixed = ("def exposure(capital):\n"
+             "    if capital <= 0:\n"
+             "        raise ValueError('capital must be positive')\n"
+             "    return 1000 // capital\n")
+    target, probe, _command, _rule, _cases = _formula_fixture(tmp_path, fixed)
+    probe.write_bytes(probe.read_bytes().replace(b"\n", b"\r\n"))
+    report = run_mutation_campaign(tmp_path, target.relative_to(tmp_path), probe.relative_to(tmp_path),
+                                  max_mutants=4, timeout=5)
+    assert report["status"] == "complete", report
+    assert report["passed"] is True
+    assert report["mutation_kill_rate"] == 1.0
+
+
 def test_ast_mutation_campaign_rechecks_a_failed_direct_baseline_with_pytest(monkeypatch, tmp_path):
     fixed = ("def exposure(capital):\n"
              "    if capital <= 0:\n"
