@@ -168,7 +168,15 @@ def _mirror_package(source: Path, destination: Path, target: Path) -> None:
         if child.is_dir() and target_relative.is_relative_to(relative):
             _mirror_package(child, output, target)
         else:
-            output.symlink_to(child, target_is_directory=child.is_dir())
+            try:
+                output.symlink_to(child, target_is_directory=child.is_dir())
+            except (NotImplementedError, OSError):
+                # Hosted Windows runners may lack SeCreateSymbolicLinkPrivilege.
+                # Copying keeps the mutant tree isolated and the campaign real.
+                if child.is_dir():
+                    shutil.copytree(child, output, symlinks=True)
+                else:
+                    shutil.copy2(child, output)
 
 
 def _isolated_tree(repo_root: Path, target_path: Path, test_path: Path,

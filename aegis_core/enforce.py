@@ -121,8 +121,15 @@ def _windows_private_key_acl_safe(private_path: Path) -> bool:
     readable_rights = {"F", "M", "RX", "R", "RD", "RA", "REA", "RC", "WDAC"}
     ace_pattern = re.compile(r"^\s*(?P<principal>.+?):(?P<rights>(?:\([A-Za-z]+\)\s*)+)$")
     parsed_aces = 0
+    path_prefix = str(private_path).replace("/", "\\")
     for line in result.stdout.splitlines():
-        match = ace_pattern.fullmatch(line)
+        stripped_line = line.strip().replace("/", "\\")
+        # icacls prefixes the first ACE with the queried path. Exclude that
+        # prefix before identifying the principal, since e.g. C:\\Users is a
+        # path component and must not be mistaken for BUILTIN\\Users.
+        if stripped_line.casefold().startswith(path_prefix.casefold()):
+            stripped_line = stripped_line[len(path_prefix):].strip()
+        match = ace_pattern.fullmatch(stripped_line)
         if match is None:
             continue
         principal = match.group("principal").strip().casefold().replace("/", "\\")

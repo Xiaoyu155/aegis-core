@@ -13,7 +13,7 @@ from urllib.request import urlopen
 
 import pytest
 
-from aegis_core.ast_mutator import generate_mutants, run_mutation_campaign
+from aegis_core.ast_mutator import _isolated_tree, generate_mutants, run_mutation_campaign
 from aegis_core.audit_ledger import AuditLedger
 from aegis_core.enforce import _windows_private_key_acl_safe, create_keypair, inspect_keys
 from aegis_core.invariant_guard import inspect_source, scan_changed_files
@@ -120,6 +120,50 @@ def test_windows_acl_parser_fails_closed_on_empty_or_unparsed_output(monkeypatch
     Result.stdout = stdout
     monkeypatch.setattr(enforce.subprocess, "run", lambda *args, **kwargs: Result())
     assert _windows_private_key_acl_safe(tmp_path / "private.pem") is False
+
+
+@pytest.mark.parametrize("principal,should_be_safe", [
+    ("BUILTIN\\Administrators", True), ("NT AUTHORITY\\SYSTEM", True),
+    ("BUILTIN\\Users", False), ("Everyone", False),
+])
+def test_windows_acl_parser_strips_the_queried_path_before_principal_check(
+        monkeypatch, principal, should_be_safe):
+    from aegis_core import enforce
+
+    key_path = Path("C:/Users/runneradmin/AppData/Local/Temp/keys/private.pem")
+
+    class Result:
+        returncode = 0
+        stdout = f"{key_path} {principal}:(F)\n"
+        stderr = ""
+
+    monkeypatch.setattr(enforce.subprocess, "run", lambda *args, **kwargs: Result())
+    assert _windows_private_key_acl_safe(key_path) is should_be_safe
+
+
+def test_ast_mutation_package_mirror_copies_when_symlinks_are_unavailable(monkeypatch, tmp_path):
+    root = tmp_path / "source"
+    package = root / "aegis_core"
+    (package / "nested").mkdir(parents=True)
+    (package / "__init__.py").write_text("", encoding="utf-8")
+    (package / "helpers.py").write_text("VALUE = 7\n", encoding="utf-8")
+    (package / "nested" / "extra.py").write_text("OTHER = 8\n", encoding="utf-8")
+    target = package / "capital.py"
+    target.write_text("def exposure(value): return value\n", encoding="utf-8")
+    probe = root / "tests" / "probe.py"
+    probe.parent.mkdir()
+    probe.write_text("def test_probe(): pass\n", encoding="utf-8")
+    destination = tmp_path / "isolated"
+
+    def no_symlink(*_args, **_kwargs):
+        raise OSError("symbolic links are unavailable")
+
+    monkeypatch.setattr(Path, "symlink_to", no_symlink)
+    _isolated_tree(root, target, probe, "def exposure(value): return value + 1\n", destination)
+    assert (destination / "aegis_core" / "helpers.py").read_text(encoding="utf-8") == "VALUE = 7\n"
+    assert (destination / "aegis_core" / "nested" / "extra.py").read_text(encoding="utf-8") == "OTHER = 8\n"
+    assert (destination / "aegis_core" / "capital.py").read_text(encoding="utf-8") == "def exposure(value): return value + 1\n"
+    assert (destination / "tests" / "probe.py").read_text(encoding="utf-8") == "def test_probe(): pass\n"
 
 
 @pytest.mark.parametrize("path_index", range(12))
